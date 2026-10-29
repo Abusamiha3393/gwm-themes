@@ -48,7 +48,7 @@ class SplitInfoView(context: Context, initialPage: Int, private val onPageChange
                 gravity = Gravity.CENTER
                 contentDescription = spec.name
                 setOnClickListener { show(i) }
-            }
+            }.also { it.pressable(context.dp(10f)) }
             t.addView(ImageView(context).apply { setImageResource(spec.icon) }, LayoutParams(context.dp(24), context.dp(24)).apply { marginEnd = context.dp(6) })
             t.addView(context.label(spec.name, 13f, Palette.muted).apply { maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END })
             tabViews.add(t)

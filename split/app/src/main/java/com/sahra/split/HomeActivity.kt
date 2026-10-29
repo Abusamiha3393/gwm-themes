@@ -190,7 +190,7 @@ class HomeActivity : Activity() {
             background = rounded(color, dp(10f))
             setPadding(dp(16), dp(10), dp(16), dp(10))
             setOnClickListener { onClick() }
-        }
+        }.also { it.pressable(dp(10f)) }
         row.addView(icon(res, 28, ink), LinearLayout.LayoutParams(dp(28), dp(28)).apply { marginEnd = dp(12) })
         row.addView(label(text, 17f, ink, true).apply { maxLines = 1; ellipsize = TextUtils.TruncateAt.END },
             LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f))
@@ -271,6 +271,7 @@ class HomeActivity : Activity() {
             }
         }
         board.setOnLongClickListener { pick(title, nav); true }
+        board.pressable(dp(14f))
         col.addView(board, LinearLayout.LayoutParams(MATCH_PARENT, 0, 1f))
         return col
     }
@@ -282,7 +283,7 @@ class HomeActivity : Activity() {
         val f = FrameLayout(this).apply {
             background = if (primary) rounded(Palette.white, size / 2f) else rounded(0, size / 2f, dp(3), Palette.white)
             setOnClickListener { onClick() }
-        }
+        }.also { it.pressable(size / 2f) }
         f.addView(icon(res, 32, if (primary) Palette.blue else Palette.white), FrameLayout.LayoutParams(dp(32), dp(32), Gravity.CENTER))
         f.layoutParams = LinearLayout.LayoutParams(size, size).apply { setMargins(dp(7), 0, dp(7), 0) }
         return f
@@ -307,7 +308,7 @@ class HomeActivity : Activity() {
             background = smallSign(Palette.blue)
             setOnClickListener { onClick() }
             contentDescription = text
-        }
+        }.also { it.pressable(dp(10f)) }
         sq.addView(icon(res, 38), FrameLayout.LayoutParams(dp(38), dp(38), Gravity.CENTER))
         col.addView(sq, LinearLayout.LayoutParams(dp(84), dp(84)))
         col.addView(label(text, 14f, Palette.muted).apply { setPadding(0, dp(6), 0, 0) })

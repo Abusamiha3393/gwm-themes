@@ -187,7 +187,7 @@ class OverlayService : Service(), VehicleRepository.Listener {
                 gravity = Gravity.CENTER_VERTICAL
                 setPadding(dp(6), dp(6), dp(10), dp(6))
                 setOnClickListener { closeMenu(); action() }
-            }
+            }.also { it.pressable(dp(12f)) }
             val sq = FrameLayout(this).apply { background = smallSign(color) }
             sq.addView(icon(res, 26), FrameLayout.LayoutParams(dp(26), dp(26), Gravity.CENTER))
             row.addView(sq, LinearLayout.LayoutParams(dp(52), dp(52)).apply { marginEnd = dp(14) })

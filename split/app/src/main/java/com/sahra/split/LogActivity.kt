@@ -80,7 +80,7 @@ class LogActivity : Activity() {
                 gravity = Gravity.CENTER
                 background = if (on) smallSign(t.color) else rounded(Palette.shoulder, dp(10f), dp(2), Palette.kerb)
                 setOnClickListener { tab = i; render() }
-            }
+            }.also { it.pressable(dp(10f)) }
             row.addView(icon(t.icon, 24, if (on) Palette.white else Palette.muted), LinearLayout.LayoutParams(dp(24), dp(24)).apply { marginEnd = dp(10) })
             row.addView(label(t.name, 16f, if (on) Palette.white else Palette.muted, on))
             tabsRow.addView(row, LinearLayout.LayoutParams(0, MATCH_PARENT, 1f).apply { if (i > 0) marginStart = dp(8) })
@@ -117,6 +117,7 @@ class LogActivity : Activity() {
             if (unit.isNotEmpty()) v.addView(label(unit, 15f, dim).apply { setPadding(dp(8), 0, 0, dp(4)) })
             c.addView(v, LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT).apply { marginStart = dp(16) })
         }
+        c.foreground = android.graphics.drawable.RippleDrawable(android.content.res.ColorStateList.valueOf(0x33FFFFFF), null, rounded(android.graphics.Color.WHITE, dp(14f)))
         list.addView(c, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT).apply { bottomMargin = dp(10) })
         return c
     }
@@ -131,7 +132,7 @@ class LogActivity : Activity() {
     private fun actions(vararg items: Triple<Int, String, () -> Unit>) {
         val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
         items.forEach { (res, t, f) ->
-            row.addView(signButton(res, t, Palette.blue, f), LinearLayout.LayoutParams(WRAP_CONTENT, dp(60)).apply { marginEnd = dp(10) })
+            row.addView(signButton(res, t, Palette.blue, f), LinearLayout.LayoutParams(WRAP_CONTENT, dp(64)).apply { marginEnd = dp(10) })
         }
         list.addView(row, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT).apply { bottomMargin = dp(14) })
     }
@@ -145,7 +146,7 @@ class LogActivity : Activity() {
             setPadding(dp(18), 0, dp(18), 0)
             minimumHeight = dp(64)
             setOnClickListener { onClick() }
-        }
+        }.also { it.pressable(dp(10f)) }
         row.addView(icon(res, 22, Palette.muted), LinearLayout.LayoutParams(dp(22), dp(22)).apply { marginEnd = dp(10) })
         row.addView(label(text, 15f, Palette.muted))
         val wrap = LinearLayout(this).apply { gravity = Gravity.END }

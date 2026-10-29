@@ -1,0 +1,464 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-29T23:46:33+00:00",
+  "title": "Design System: Sahra Split",
+  "extensions": {
+    "colorMeta": {
+      "asphalt": {
+        "role": "neutral",
+        "displayName": "Asphalt",
+        "canonical": "oklch(21.3% 0.004 264.5)",
+        "tonalRamp": [
+          "#0B0B0C",
+          "#242526",
+          "#414244",
+          "#606164",
+          "#818285",
+          "#A4A5A7",
+          "#C8C9CA",
+          "#EEEEEF"
+        ]
+      },
+      "gantry": {
+        "role": "neutral",
+        "displayName": "Gantry",
+        "canonical": "oklch(18.2% 0.004 264.5)",
+        "tonalRamp": [
+          "#0B0B0C",
+          "#242526",
+          "#414244",
+          "#606164",
+          "#818285",
+          "#A4A5A7",
+          "#C8C9CB",
+          "#EEEEEF"
+        ]
+      },
+      "shoulder": {
+        "role": "neutral",
+        "displayName": "Shoulder",
+        "canonical": "oklch(24.4% 0.006 271.2)",
+        "tonalRamp": [
+          "#0B0B0C",
+          "#242527",
+          "#414244",
+          "#606165",
+          "#818286",
+          "#A4A5A8",
+          "#C8C9CB",
+          "#EEEEEF"
+        ]
+      },
+      "kerb": {
+        "role": "neutral",
+        "displayName": "Kerb",
+        "canonical": "oklch(27.6% 0.006 258.4)",
+        "tonalRamp": [
+          "#0B0B0C",
+          "#242527",
+          "#404245",
+          "#5F6165",
+          "#808286",
+          "#A3A5A8",
+          "#C8C9CB",
+          "#EEEEEF"
+        ]
+      },
+      "lane-dash": {
+        "role": "neutral",
+        "displayName": "Lane Dash",
+        "canonical": "oklch(36.0% 0.007 264.5)",
+        "tonalRamp": [
+          "#0B0B0C",
+          "#242527",
+          "#404245",
+          "#5F6166",
+          "#808287",
+          "#A3A5A9",
+          "#C8C9CC",
+          "#EEEEF0"
+        ]
+      },
+      "highway-green": {
+        "role": "primary",
+        "displayName": "Highway Green",
+        "canonical": "oklch(45.3% 0.105 158.3)",
+        "tonalRamp": [
+          "#030E07",
+          "#072D1B",
+          "#0A4F31",
+          "#18734A",
+          "#42956A",
+          "#77B592",
+          "#ACD4BC",
+          "#E1F4E8"
+        ]
+      },
+      "city-blue": {
+        "role": "secondary",
+        "displayName": "City Blue",
+        "canonical": "oklch(42.0% 0.118 256.6)",
+        "tonalRamp": [
+          "#040B17",
+          "#102542",
+          "#1E4273",
+          "#3061A3",
+          "#5183C8",
+          "#7FA7DF",
+          "#B0CBF1",
+          "#E3F0FF"
+        ]
+      },
+      "tourist-brown": {
+        "role": "tertiary",
+        "displayName": "Tourist Brown",
+        "canonical": "oklch(41.0% 0.083 48.6)",
+        "tonalRamp": [
+          "#120905",
+          "#361E12",
+          "#5E3721",
+          "#875235",
+          "#AB7355",
+          "#C89981",
+          "#E1C2B1",
+          "#FAEBE3"
+        ]
+      },
+      "warning-amber": {
+        "role": "tertiary",
+        "displayName": "Warning Amber",
+        "canonical": "oklch(80.5% 0.166 82.6)",
+        "tonalRamp": [
+          "#130900",
+          "#391F00",
+          "#633700",
+          "#8E5200",
+          "#B27500",
+          "#CD9C33",
+          "#E5C589",
+          "#FCEDD1"
+        ]
+      },
+      "legend-white": {
+        "role": "neutral",
+        "displayName": "Legend White",
+        "canonical": "oklch(96.8% 0.007 115.7)",
+        "tonalRamp": [
+          "#0B0B0A",
+          "#252523",
+          "#42423F",
+          "#61625D",
+          "#82837E",
+          "#A5A5A2",
+          "#C9C9C7",
+          "#EEEEED"
+        ]
+      },
+      "legend-dim": {
+        "role": "neutral",
+        "displayName": "Legend Dim",
+        "canonical": "#F4F5F0CC (Android ARGB #CCF4F5F0; white at 80%)",
+        "tonalRamp": [
+          "#0B0B0A",
+          "#252523",
+          "#42423F",
+          "#61625D",
+          "#82837E",
+          "#A5A5A2",
+          "#C9C9C7",
+          "#EEEEED"
+        ]
+      },
+      "verge-grey": {
+        "role": "neutral",
+        "displayName": "Verge Grey",
+        "canonical": "oklch(71.4% 0.009 253.9)",
+        "tonalRamp": [
+          "#0B0B0C",
+          "#242527",
+          "#404246",
+          "#5E6266",
+          "#7F8387",
+          "#A2A5A9",
+          "#C7C9CC",
+          "#EDEEF0"
+        ]
+      },
+      "sign-ink": {
+        "role": "neutral",
+        "displayName": "Sign Ink",
+        "canonical": "oklch(18.7% 0.018 91.8)",
+        "tonalRamp": [
+          "#0C0B09",
+          "#272520",
+          "#45423A",
+          "#656156",
+          "#868277",
+          "#A8A59B",
+          "#CBC9C3",
+          "#EFEEEB"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display-numeral": {
+        "displayName": "Display Numeral",
+        "purpose": "Clock, fuel %, temperature, live chart value, speed roundel; sized as a fraction of the canvas page box."
+      },
+      "value-numeral": {
+        "displayName": "Value Numeral",
+        "purpose": "Value column of log entries and distance rows (1.5x the row word size on canvas)."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "App or track name on an exit panel."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Sub-screen header boards."
+      },
+      "button": {
+        "displayName": "Button",
+        "purpose": "Sign-button legends, warning strip, floating menu rows."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Exit tab names, subtitles on signs, settings values, tab names."
+      },
+      "meta": {
+        "displayName": "Meta",
+        "purpose": "Dock captions, notes, third lines; the smallest text anywhere."
+      }
+    },
+    "shadows": [
+      {
+        "name": "roundel-lift",
+        "value": "0 4dp 0 0 rgba(0,0,0,0.40)",
+        "purpose": "Only under the floating speed roundel drawn over other apps."
+      }
+    ],
+    "motion": [
+      {
+        "name": "none",
+        "value": "instant",
+        "purpose": "No transitions or animations; pages and presets switch instantly. Press feedback is a 20% white ripple (#33FFFFFF) on sign buttons."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "head-unit-wide",
+        "value": "1920x720 landscape"
+      },
+      {
+        "name": "head-unit",
+        "value": "1920x1080 landscape"
+      }
+    ],
+    "signBorder": {
+      "large": {
+        "radius": "14dp",
+        "inset": "5dp",
+        "stroke": "2.5dp"
+      },
+      "small": {
+        "radius": "10dp",
+        "inset": "3.5dp",
+        "stroke": "2dp"
+      },
+      "plaque": {
+        "radius": "9dp",
+        "innerRadius": "6dp",
+        "inset": "4dp",
+        "stroke": "2dp"
+      }
+    },
+    "asphaltTexture": {
+      "base": "#18191B",
+      "line": "#FFFFFF at 3.5% (ARGB #09FFFFFF)",
+      "step": "48dp",
+      "lineWidth": "2dp (step/24)"
+    },
+    "pictograms": {
+      "grid": "48",
+      "fill": "solid white, tinted at runtime",
+      "source": "/home/claude/design/icons.py",
+      "files": "app/src/main/res/drawable/ic_*.xml"
+    },
+    "fonts": [
+      {
+        "family": "Noto Kufi Arabic",
+        "weights": [
+          500,
+          800
+        ],
+        "files": [
+          "kufi_medium.ttf",
+          "kufi_bold.ttf"
+        ],
+        "license": "OFL"
+      },
+      {
+        "family": "Overpass",
+        "weights": [
+          700,
+          900
+        ],
+        "files": [
+          "digits_bold.ttf",
+          "digits_black.ttf"
+        ],
+        "license": "OFL"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Sign Button",
+      "kind": "button",
+      "refersTo": "sign-button",
+      "description": "Blue small sign with pictogram and Kufi 800 legend; back and secondary commands.",
+      "html": "<button class=\"ds-sign-btn\" dir=\"rtl\"><svg viewBox=\"0 0 48 48\" width=\"28\" height=\"28\"><path d=\"M34 41 V20 A10 10 0 0 0 14 20 V27\" fill=\"none\" stroke=\"#F4F5F0\" stroke-width=\"6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M5.5 25 H22.5 L14 37 Z\" fill=\"#F4F5F0\"/></svg><span>رجوع</span></button>",
+      "css": ".ds-sign-btn{position:relative;background:#1B4C8C;border-radius:10px;}.ds-sign-btn::after{content:'';position:absolute;inset:3.5px;border:2px solid #F4F5F0;border-radius:6.5px;pointer-events:none;}.ds-sign-btn{display:inline-flex;align-items:center;gap:10px;min-height:64px;padding:12px 18px;border:none;color:#F4F5F0;font-family:'Noto Kufi Arabic',sans-serif;font-weight:800;font-size:17px;cursor:pointer;}.ds-sign-btn:active{background:#2F5E9C;}.ds-sign-btn:focus-visible{outline:3px solid #F3B300;outline-offset:3px;}"
+    },
+    {
+      "name": "Primary Sign Button",
+      "kind": "button",
+      "refersTo": "sign-button-primary",
+      "description": "The one green command per screen (split screen), 84dp high.",
+      "html": "<button class=\"ds-sign-primary\" dir=\"rtl\"><svg viewBox=\"0 0 48 48\" width=\"28\" height=\"28\" fill=\"#F4F5F0\"><path d=\"M7 9 H25 A3 3 0 0 1 28 12 V36 A3 3 0 0 1 25 39 H7 A3 3 0 0 1 4 36 V12 A3 3 0 0 1 7 9 Z\"/><path d=\"M34 9 H41 A3 3 0 0 1 44 12 V36 A3 3 0 0 1 41 39 H34 A3 3 0 0 1 31 36 V12 A3 3 0 0 1 34 9 Z\"/></svg><span>تقسيم الشاشة</span></button>",
+      "css": ".ds-sign-primary{position:relative;background:#00673F;border-radius:10px;}.ds-sign-primary::after{content:'';position:absolute;inset:3.5px;border:2px solid #F4F5F0;border-radius:6.5px;pointer-events:none;}.ds-sign-primary{display:inline-flex;align-items:center;justify-content:center;gap:10px;height:84px;min-width:240px;padding:12px 18px;border:none;color:#F4F5F0;font-family:'Noto Kufi Arabic',sans-serif;font-weight:800;font-size:17px;cursor:pointer;}.ds-sign-primary:active{background:#14794F;}.ds-sign-primary:focus-visible{outline:3px solid #F3B300;outline-offset:3px;}"
+    },
+    {
+      "name": "Dock Sign",
+      "kind": "button",
+      "refersTo": "dock-sign",
+      "description": "84dp square blue sign with a 38dp pictogram and a Verge Grey caption below.",
+      "html": "<div class=\"ds-dock\" dir=\"rtl\"><button class=\"ds-dock-sq\" aria-label=\"الإعدادات\"><svg viewBox=\"0 0 48 48\" width=\"38\" height=\"38\"><path d=\"M29 19 L9.5 38.5\" stroke=\"#F4F5F0\" stroke-width=\"7\" stroke-linecap=\"round\" fill=\"none\"/><path d=\"M33.5 5 A10 10 0 1 0 43 14.5 L36.5 14.5 L33.5 11.5 Z\" fill=\"#F4F5F0\"/></svg></button><span>الإعدادات</span></div>",
+      "css": ".ds-dock-sq{position:relative;background:#1B4C8C;border-radius:10px;}.ds-dock-sq::after{content:'';position:absolute;inset:3.5px;border:2px solid #F4F5F0;border-radius:6.5px;pointer-events:none;}.ds-dock{display:inline-flex;flex-direction:column;align-items:center;gap:6px;background:#18191B;padding:12px;}.ds-dock-sq{width:84px;height:84px;border:none;display:grid;place-items:center;cursor:pointer;}.ds-dock-sq:active{background:#2F5E9C;}.ds-dock-sq:focus-visible{outline:3px solid #F3B300;outline-offset:3px;}.ds-dock span{color:#9FA3A8;font-family:'Noto Kufi Arabic',sans-serif;font-size:14px;}"
+    },
+    {
+      "name": "Lane Strip",
+      "kind": "nav",
+      "refersTo": "lane-strip",
+      "description": "Presets as road lanes divided by dashed lane lines; the active lane is lit green.",
+      "html": "<div class=\"ds-lanes\" dir=\"rtl\"><button class=\"ds-lane on\"><svg viewBox=\"0 0 48 48\" width=\"22\" height=\"22\"><path d=\"M24 43 V16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"6.5\" stroke-linecap=\"round\"/><path d=\"M12 19 L24 4 L36 19 Z\" fill=\"currentColor\"/></svg>المدينة</button><button class=\"ds-lane\"><svg viewBox=\"0 0 48 48\" width=\"22\" height=\"22\"><path d=\"M24 43 V16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"6.5\" stroke-linecap=\"round\"/><path d=\"M12 19 L24 4 L36 19 Z\" fill=\"currentColor\"/></svg>سفر</button><button class=\"ds-lane\"><svg viewBox=\"0 0 48 48\" width=\"22\" height=\"22\"><path d=\"M24 43 V16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"6.5\" stroke-linecap=\"round\"/><path d=\"M12 19 L24 4 L36 19 Z\" fill=\"currentColor\"/></svg>طلعات</button></div>",
+      "css": ".ds-lanes{display:flex;height:64px;background:#111214;border-radius:10px;padding:3px;width:520px;}.ds-lane{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;border:none;background:none;color:#9FA3A8;font-family:'Noto Kufi Arabic',sans-serif;font-weight:500;font-size:17px;cursor:pointer;border-inline-start:3px dashed #3B3D41;}.ds-lane:first-child{border-inline-start:none;}.ds-lane.on{background:#00673F;color:#F4F5F0;font-weight:800;border-radius:8px;border:none;}.ds-lane+.ds-lane.on,.ds-lane.on+.ds-lane{border-inline-start:none;}.ds-lane:focus-visible{outline:3px solid #F3B300;outline-offset:-3px;}"
+    },
+    {
+      "name": "Exit Panel",
+      "kind": "custom",
+      "refersTo": "sign-panel",
+      "description": "Large green sign for the navigation window: exit tab with side arrow, app on a white plate, Headline name.",
+      "html": "<div class=\"ds-exit\" dir=\"rtl\"><div class=\"ds-exit-tab\"><svg viewBox=\"0 0 48 48\" width=\"22\" height=\"22\" style=\"transform:scaleX(-1)\"><path d=\"M17 43 V26 A7 7 0 0 1 24 19 H31\" fill=\"none\" stroke=\"#F4F5F0\" stroke-width=\"6.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M29 8 L43 19 L29 30 Z\" fill=\"#F4F5F0\"/></svg>الملاحة</div><div class=\"ds-exit-board\"><div class=\"ds-plate\"></div><div><div class=\"ds-exit-name\">خرائط Google</div><div class=\"ds-exit-sub\">المس للفتح · مطولًا للتغيير</div></div></div></div>",
+      "css": ".ds-exit-board{position:relative;background:#00673F;border-radius:14px;}.ds-exit-board::after{content:'';position:absolute;inset:5px;border:2.5px solid #F4F5F0;border-radius:9px;pointer-events:none;}.ds-exit{width:480px;}.ds-exit-tab{display:inline-flex;align-items:center;gap:8px;margin-inline-start:22px;padding:8px 16px;background:#00673F;color:#F4F5F0;border-radius:10px 10px 0 0;font-family:'Noto Kufi Arabic',sans-serif;font-weight:800;font-size:16px;}.ds-exit-board{display:flex;align-items:center;gap:20px;padding:26px 30px 22px;min-height:220px;align-items:flex-start;}.ds-plate{width:92px;height:92px;flex:none;background:#F4F5F0;border-radius:20px;}.ds-exit-name{color:#F4F5F0;font-family:'Noto Kufi Arabic',sans-serif;font-weight:800;font-size:30px;line-height:1.2;}.ds-exit-sub{color:#F4F5F0CC;font-family:'Noto Kufi Arabic',sans-serif;font-size:15px;padding-top:8px;}"
+    },
+    {
+      "name": "Distance Row",
+      "kind": "custom",
+      "refersTo": "sign-panel-services",
+      "description": "Labelled value as a distance sign: name right, dotted leader, Overpass value and dim unit left.",
+      "html": "<div class=\"ds-dist-sign\" dir=\"rtl\"><div class=\"ds-dist\"><b>المدى المتبقي</b><i></i><span class=\"v\">438</span><span class=\"u\">كم</span></div><div class=\"ds-dist\"><b>في الخزان</b><i></i><span class=\"v\">49.6</span><span class=\"u\">لتر</span></div></div>",
+      "css": ".ds-dist-sign{position:relative;background:#1B4C8C;border-radius:14px;}.ds-dist-sign::after{content:'';position:absolute;inset:5px;border:2.5px solid #F4F5F0;border-radius:9px;pointer-events:none;}.ds-dist-sign{width:340px;padding:24px 26px;}.ds-dist{display:flex;align-items:baseline;gap:8px;color:#F4F5F0;margin:10px 0;}.ds-dist b{font-family:'Noto Kufi Arabic',sans-serif;font-weight:800;font-size:19px;}.ds-dist i{flex:1;border-bottom:2px dotted rgba(244,245,240,0.44);transform:translateY(-5px);}.ds-dist .v{font-family:'Overpass',sans-serif;font-weight:900;font-size:28px;direction:ltr;}.ds-dist .u{color:#F4F5F0CC;font-family:'Noto Kufi Arabic',sans-serif;font-size:13px;}"
+    },
+    {
+      "name": "Warning Strip",
+      "kind": "custom",
+      "refersTo": "warning-strip",
+      "description": "Amber strip for a due reminder: triangle, Sign Ink legend, status word.",
+      "html": "<button class=\"ds-warn\" dir=\"rtl\"><svg viewBox=\"0 0 48 48\" width=\"28\" height=\"28\" fill=\"#16130A\"><path fill-rule=\"evenodd\" d=\"M24 4 L45.5 42 H2.5 Z M21.6 16 H26.4 L25.6 30 H22.4 Z M24 32.5 A2.6 2.6 0 1 1 23.99 32.5 Z\"/></svg><span class=\"t\">تغيير الزيت</span><span class=\"s\">حان الموعد</span></button>",
+      "css": ".ds-warn{display:flex;align-items:center;gap:12px;width:520px;padding:10px 16px;border:none;border-radius:10px;background:#F3B300;color:#16130A;font-family:'Noto Kufi Arabic',sans-serif;font-weight:800;font-size:17px;cursor:pointer;}.ds-warn .t{flex:1;text-align:start;}.ds-warn .s{font-size:16px;}.ds-warn:active{background:#E0A500;}.ds-warn:focus-visible{outline:3px solid #F4F5F0;outline-offset:3px;}"
+    },
+    {
+      "name": "Choice Chips",
+      "kind": "chip",
+      "refersTo": "choice-on",
+      "description": "Single-select options: selected is a green small sign, others Asphalt with a Kerb outline.",
+      "html": "<div class=\"ds-chips\" dir=\"rtl\"><button class=\"ds-chip on\">يسار</button><button class=\"ds-chip\">يمين</button><button class=\"ds-chip\">مخفية</button></div>",
+      "css": ".ds-chip.on{position:relative;background:#00673F;border-radius:10px;}.ds-chip.on::after{content:'';position:absolute;inset:3.5px;border:2px solid #F4F5F0;border-radius:6.5px;pointer-events:none;}.ds-chips{display:flex;gap:8px;background:#1F2023;padding:16px;border-radius:12px;}.ds-chip{position:relative;min-height:52px;padding:12px 18px;background:#18191B;border:2px solid #26282B;border-radius:10px;color:#9FA3A8;font-family:'Noto Kufi Arabic',sans-serif;font-size:16px;cursor:pointer;}.ds-chip.on{border:none;color:#F4F5F0;font-weight:800;}.ds-chip:focus-visible{outline:3px solid #F3B300;outline-offset:3px;}"
+    },
+    {
+      "name": "Shoulder Row",
+      "kind": "card",
+      "refersTo": "shoulder-row",
+      "description": "Parked-use settings row on Shoulder with Kerb stroke, value in Verge Grey and a chevron.",
+      "html": "<div class=\"ds-row\" dir=\"rtl\"><span class=\"t\">تطبيق الملاحة</span><span class=\"v\">خرائط Google</span><svg viewBox=\"0 0 48 48\" width=\"22\" height=\"22\"><path d=\"M30 10 L16 24 L30 38\" fill=\"none\" stroke=\"#9FA3A8\" stroke-width=\"6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg></div>",
+      "css": ".ds-row{display:flex;align-items:center;gap:12px;width:560px;min-height:68px;padding:14px 20px;background:#1F2023;border:1px solid #26282B;border-radius:12px;font-family:'Noto Kufi Arabic',sans-serif;cursor:pointer;}.ds-row .t{flex:1;color:#F4F5F0;font-size:17px;}.ds-row .v{color:#9FA3A8;font-size:16px;}.ds-row:active{background:#26282B;}"
+    },
+    {
+      "name": "Round Media Control",
+      "kind": "button",
+      "refersTo": "round-control-primary",
+      "description": "Solid white 80dp play control with blue glyph beside 72dp outlined circles.",
+      "html": "<div class=\"ds-media\"><button class=\"ds-rc primary\" aria-label=\"تشغيل\"><svg viewBox=\"0 0 48 48\" width=\"32\" height=\"32\" fill=\"#1B4C8C\"><path d=\"M14 8.5 Q14 6 16.3 7.4 L39 21.6 Q41 23 39 24.4 L16.3 38.6 Q14 40 14 37.5 Z\"/></svg></button></div>",
+      "css": ".ds-media{background:#1B4C8C;padding:20px;border-radius:14px;display:inline-flex;}.ds-rc{width:72px;height:72px;border-radius:50%;border:3px solid #F4F5F0;background:none;display:grid;place-items:center;cursor:pointer;}.ds-rc.primary{width:80px;height:80px;border:none;background:#F4F5F0;}.ds-rc:active{background:#DCDDD8;}.ds-rc:focus-visible{outline:3px solid #F3B300;outline-offset:3px;}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Highway Gantry",
+    "overview": "Every value the driver needs is set as a Saudi road sign: a coloured reflective panel, a white legend inside a thin white inset border, a pictogram, a number. The screen is a stretch of road at night. The ground is warm charcoal asphalt with faint vertical lane-dash texture; on it stand sign panels whose colour is their meaning, exactly as on the highway: green for roads and the primary action, blue for services and apps, brown for weather, tourism and off-road, amber for something that needs attention now.\n\nDensity is low and deliberate. A screen holds few things, each large enough to read in a one- or two-second glance at arm's length. Words are wide Noto Kufi Arabic; every number is set in Overpass, a highway-gothic face, at heavy weight. Composition is right-to-left: the label sits on the right, the number on the left, joined by a dotted leader like a distance sign. The panels are flat; depth comes from the colour of the board against the road, never from glass, blur or glow.\n\nThe system rejects the head-unit category default of glassy dark cards, neon glow and generic line icons. Pictograms are solid white shapes drawn for this product on a 48 grid, never outlines from a stock set and never emoji or Unicode symbols.",
+    "keyCharacteristics": [
+      "Asphalt ground, sign-colour panels, white legends inside a white inset border.",
+      "Colour is semantic by sign family: green roads, blue services, brown tourism, amber warning.",
+      "Kufi for words, Overpass Black for every number, Latin digits throughout.",
+      "Distance-sign rows: name right, dotted leader, value and unit left.",
+      "Flat panels; no shadows except on the one window that floats over other apps.",
+      "Solid white 48-grid pictograms; no animation."
+    ],
+    "rules": [
+      {
+        "name": "The Sign Family Rule",
+        "body": "A panel's colour states its family, not its importance: green roads, blue services, brown tourism and environment, amber warning. Never pick a sign colour for contrast or variety.",
+        "section": "colors"
+      },
+      {
+        "name": "The Legend Rule",
+        "body": "Text on a sign is Legend White or Legend Dim; text on the road is Legend White or Verge Grey; text on amber is Sign Ink. No other text colours exist.",
+        "section": "colors"
+      },
+      {
+        "name": "The Red Ring Reserve",
+        "body": "Regulatory red (`#C8102E`, declared in Palette) means a limit and nothing else. It is not used in the shipped build; the speed roundel is deliberately green because a red ring would read as the limit, not the current speed.",
+        "section": "colors"
+      },
+      {
+        "name": "The Every-Number Rule",
+        "body": "Every number, in any context, is set in Overpass with Latin digits (`ar-u-nu-latn`), thousands grouped with a comma as on distance signs. Arabic words never set numbers in Kufi.",
+        "section": "typography"
+      },
+      {
+        "name": "The Distance Row Rule",
+        "body": "A labelled value is a distance-sign row: Kufi 800 name on the right, a dotted leader (2dp dots every 6dp at 44% white), the Overpass 900 value, and the unit in Kufi 500 at 70% size in Legend Dim on the far left.",
+        "section": "typography"
+      },
+      {
+        "name": "The Isolate Rule",
+        "body": "A number joined to a symbol (36°) inside an Arabic sentence is wrapped in a left-to-right isolate so the symbol never flips side.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat Road Rule",
+        "body": "Signs do not float. Separation comes from the colour of the board, its white inset border, and the Kerb line, never from a shadow, blur or glow. The single exception is a window drawn over other apps.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** set every value as a sign: family colour, white legend, white inset border (14dp/5dp/2.5dp large, 10dp/3.5dp/2dp small).",
+      "**Do** choose the panel colour by sign family: green roads and the primary action, blue services and apps, brown weather and off-road, amber warning.",
+      "**Do** set every number in Overpass 900 with Latin digits and comma thousands, and every word in Noto Kufi Arabic.",
+      "**Do** lay out labelled values as distance rows: name right, dotted leader, value and unit left.",
+      "**Do** pair every amber or warning state with a triangle pictogram or words; never colour alone.",
+      "**Do** keep touch targets at least 64dp; dock and primary signs are 84dp.",
+      "**Do** put third-party app icons and album art on a white plate.",
+      "**Do** draw new pictograms as solid white shapes on the 48 grid, in the style of `/home/claude/design/icons.py`."
+    ],
+    "donts": [
+      "**Don't** use glassy dark cards, blur, neon glow or gradients on any surface.",
+      "**Don't** use stock line icons, emoji or Unicode symbols as icons.",
+      "**Don't** cast shadows inside the app; only the floating roundel over other apps has a lift.",
+      "**Don't** use red for anything but a limit; never for the current speed, errors or decoration.",
+      "**Don't** animate: no transitions, pulses or count-ups. Pages switch instantly.",
+      "**Don't** put coloured text on a sign; legends are white, dim white, or ink on amber.",
+      "**Don't** set numbers in Kufi or in Arabic-Indic digits."
+    ]
+  }
+}

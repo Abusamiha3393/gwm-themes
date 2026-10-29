@@ -232,6 +232,7 @@ class SettingsActivity : Activity() {
         })
         c.addView(icon(R.drawable.ic_chev, 22, Palette.muted))
         c.setOnClickListener { onClick() }
+        c.pressable(dp(12f))
         add(c)
     }
 
@@ -254,6 +255,7 @@ class SettingsActivity : Activity() {
             c.addView(badge)
         }
         c.setOnClickListener { runCatching { onClick() } }
+        c.pressable(dp(12f))
         add(c)
     }
 
@@ -269,6 +271,7 @@ class SettingsActivity : Activity() {
         }
         c.addView(sw)
         c.setOnClickListener { sw.toggle() }
+        c.pressable(dp(12f))
         add(c)
     }
 
@@ -287,7 +290,7 @@ class SettingsActivity : Activity() {
                 gravity = Gravity.CENTER
                 background = if (on) smallSign(Palette.green) else rounded(Palette.asphalt, dp(10f), dp(2), Palette.kerb)
                 setPadding(dp(18), dp(12), dp(18), dp(12))
-                minHeight = dp(52)
+                minHeight = dp(64)
                 setOnClickListener { if (!on) onPick(i) }
             }, LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT).apply { marginEnd = dp(8); topMargin = dp(12) })
         }
@@ -317,7 +320,7 @@ class SettingsActivity : Activity() {
                 override fun onStartTrackingTouch(sb: SeekBar?) {}
                 override fun onStopTrackingTouch(sb: SeekBar?) { onChange((sb?.progress ?: 0) + min) }
             })
-        }, LinearLayout.LayoutParams(MATCH_PARENT, dp(48)).apply { topMargin = dp(6) })
+        }, LinearLayout.LayoutParams(MATCH_PARENT, dp(64)).apply { topMargin = dp(2) })
         add(c)
     }
 

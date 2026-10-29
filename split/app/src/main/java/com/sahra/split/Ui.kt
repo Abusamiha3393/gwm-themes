@@ -179,6 +179,13 @@ fun Context.header(res: Int, title: String, color: Int = Palette.green, onBack: 
     return row
 }
 
+/** أثر لمس أبيض خافت على أي لوحة قابلة للضغط. */
+fun View.pressable(radius: Float): View {
+    foreground = android.graphics.drawable.RippleDrawable(ColorStateList.valueOf(0x33FFFFFF), null, rounded(Color.WHITE, radius))
+    isClickable = true
+    return this
+}
+
 fun View.pad(all: Int) { setPadding(all, all, all, all) }
 
 /** رقم بعدد خانات عشرية، أو «—» إن لم يكن معروفًا. الآلاف بفاصلة كما في لوحات المسافات. */
