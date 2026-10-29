@@ -1,0 +1,64 @@
+name: Build Sahra Split
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "split/**"
+      - ".github/workflows/build-split.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: split
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.9"
+
+      - name: Check signing secret
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+        run: |
+          if [ -z "$KEYSTORE_PASSWORD" ]; then
+            echo "::error::أضف السر KEYSTORE_PASSWORD في Settings > Secrets and variables > Actions"
+            exit 1
+          fi
+
+      - name: Build
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+        run: gradle assembleRelease --no-daemon --stacktrace
+
+      - name: Rename APK
+        run: |
+          mkdir -p out
+          cp app/build/outputs/apk/release/app-release.apk "out/SahraSplit-0.1.${{ github.run_number }}.apk"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SahraSplit-apk
+          path: split/out/*.apk
+
+      # make_latest=false حتى لا يظن محدّث صحراء داش أن هذا إصداره
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: split-${{ github.run_number }}
+          name: صحراء سبليت 0.1.${{ github.run_number }}
+          body: نسخة مبنية تلقائيًا من مجلد split على main.
+          make_latest: "false"
+          files: split/out/*.apk

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">صحراء سبليت</string>
+    <string name="a11y_desc">يتيح لزر «رجوع» العائم أن يعمل مثل زر الرجوع في النظام. لا يقرأ محتوى الشاشة.</string>
+</resources>

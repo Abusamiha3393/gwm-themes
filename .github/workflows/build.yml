@@ -3,6 +3,9 @@ name: Build APK
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - "split/**"
+      - ".github/workflows/build-split.yml"
   workflow_dispatch:
 
 permissions:
