@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- رمز «terrain» من مجموعة رموز صحراء سبليت، مرسوم على شبكة 48 بأسلوب لوحات الطرق -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp" android:height="48dp"
+    android:viewportWidth="48" android:viewportHeight="48">
+    <path android:pathData="M3 41 L17 15.5 L23.5 27 L31 11 L45 41 Z M31 11 L35.6 20.8 L32.6 19.2 L30 22 L27.5 19 L26.4 20.8 Z" android:fillColor="#FFFFFFFF" android:fillType="evenOdd" />
+</vector>

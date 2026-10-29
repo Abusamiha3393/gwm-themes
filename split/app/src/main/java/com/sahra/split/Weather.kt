@@ -4,11 +4,14 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Canvas
 import android.graphics.Paint
+import android.graphics.RectF
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
 import android.text.TextUtils
 import android.view.Gravity
+import android.view.View
+import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import org.json.JSONObject
@@ -17,6 +20,7 @@ import java.net.URL
 import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.concurrent.CopyOnWriteArraySet
+import kotlin.math.max
 import kotlin.math.min
 
 /**
@@ -97,27 +101,28 @@ object Weather {
         )
     }
 
-    /** رموز WMO إلى وصف ورمز. */
-    fun describe(code: Int): Pair<String, String> = when (code) {
-        0 -> "صحو" to "☀️"
-        1 -> "صحو غالبًا" to "🌤️"
-        2 -> "غائم جزئيًا" to "⛅"
-        3 -> "غائم" to "☁️"
-        45, 48 -> "ضباب" to "🌫️"
-        51, 53, 55, 56, 57 -> "رذاذ" to "🌦️"
-        61, 63, 66 -> "مطر" to "🌧️"
-        65, 67 -> "مطر غزير" to "🌧️"
-        71, 73, 75, 77, 85, 86 -> "ثلج" to "❄️"
-        80, 81, 82 -> "زخات مطر" to "🌦️"
-        95, 96, 99 -> "عاصفة رعدية" to "⛈️"
-        else -> "—" to "🌡️"
+    /** رموز WMO إلى وصف ورمز من مجموعة الرموز. */
+    fun describe(code: Int): Pair<String, Int> = when (code) {
+        0 -> "صحو" to R.drawable.ic_sun
+        1 -> "صحو غالبًا" to R.drawable.ic_partly
+        2 -> "غائم جزئيًا" to R.drawable.ic_partly
+        3 -> "غائم" to R.drawable.ic_cloud
+        45, 48 -> "ضباب" to R.drawable.ic_fog
+        51, 53, 55, 56, 57 -> "رذاذ" to R.drawable.ic_rain
+        61, 63, 66 -> "مطر" to R.drawable.ic_rain
+        65, 67 -> "مطر غزير" to R.drawable.ic_rain
+        71, 73, 75, 77, 85, 86 -> "ثلج" to R.drawable.ic_snow
+        80, 81, 82 -> "زخات مطر" to R.drawable.ic_rain
+        95, 96, 99 -> "عاصفة رعدية" to R.drawable.ic_storm
+        else -> "—" to R.drawable.ic_cloud
     }
 }
 
+/** الطقس على لوحة بنية (لوحات الوجهات السياحية). */
 class WeatherPage(context: Context) : LivePage(context) {
     override val tickMs = 60_000L
     private val onWeather: () -> Unit = { invalidate() }
-    private val dayName = SimpleDateFormat("EEEE", Locale("ar"))
+    private val dayName = SimpleDateFormat("EEEE", ArabicLatn)
     private val iso = SimpleDateFormat("yyyy-MM-dd", Locale.US)
 
     init { setOnClickListener { Weather.ensure(context, force = true); invalidate() } }
@@ -137,65 +142,97 @@ class WeatherPage(context: Context) : LivePage(context) {
 
     override fun onDraw(c: Canvas) {
         val w = width.toFloat(); val h = height.toFloat()
+        val pad = min(w, h) * 0.07f
         val d = Weather.data
         if (d == null) {
-            c.label(Weather.error ?: "جارٍ جلب الطقس…", w / 2, h / 2, w * 0.055f, Palette.muted)
+            c.glyph(R.drawable.ic_partly, w / 2, h * 0.42f, min(w, h) * 0.3f, Palette.legendDim)
+            c.say(Weather.error ?: "جارٍ جلب الطقس…", w / 2, h * 0.62f, w * 0.05f, Face.WORD, Palette.legendDim)
             return
         }
         val (desc, icon) = Weather.describe(d.code)
-        val big = min(w * 0.22f, h * 0.14f)
-        c.label(icon, w * 0.27f, h * 0.2f, big * 1.1f)
-        c.label("${num(d.temp)}°", w * 0.7f, h * 0.2f, big * 1.2f, Palette.fg, true)
-        c.label(desc, w / 2, h * 0.3f, w * 0.065f, Palette.accent, true)
-        val small = w * 0.048f
-        c.label("المحسوسة ${num(d.feels)}° · الرطوبة ${d.humidity}% · الرياح ${num(d.wind)} كم/س", w / 2, h * 0.37f, small, Palette.muted)
-        if (!s.outsideTemp.isNaN()) c.label("حساس السيارة ${num(s.outsideTemp)}°", w / 2, h * 0.43f, small, Palette.muted)
+        val big = min(w * 0.24f, h * 0.15f)
+        val top = pad + big
+        c.glyph(icon, w - pad - big * 0.6f, top - big * 0.36f, big * 1.2f)
+        val t = num(d.temp)
+        c.say(t, pad, top, big, Face.DIGIT_BLACK, Palette.white, Paint.Align.LEFT)
+        c.say("°", pad + width(t, big, Type.digitsBlack) + big * 0.04f, top, big * 0.7f, Face.DIGIT_BLACK, Palette.white, Paint.Align.LEFT)
+        val small = min(w * 0.046f, h * 0.03f)
+        c.say(desc, w - pad, top + big * 0.62f, small * 1.4f, Face.WORD_BOLD, Palette.white, Paint.Align.RIGHT)
+        c.say("المحسوسة ${ltr(num(d.feels) + "°")}", pad, top + big * 0.62f, small, Face.WORD, Palette.legendDim, Paint.Align.LEFT)
+        // في الشاشات القصيرة تُترك التفاصيل ويبقى التوقع، حتى لا يصغر الخط
+        val compact = h < context.dp(420f)
+        val rowsTop = top + big * 0.62f + small * 2.4f
+        if (!compact) {
+            c.destination("الرطوبة", "${d.humidity}", "%", pad, w - pad, rowsTop, small)
+            c.destination("الرياح", num(d.wind), "كم/س", pad, w - pad, rowsTop + small * 2.6f, small)
+            if (!s.outsideTemp.isNaN()) c.destination("حساس السيارة", "${num(s.outsideTemp)}°", "", pad, w - pad, rowsTop + small * 5.2f, small)
+        }
 
         val days = d.days.drop(1).take(3)
-        val top = h * 0.5f
-        val step = (h * 0.42f) / 3
+        val dTop = if (compact) top + big * 0.62f + small * 1.4f else h * 0.56f
+        val step = (h - pad * 1.6f - dTop) / 3
         days.forEachIndexed { i, day ->
-            val y = top + step * i + step * 0.6f
-            fill.color = Palette.card
-            c.drawRoundRect(w * 0.04f, top + step * i + step * 0.08f, w * 0.96f, top + step * (i + 1) - step * 0.08f, step * 0.2f, step * 0.2f, fill)
+            val y0 = dTop + step * i
+            val r = RectF(pad * 0.6f, y0 + step * 0.06f, w - pad * 0.6f, y0 + step * 0.94f)
+            // خط أبيض رفيع فوق كل يوم، كفواصل لوحات الوجهات
+            fill.color = (Palette.white and 0x00FFFFFF) or 0x66000000
+            c.drawRect(pad, y0, w - pad, y0 + dp1 * 1.5f, fill)
+            val cy = r.centerY()
             val name = runCatching { dayName.format(iso.parse(day.date)!!) }.getOrDefault(day.date)
-            c.label(name, w * 0.92f, y, small * 1.1f, Palette.fg, true, Paint.Align.RIGHT)
-            c.label(Weather.describe(day.code).second, w * 0.5f, y, small * 1.4f)
-            c.label("${num(day.max)}° / ${num(day.min)}°", w * 0.08f, y, small * 1.1f, Palette.fg, false, Paint.Align.LEFT)
+            c.say(name, r.right - pad * 0.6f, cy + small * 0.4f, small * 1.15f, Face.WORD_BOLD, Palette.white, Paint.Align.RIGHT)
+            c.glyph(Weather.describe(day.code).second, w * 0.46f, cy, r.height() * 0.62f)
+            c.say("${num(day.max)}°", r.left + pad * 0.6f + small * 2.6f, cy + small * 0.5f, small * 1.4f, Face.DIGIT_BLACK, Palette.white, Paint.Align.LEFT)
+            c.say("${num(day.min)}°", r.left + pad * 0.6f, cy + small * 0.5f, small * 1.05f, Face.DIGIT, Palette.legendDim, Paint.Align.LEFT)
         }
         val ago = (System.currentTimeMillis() - d.at) / 60000
         val stamp = if (ago < 1) "محدّث الآن" else "قبل $ago دقيقة"
-        c.label("$stamp · المس للتحديث · Open-Meteo", w / 2, h * 0.97f, small * 0.8f, if (Weather.error != null) Palette.warn else Palette.muted)
+        c.say("$stamp · المس للتحديث", w / 2, h - pad * 0.45f, max(small * 0.85f, context.dp(13f)), Face.WORD, if (Weather.error != null) Palette.amber else Palette.legendDim)
     }
 }
 
-/** صفحة الموسيقى: الغلاف والعنوان وأزرار التحكم. */
+/** صفحة الموسيقى على لوحة زرقاء: الغلاف على لوح أبيض، والعنوان، وأزرار دائرية. */
 class MusicPage(context: Context) : LinearLayout(context) {
     private val art = ImageView(context).apply { scaleType = ImageView.ScaleType.CENTER_CROP }
-    private val title = context.label("", 20f, Palette.fg, true).apply {
+    private val plate = FrameLayout(context)
+    private val title = context.label("", 22f, Palette.white, true).apply {
         gravity = Gravity.CENTER; maxLines = 2; ellipsize = TextUtils.TruncateAt.END
     }
-    private val artist = context.label("", 16f, Palette.muted).apply {
+    private val artist = context.label("", 16f, Palette.legendDim).apply {
         gravity = Gravity.CENTER; maxLines = 1; ellipsize = TextUtils.TruncateAt.END
     }
-    private val playBtn = context.pill("▶") { MediaTracker.command("toggle") }
+    private val playIcon = context.icon(R.drawable.ic_play, 34, Palette.blue)
     private val listener: (NowPlaying) -> Unit = { show(it) }
 
     init {
         orientation = VERTICAL
         gravity = Gravity.CENTER
-        pad(context.dp(16))
-        addView(art, LayoutParams(context.dp(160), context.dp(160)).apply { bottomMargin = context.dp(16) })
-        addView(title, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT))
-        addView(artist, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT))
-        val row = LinearLayout(context).apply { gravity = Gravity.CENTER }
-        val lp = { LayoutParams(context.dp(72), context.dp(56)).apply { setMargins(context.dp(6), context.dp(16), context.dp(6), 0) } }
-        row.addView(context.pill("⏮") { MediaTracker.command("prev") }, lp())
-        row.addView(playBtn, lp())
-        row.addView(context.pill("⏭") { MediaTracker.command("next") }, lp())
-        addView(row)
-        art.background = rounded(Palette.card, context.dp(16f))
+        pad(context.dp(18))
+        plate.background = rounded(Palette.white, context.dp(22f))
+        plate.setPadding(context.dp(10), context.dp(10), context.dp(10), context.dp(10))
+        art.background = rounded(Palette.white, context.dp(14f))
         art.clipToOutline = true
+        plate.addView(art, FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT))
+        addView(plate, LayoutParams(context.dp(168), context.dp(168)).apply { bottomMargin = context.dp(20) })
+        addView(title, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT))
+        addView(artist, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT).apply { topMargin = context.dp(6) })
+        val row = LinearLayout(context).apply { gravity = Gravity.CENTER; layoutDirection = View.LAYOUT_DIRECTION_LTR }
+        row.addView(control(R.drawable.ic_prev, false) { MediaTracker.command("prev") })
+        row.addView(control(0, true) { MediaTracker.command("toggle") })
+        row.addView(control(R.drawable.ic_next, false) { MediaTracker.command("next") })
+        addView(row, LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT).apply { topMargin = context.dp(22) })
+    }
+
+    private fun control(res: Int, primary: Boolean, onClick: () -> Unit): View {
+        val size = context.dp(if (primary) 80 else 72)
+        val f = FrameLayout(context).apply {
+            background = if (primary) rounded(Palette.white, size / 2f) else rounded(0, size / 2f, context.dp(3), Palette.white)
+            setOnClickListener { onClick() }
+        }
+        val ic = if (primary) playIcon else context.icon(res, 28)
+        (ic.parent as? android.view.ViewGroup)?.removeView(ic)
+        f.addView(ic, FrameLayout.LayoutParams(context.dp(if (primary) 34 else 28), context.dp(if (primary) 34 else 28), Gravity.CENTER))
+        f.layoutParams = LayoutParams(size, size).apply { setMargins(context.dp(9), 0, context.dp(9), 0) }
+        return f
     }
 
     override fun onAttachedToWindow() {
@@ -217,14 +254,28 @@ class MusicPage(context: Context) : LinearLayout(context) {
                     context.startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
                 }
             }
-            art.setImageDrawable(null)
+            art.setImageResource(R.drawable.ic_music)
+            art.imageTintList = android.content.res.ColorStateList.valueOf(Palette.blue)
+            art.scaleType = ImageView.ScaleType.CENTER_INSIDE
             return
         }
         title.setOnClickListener(null)
-        title.text = np.title.ifEmpty { "لا يوجد تشغيل" }
+        title.text = np.title.ifEmpty { "لا شيء يُشغَّل" }
         artist.text = if (np.app.isEmpty()) "" else listOf(np.artist, AppLauncher.label(context, np.app)).filter { it.isNotEmpty() }.joinToString(" · ")
-        playBtn.text = if (np.playing) "⏸" else "▶"
+        playIcon.setImageResource(if (np.playing) R.drawable.ic_pause else R.drawable.ic_play)
         val bmp = np.art
-        if (bmp != null) art.setImageBitmap(bmp) else art.setImageDrawable(AppLauncher.icon(context, np.app))
+        if (bmp != null) {
+            art.imageTintList = null
+            art.scaleType = ImageView.ScaleType.CENTER_CROP
+            art.setImageBitmap(bmp)
+        } else {
+            val appIcon = AppLauncher.icon(context, np.app)
+            art.scaleType = ImageView.ScaleType.CENTER_INSIDE
+            if (appIcon != null) { art.imageTintList = null; art.setImageDrawable(appIcon) }
+            else {
+                art.setImageResource(R.drawable.ic_music)
+                art.imageTintList = android.content.res.ColorStateList.valueOf(Palette.blue)
+            }
+        }
     }
 }

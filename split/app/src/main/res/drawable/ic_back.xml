@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- رمز «back» من مجموعة رموز صحراء سبليت، مرسوم على شبكة 48 بأسلوب لوحات الطرق -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp" android:height="48dp"
+    android:viewportWidth="48" android:viewportHeight="48">
+    <path android:pathData="M34 41 V20 A10 10 0 0 0 14 20 V27" android:strokeColor="#FFFFFFFF" android:strokeWidth="6" android:strokeLineCap="round" android:strokeLineJoin="round" />
+    <path android:pathData="M5.5 25 H22.5 L14 37 Z" android:fillColor="#FFFFFFFF" />
+</vector>

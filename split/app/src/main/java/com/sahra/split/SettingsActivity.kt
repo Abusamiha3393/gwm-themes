@@ -34,6 +34,8 @@ class SettingsActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         prefs = Prefs(this)
+        Type.init(this)
+        window.statusBarColor = Palette.gantry
         window.decorView.layoutDirection = View.LAYOUT_DIRECTION_RTL
     }
 
@@ -44,10 +46,10 @@ class SettingsActivity : Activity() {
     }
 
     private fun render() {
-        val scroll = ScrollView(this).apply { setBackgroundColor(Palette.bg) }
+        val scroll = ScrollView(this).apply { background = AsphaltDrawable(this@SettingsActivity); isVerticalScrollBarEnabled = false }
         body = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(20), dp(16), dp(20), dp(32))
+            setPadding(dp(24), dp(16), dp(24), dp(40))
         }
         scroll.addView(body)
         build()
@@ -57,16 +59,13 @@ class SettingsActivity : Activity() {
     }
 
     private fun build() {
-        val head = LinearLayout(this).apply { gravity = Gravity.CENTER_VERTICAL }
-        head.addView(label("إعدادات صحراء سبليت", 24f, Palette.fg, true), LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f))
-        head.addView(pill("رجوع") { finish() })
-        body.addView(head)
+        body.addView(header(R.drawable.ic_settings, "الإعدادات", Palette.blue) { finish() })
         val st = VehicleRepository.state
         note(when {
-            st.live -> "✓ متصل ببيانات السيارة"
+            st.live -> "متصل ببيانات السيارة"
             st.demo -> "بيانات تجريبية — لم يُعثر على خدمة السيارة أو الوضع التجريبي مفعّل"
             else -> "بانتظار بيانات السيارة…"
-        }, if (st.live) Palette.good else Palette.muted)
+        }, if (st.live) Palette.white else Palette.muted)
 
         // ---------------- الصلاحيات ----------------
         section("الصلاحيات")
@@ -100,7 +99,7 @@ class SettingsActivity : Activity() {
         section("الإعداد المسبق الحالي: ${p.name}")
         choice("اختر الإعداد", prefs.presets().map { it.name }, idx) { prefs.presetIndex = it; render() }
         row("الاسم", p.name) {
-            val input = EditText(this).apply { setText(p.name); setTextColor(Palette.fg) }
+            val input = EditText(this).apply { setText(p.name); setTextColor(Palette.white) }
             AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
                 .setTitle("اسم الإعداد").setView(input)
                 .setPositiveButton("حفظ") { _, _ ->
@@ -156,7 +155,7 @@ class SettingsActivity : Activity() {
 
         // ---------------- الساعة والوقود ----------------
         section("الساعة والوقود")
-        choice("شكل الساعة", listOf("عقارب", "رقمية"), prefs.clockStyle) { prefs.clockStyle = it; render() }
+        choice("شكل الساعة", listOf("أرقام", "عقارب"), prefs.clockStyle) { prefs.clockStyle = it; render() }
         seek("سعة الخزان", 40, 140, prefs.tankLiters.toInt(), { "$it لتر" }) { prefs.tankLiters = it.toFloat() }
         val refuel = if (prefs.refuelAt > 0) android.text.format.DateFormat.format("yyyy/MM/dd HH:mm", prefs.refuelAt).toString() else "لم تُرصد بعد"
         row("آخر تعبئة", refuel) {
@@ -174,7 +173,7 @@ class SettingsActivity : Activity() {
 
         // ---------------- الموقع ----------------
         section("الموقع")
-        note("المستخدم للطقس والشروق: ${num(prefs.lat, 3)}, ${num(prefs.lon, 3)}", Palette.fg)
+        note("المستخدم للطقس والشروق: ${num(prefs.lat, 3)}, ${num(prefs.lon, 3)}", Palette.white)
         row("تحديث من موقع السيارة الآن", "") {
             Sun.refreshLocation(this)
             Weather.ensure(this, force = true)
@@ -187,7 +186,7 @@ class SettingsActivity : Activity() {
 
         // ---------------- التحديثات ----------------
         section("التحديثات")
-        note("الإصدار الحالي ${Updater.currentName(this)}${if (updateStatus.isNotEmpty()) " · $updateStatus" else ""}", Palette.fg)
+        note("الإصدار الحالي ${Updater.currentName(this)}${if (updateStatus.isNotEmpty()) " · $updateStatus" else ""}", Palette.white)
         toggle("التحقق تلقائيًا كل 6 ساعات", prefs.autoUpdateCheck) { prefs.autoUpdateCheck = it }
         val rel = pending
         if (rel != null) row("ثبّت الإصدار 0.1.${rel.number}", "") { install(rel) }
@@ -196,27 +195,42 @@ class SettingsActivity : Activity() {
 
     // ---------------- أدوات البناء ----------------
 
+    /** عنوان القسم: لسان أخضر صغير كلسان لوحة المخرج. */
     private fun section(title: String) {
-        body.addView(label(title, 18f, Palette.accent, true).apply { setPadding(0, dp(24), 0, dp(8)) })
+        val tab = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            background = smallSign(Palette.green)
+            setPadding(dp(18), dp(10), dp(18), dp(10))
+        }
+        tab.addView(label(title, 17f, Palette.white, true))
+        val row = LinearLayout(this).apply { setPadding(0, dp(28), 0, dp(10)) }
+        row.addView(tab)
+        body.addView(row)
     }
 
     private fun note(text: String, color: Int) {
-        body.addView(label(text, 14f, color).apply { setPadding(0, dp(4), 0, dp(4)) })
+        body.addView(label(text, 14f, color).apply { setPadding(dp(4), dp(6), dp(4), dp(6)); setLineSpacing(dp(3f), 1f) })
     }
 
     private fun card() = LinearLayout(this).apply {
         orientation = LinearLayout.HORIZONTAL
         gravity = Gravity.CENTER_VERTICAL
-        background = rounded(Palette.card, dp(12f))
-        setPadding(dp(16), dp(12), dp(16), dp(12))
+        background = rounded(Palette.shoulder, dp(12f), dp(1), Palette.kerb)
+        setPadding(dp(20), dp(14), dp(20), dp(14))
+        minimumHeight = dp(68)
     }
 
-    private fun add(v: View) = body.addView(v, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT).apply { bottomMargin = dp(6) })
+    private fun add(v: View) = body.addView(v, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT).apply { bottomMargin = dp(8) })
 
     private fun row(title: String, value: String, onClick: () -> Unit) {
         val c = card()
-        c.addView(label(title, 16f), LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f))
-        c.addView(label(if (value.isEmpty()) "›" else "$value  ›", 15f, Palette.muted))
+        c.addView(label(title, 17f), LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f))
+        if (value.isNotEmpty()) c.addView(label(value, 16f, Palette.muted).apply {
+            maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END; setPadding(dp(12), 0, dp(10), 0)
+            maxWidth = dp(320)
+        })
+        c.addView(icon(R.drawable.ic_chev, 22, Palette.muted))
         c.setOnClickListener { onClick() }
         add(c)
     }
@@ -224,41 +238,58 @@ class SettingsActivity : Activity() {
     private fun permission(title: String, desc: String, ok: Boolean, onClick: () -> Unit) {
         val c = card()
         val texts = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-        texts.addView(label(title, 16f))
-        texts.addView(label(desc, 13f, Palette.muted))
+        texts.addView(label(title, 17f, Palette.white, true))
+        texts.addView(label(desc, 14f, Palette.muted).apply { setPadding(0, dp(4), 0, 0) })
         c.addView(texts, LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f))
-        c.addView(label(if (ok) "✓ ممنوحة" else "امنح ›", 15f, if (ok) Palette.good else Palette.accent, true))
+        if (ok) {
+            c.addView(icon(R.drawable.ic_check, 24, Palette.white), LinearLayout.LayoutParams(dp(24), dp(24)).apply { marginEnd = dp(8) })
+            c.addView(label("ممنوحة", 15f, Palette.white))
+        } else {
+            val badge = LinearLayout(this).apply {
+                gravity = Gravity.CENTER_VERTICAL
+                background = rounded(Palette.amber, dp(8f))
+                setPadding(dp(14), dp(8), dp(14), dp(8))
+            }
+            badge.addView(label("امنح", 15f, Palette.ink, true))
+            c.addView(badge)
+        }
         c.setOnClickListener { runCatching { onClick() } }
         add(c)
     }
 
     private fun toggle(title: String, value: Boolean, onChange: (Boolean) -> Unit) {
         val c = card()
-        c.addView(label(title, 16f), LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f))
-        val sw = Switch(this).apply { isChecked = value; setOnCheckedChangeListener { _, b -> onChange(b) } }
+        c.addView(label(title, 17f), LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f))
+        val states = arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf())
+        val sw = Switch(this).apply {
+            isChecked = value
+            thumbTintList = android.content.res.ColorStateList(states, intArrayOf(Palette.white, Palette.muted))
+            trackTintList = android.content.res.ColorStateList(states, intArrayOf(Palette.green, Palette.laneDash))
+            setOnCheckedChangeListener { _, b -> onChange(b) }
+        }
         c.addView(sw)
         c.setOnClickListener { sw.toggle() }
         add(c)
     }
 
+    /** اختيار من عدة: كالمسارات، المختار لوحة خضراء. */
     private fun choice(title: String, options: List<String>, selected: Int, onPick: (Int) -> Unit) {
         val c = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            background = rounded(Palette.card, dp(12f))
-            setPadding(dp(16), dp(12), dp(16), dp(12))
+            background = rounded(Palette.shoulder, dp(12f), dp(1), Palette.kerb)
+            setPadding(dp(20), dp(14), dp(20), dp(16))
         }
-        c.addView(label(title, 16f))
+        c.addView(label(title, 17f))
         val chips = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
         options.forEachIndexed { i, o ->
             val on = i == selected
-            chips.addView(TextView(this).apply {
-                text = o
-                textSize = 15f
-                setTextColor(if (on) Palette.bg else Palette.fg)
-                background = rounded(if (on) Palette.accent else Palette.cardHi, dp(14f))
-                setPadding(dp(14), dp(8), dp(14), dp(8))
+            chips.addView(label(o, 16f, if (on) Palette.white else Palette.muted, on).apply {
+                gravity = Gravity.CENTER
+                background = if (on) smallSign(Palette.green) else rounded(Palette.asphalt, dp(10f), dp(2), Palette.kerb)
+                setPadding(dp(18), dp(12), dp(18), dp(12))
+                minHeight = dp(52)
                 setOnClickListener { if (!on) onPick(i) }
-            }, LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT).apply { marginEnd = dp(6); topMargin = dp(8) })
+            }, LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT).apply { marginEnd = dp(8); topMargin = dp(12) })
         }
         c.addView(HorizontalScrollView(this).apply { isHorizontalScrollBarEnabled = false; addView(chips) })
         add(c)
@@ -267,23 +298,26 @@ class SettingsActivity : Activity() {
     private fun seek(title: String, min: Int, max: Int, value: Int, fmt: (Int) -> String, onChange: (Int) -> Unit) {
         val c = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            background = rounded(Palette.card, dp(12f))
-            setPadding(dp(16), dp(12), dp(16), dp(12))
+            background = rounded(Palette.shoulder, dp(12f), dp(1), Palette.kerb)
+            setPadding(dp(20), dp(14), dp(20), dp(14))
         }
-        val top = LinearLayout(this)
-        top.addView(label(title, 16f), LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f))
-        val v = label(fmt(value), 15f, Palette.accent, true)
+        val top = LinearLayout(this).apply { gravity = Gravity.CENTER_VERTICAL }
+        top.addView(label(title, 17f), LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f))
+        val v = label(fmt(value), 22f, Palette.white, true, digitsFace = true)
         top.addView(v)
         c.addView(top)
         c.addView(SeekBar(this).apply {
             this.max = max - min
             progress = (value - min).coerceIn(0, max - min)
+            progressTintList = android.content.res.ColorStateList.valueOf(Palette.green)
+            progressBackgroundTintList = android.content.res.ColorStateList.valueOf(Palette.laneDash)
+            thumbTintList = android.content.res.ColorStateList.valueOf(Palette.white)
             setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
                 override fun onProgressChanged(sb: SeekBar?, p: Int, fromUser: Boolean) { v.text = fmt(p + min) }
                 override fun onStartTrackingTouch(sb: SeekBar?) {}
                 override fun onStopTrackingTouch(sb: SeekBar?) { onChange((sb?.progress ?: 0) + min) }
             })
-        }, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT).apply { topMargin = dp(8) })
+        }, LinearLayout.LayoutParams(MATCH_PARENT, dp(48)).apply { topMargin = dp(6) })
         add(c)
     }
 

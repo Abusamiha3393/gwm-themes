@@ -12,33 +12,36 @@ import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
 import android.widget.BaseAdapter
+import android.widget.FrameLayout
 import android.widget.GridView
 import android.widget.ImageView
 import android.widget.LinearLayout
 
-/** قائمة كل التطبيقات: لمسة تفتح التطبيق، والضغط المطوّل يعرض خيارات التقسيم والنافذة العائمة. */
+/** كل التطبيقات على أرضية الإسفلت: لمسة تفتح التطبيق، والضغط المطوّل يعرض خيارات التقسيم والنافذة العائمة. */
 class AppsActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        Type.init(this)
+        window.statusBarColor = Palette.gantry
         window.decorView.layoutDirection = View.LAYOUT_DIRECTION_RTL
         val apps = AppLauncher.apps(this)
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setBackgroundColor(Palette.bg)
-            setPadding(dp(16), dp(12), dp(16), dp(12))
+            background = AsphaltDrawable(this@AppsActivity)
+            setPadding(dp(20), dp(16), dp(20), dp(8))
         }
-        val head = LinearLayout(this).apply { gravity = Gravity.CENTER_VERTICAL }
-        head.addView(label("التطبيقات", 24f, Palette.fg, true), LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
-        head.addView(pill("رجوع") { finish() })
-        root.addView(head)
+        root.addView(header(R.drawable.ic_apps, "التطبيقات", Palette.blue) { finish() })
 
         val grid = GridView(this).apply {
             numColumns = GridView.AUTO_FIT
-            columnWidth = dp(120)
-            verticalSpacing = dp(12)
-            horizontalSpacing = dp(12)
+            columnWidth = dp(132)
+            verticalSpacing = dp(14)
+            horizontalSpacing = dp(14)
             stretchMode = GridView.STRETCH_COLUMN_WIDTH
+            selector = rounded(0x22FFFFFF, dp(14f))
+            clipToPadding = false
+            setPadding(0, dp(16), 0, dp(16))
             adapter = object : BaseAdapter() {
                 override fun getCount() = apps.size
                 override fun getItem(i: Int) = apps[i]
@@ -47,13 +50,15 @@ class AppsActivity : Activity() {
                     val app = apps[i]
                     return LinearLayout(this@AppsActivity).apply {
                         orientation = LinearLayout.VERTICAL
-                        gravity = Gravity.CENTER
-                        setPadding(dp(6), dp(10), dp(6), dp(10))
-                        background = rounded(Palette.card, dp(14f))
-                        addView(ImageView(context).apply { setImageDrawable(app.icon) }, LinearLayout.LayoutParams(dp(64), dp(64)))
-                        addView(label(app.label, 14f).apply {
+                        gravity = Gravity.CENTER_HORIZONTAL
+                        setPadding(dp(8), dp(14), dp(8), dp(12))
+                        background = rounded(Palette.shoulder, dp(14f), dp(1), Palette.kerb)
+                        val plate = FrameLayout(context).apply { background = rounded(Palette.white, dp(18f)) }
+                        plate.addView(ImageView(context).apply { setImageDrawable(app.icon) }, FrameLayout.LayoutParams(dp(56), dp(56), Gravity.CENTER))
+                        addView(plate, LinearLayout.LayoutParams(dp(78), dp(78)))
+                        addView(label(app.label, 14f, Palette.white, true).apply {
                             gravity = Gravity.CENTER; maxLines = 2; ellipsize = TextUtils.TruncateAt.END
-                            setPadding(0, dp(6), 0, 0)
+                            setPadding(0, dp(10), 0, 0)
                         })
                     }
                 }
@@ -61,7 +66,7 @@ class AppsActivity : Activity() {
             setOnItemClickListener { _, _, i, _ -> AppLauncher.launch(this@AppsActivity, apps[i].packageName, null, AppLauncher.MODE_FULLSCREEN) }
             setOnItemLongClickListener { _, _, i, _ -> options(apps[i]); true }
         }
-        root.addView(grid, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f).apply { topMargin = dp(12) })
+        root.addView(grid, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f))
         setContentView(root)
     }
 

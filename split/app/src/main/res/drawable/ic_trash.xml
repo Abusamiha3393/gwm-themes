@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- رمز «trash» من مجموعة رموز صحراء سبليت، مرسوم على شبكة 48 بأسلوب لوحات الطرق -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp" android:height="48dp"
+    android:viewportWidth="48" android:viewportHeight="48">
+    <path android:pathData="M17 4 H31 V8 H41 V13 H7 V8 H17 Z" android:fillColor="#FFFFFFFF" />
+    <path android:pathData="M10 16 H38 L35.5 44 H12.5 Z M17 21 H20.5 L21 39 H17.6 Z M27.5 21 H31 L30.4 39 H27 Z" android:fillColor="#FFFFFFFF" android:fillType="evenOdd" />
+</vector>

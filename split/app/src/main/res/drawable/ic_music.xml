@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- رمز «music» من مجموعة رموز صحراء سبليت، مرسوم على شبكة 48 بأسلوب لوحات الطرق -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp" android:height="48dp"
+    android:viewportWidth="48" android:viewportHeight="48">
+    <path android:pathData="M7.5 37 A6.2 4.8 -20 1 0 19.9 37 A6.2 4.8 -20 1 0 7.5 37 Z" android:fillColor="#FFFFFFFF" />
+    <path android:pathData="M27.5 32.5 A6.2 4.8 -20 1 0 39.9 32.5 A6.2 4.8 -20 1 0 27.5 32.5 Z" android:fillColor="#FFFFFFFF" />
+    <path android:pathData="M17.2 36 V11 L20.8 10.2 V36 Z" android:fillColor="#FFFFFFFF" />
+    <path android:pathData="M37.2 31.5 V6.5 L40.8 5.7 V31.5 Z" android:fillColor="#FFFFFFFF" />
+    <path android:pathData="M17.2 8.5 L40.8 3.5 V10.5 L17.2 15.5 Z" android:fillColor="#FFFFFFFF" />
+</vector>

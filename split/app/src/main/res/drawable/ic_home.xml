@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- رمز «home» من مجموعة رموز صحراء سبليت، مرسوم على شبكة 48 بأسلوب لوحات الطرق -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp" android:height="48dp"
+    android:viewportWidth="48" android:viewportHeight="48">
+    <path android:pathData="M24 5 L44 22 L39.5 22 L39.5 42 L28 42 L28 30 L20 30 L20 42 L8.5 42 L8.5 22 L4 22 Z" android:fillColor="#FFFFFFFF" android:fillType="evenOdd" />
+</vector>

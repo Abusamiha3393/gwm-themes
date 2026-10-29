@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- رمز «speed» من مجموعة رموز صحراء سبليت، مرسوم على شبكة 48 بأسلوب لوحات الطرق -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp" android:height="48dp"
+    android:viewportWidth="48" android:viewportHeight="48">
+    <path android:pathData="M24 8 A21 21 0 0 1 45 29 V34 H38.5 V29 A14.5 14.5 0 0 0 9.5 29 V34 H3 V29 A21 21 0 0 1 24 8 Z" android:fillColor="#FFFFFFFF" android:fillType="evenOdd" />
+    <path android:pathData="M24 31 L34 18" android:strokeColor="#FFFFFFFF" android:strokeWidth="4.5" android:strokeLineCap="round" android:strokeLineJoin="round" />
+    <path android:pathData="M24 26.5 A4.5 4.5 0 1 1 23.99 26.5 Z" android:fillColor="#FFFFFFFF" />
+</vector>

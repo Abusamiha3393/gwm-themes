@@ -1,9 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- أيقونة صحراء سبليت: لوحة طريق خضراء عليها سهم التفرّع -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp" android:height="108dp"
     android:viewportWidth="108" android:viewportHeight="108">
-    <path android:fillColor="#14100C" android:pathData="M0,0h108v108h-108z" />
-    <path android:fillColor="#E8A24A" android:pathData="M18,28h33v52h-33z" />
-    <path android:fillColor="#F4E3C3" android:pathData="M57,28h33v52h-33z" />
-    <path android:fillColor="#14100C" android:pathData="M24,70 Q34,56 45,70z" />
+    <path android:pathData="M22,6 H86 A16,16 0 0 1 102,22 V86 A16,16 0 0 1 86,102 H22 A16,16 0 0 1 6,86 V22 A16,16 0 0 1 22,6 Z" android:fillColor="#FF00673F" />
+    <path android:pathData="M24,13 H84 A11,11 0 0 1 95,24 V84 A11,11 0 0 1 84,95 H24 A11,11 0 0 1 13,84 V24 A11,11 0 0 1 24,13 Z" android:strokeColor="#FFF4F5F0" android:strokeWidth="3.5" />
+    <group android:translateX="27" android:translateY="25" android:scaleX="1.125" android:scaleY="1.125">
+    <path android:pathData="M24 44 V28" android:strokeColor="#FFF4F5F0" android:strokeWidth="6.5" android:strokeLineCap="round" android:strokeLineJoin="round" />
+    <path android:pathData="M24 30 C24 22 15 21 13 13" android:strokeColor="#FFF4F5F0" android:strokeWidth="6.5" android:strokeLineCap="round" android:strokeLineJoin="round" />
+    <path android:pathData="M24 30 C24 22 33 21 35 13" android:strokeColor="#FFF4F5F0" android:strokeWidth="6.5" android:strokeLineCap="round" android:strokeLineJoin="round" />
+    <path android:pathData="M5.5 15.5 L11 2.5 L19.8 13.6 Z" android:fillColor="#FFF4F5F0" />
+    <path android:pathData="M42.5 15.5 L37 2.5 L28.2 13.6 Z" android:fillColor="#FFF4F5F0" />
+    </group>
 </vector>

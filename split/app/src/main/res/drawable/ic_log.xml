@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- رمز «log» من مجموعة رموز صحراء سبليت، مرسوم على شبكة 48 بأسلوب لوحات الطرق -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp" android:height="48dp"
+    android:viewportWidth="48" android:viewportHeight="48">
+    <path android:pathData="M9 4 H35 A4 4 0 0 1 39 8 V40 A4 4 0 0 1 35 44 H9 Z M16 13 H32 V16.5 H16 Z M16 21 H32 V24.5 H16 Z M16 29 H27 V32.5 H16 Z" android:fillColor="#FFFFFFFF" android:fillType="evenOdd" />
+    <path android:pathData="M4 8 H7 V40 H4 Z" android:fillColor="#FFFFFFFF" />
+</vector>

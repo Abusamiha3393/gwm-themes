@@ -19,6 +19,7 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
+import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.TextView
 import kotlin.math.abs
@@ -45,7 +46,7 @@ class OverlayService : Service(), VehicleRepository.Listener {
 
     private lateinit var prefs: Prefs
     private lateinit var wm: WindowManager
-    private var ball: TextView? = null
+    private var ball: SpeedRoundel? = null
     private var ballParams: WindowManager.LayoutParams? = null
     private var menu: View? = null
     private var panel: View? = null
@@ -75,7 +76,7 @@ class OverlayService : Service(), VehicleRepository.Listener {
     }
 
     override fun onState(state: VehicleState) {
-        ball?.text = num(state.speed)
+        ball?.speed = state.speed
     }
 
     private fun goForeground() {
@@ -140,20 +141,9 @@ class OverlayService : Service(), VehicleRepository.Listener {
 
     @SuppressLint("ClickableViewAccessibility")
     private fun addBall() {
-        val d = dp(64)
-        val v = TextView(this).apply {
-            text = num(VehicleRepository.state.speed)
-            textSize = 20f
-            gravity = Gravity.CENTER
-            setTextColor(Palette.bg)
-            typeface = android.graphics.Typeface.DEFAULT_BOLD
-            background = android.graphics.drawable.GradientDrawable().apply {
-                shape = android.graphics.drawable.GradientDrawable.OVAL
-                setColor(Palette.accent)
-                setStroke(dp(3), Palette.bg)
-            }
-            alpha = 0.92f
-        }
+        val d = dp(76)
+        val v = SpeedRoundel(this)
+        v.speed = VehicleRepository.state.speed
         val lp = params(d, d).apply { x = prefs.ballX; y = prefs.ballY }
         var sx = 0; var sy = 0; var tx = 0f; var ty = 0f; var moved = false
         v.setOnTouchListener { _, e ->
@@ -181,55 +171,61 @@ class OverlayService : Service(), VehicleRepository.Listener {
         menu = null
     }
 
+    /** القائمة: عمود لوحات خدمات صغيرة، لكل أمر رمزه. */
     private fun toggleMenu() {
         if (menu != null) { closeMenu(); return }
+        Type.init(this)
         val col = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            background = rounded(Palette.card, dp(16f), dp(1), Palette.line)
-            setPadding(dp(8), dp(8), dp(8), dp(8))
+            background = rounded(Palette.gantry, dp(16f), dp(2), Palette.kerb)
+            setPadding(dp(10), dp(10), dp(10), dp(10))
             layoutDirection = View.LAYOUT_DIRECTION_RTL
         }
-        fun item(text: String, action: () -> Unit) {
-            col.addView(TextView(this).apply {
-                this.text = text
-                textSize = 17f
-                setTextColor(Palette.fg)
-                setPadding(dp(16), dp(12), dp(16), dp(12))
+        fun item(res: Int, text: String, color: Int = Palette.blue, action: () -> Unit) {
+            val row = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER_VERTICAL
+                setPadding(dp(6), dp(6), dp(10), dp(6))
                 setOnClickListener { closeMenu(); action() }
-            }, LinearLayout.LayoutParams(dp(220), LinearLayout.LayoutParams.WRAP_CONTENT))
+            }
+            val sq = FrameLayout(this).apply { background = smallSign(color) }
+            sq.addView(icon(res, 26), FrameLayout.LayoutParams(dp(26), dp(26), Gravity.CENTER))
+            row.addView(sq, LinearLayout.LayoutParams(dp(52), dp(52)).apply { marginEnd = dp(14) })
+            row.addView(label(text, 17f, Palette.white, true))
+            col.addView(row, LinearLayout.LayoutParams(dp(250), LinearLayout.LayoutParams.WRAP_CONTENT))
         }
-        item("⌂  الرئيسية") { AppLauncher.goHome(this) }
-        item("⧉  تقسيم الشاشة") { goHomeAndSplit() }
-        item("↩  رجوع") {
+        item(R.drawable.ic_home, "الرئيسية", Palette.green) { AppLauncher.goHome(this) }
+        item(R.drawable.ic_split, "تقسيم الشاشة", Palette.green) { goHomeAndSplit() }
+        item(R.drawable.ic_back, "رجوع") {
             if (!BackService.back()) {
                 android.widget.Toast.makeText(this, "فعّل «صحراء سبليت» في إمكانية الوصول ليعمل زر الرجوع", android.widget.Toast.LENGTH_LONG).show()
             }
         }
-        item("⇄  تبديل التطبيقين") {
+        item(R.drawable.ic_swap, "تبديل التطبيقين") {
             prefs.updatePreset { it.copy(navApp = it.musicApp, musicApp = it.navApp) }
             goHomeAndSplit()
         }
-        item("➜  الإعداد التالي") {
+        item(R.drawable.ic_up, "الإعداد التالي") {
             prefs.presetIndex = (prefs.presetIndex + 1) % Prefs.PRESETS
             prefs.autoDayNight = false
             rebuild()
             goHomeAndSplit()
         }
-        if (prefs.floatingPanel) item(if (panelHidden) "◧  إظهار اللوحة" else "◨  إخفاء اللوحة") {
+        if (prefs.floatingPanel) item(R.drawable.ic_clock, if (panelHidden) "إظهار اللوحة" else "إخفاء اللوحة", Palette.brown) {
             panelHidden = !panelHidden
             rebuild()
         }
-        item("☰  السجل") {
+        item(R.drawable.ic_log, "السجل") {
             startActivity(Intent(this, LogActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
         }
-        item("▦  التطبيقات") {
+        item(R.drawable.ic_apps, "التطبيقات") {
             startActivity(Intent(this, AppsActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
         }
         val bp = ballParams ?: return
         val size = AppLauncher.screenSize(this)
         val lp = params(WindowManager.LayoutParams.WRAP_CONTENT, WindowManager.LayoutParams.WRAP_CONTENT).apply {
-            x = if (bp.x > size.x / 2) (bp.x - dp(230)).coerceAtLeast(0) else bp.x + dp(72)
-            y = bp.y.coerceAtMost(size.y - dp(470)).coerceAtLeast(0)
+            x = if (bp.x > size.x / 2) (bp.x - dp(282)).coerceAtLeast(0) else bp.x + dp(86)
+            y = bp.y.coerceAtMost(size.y - dp(560)).coerceAtLeast(0)
         }
         runCatching { wm.addView(col, lp); menu = col }
     }
@@ -257,4 +253,35 @@ class BackService : AccessibilityService() {
     override fun onUnbind(intent: Intent?): Boolean { instance = null; return super.onUnbind(intent) }
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {}
     override fun onInterrupt() {}
+}
+
+/**
+ * الكرة العائمة: لوحة خضراء صغيرة بإطار أبيض فيها السرعة الحالية بأرقام اللوحات.
+ * لا تستعمل الحلقة الحمراء، لأنها في لوحات الطرق تعني الحد الأقصى لا سرعتك.
+ */
+class SpeedRoundel(context: Context) : View(context) {
+    private val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
+    private val sign = context.smallSign(Palette.green)
+    var speed = 0f
+        set(v) { if (num(v) != num(field)) { field = v; invalidate() } else field = v }
+
+    init { Type.init(context); contentDescription = "القائمة السريعة" }
+
+    override fun onDraw(c: android.graphics.Canvas) {
+        val w = width.toFloat(); val h = height.toFloat()
+        paint.color = 0x66000000
+        c.drawRoundRect(android.graphics.RectF(context.dp(2f), context.dp(4f), w - context.dp(2f), h), context.dp(12f), context.dp(12f), paint)
+        sign.setBounds(0, 0, width, height - context.dp(3))
+        sign.draw(c)
+        paint.color = Palette.white
+        paint.typeface = Type.digitsBlack
+        paint.textAlign = android.graphics.Paint.Align.CENTER
+        val t = num(speed)
+        paint.textSize = h * (if (t.length >= 3) 0.36f else 0.44f)
+        c.drawText(t, w / 2, h * 0.56f, paint)
+        paint.typeface = Type.kufi
+        paint.textSize = h * 0.13f
+        paint.color = Palette.legendDim
+        c.drawText("كم/س", w / 2, h * 0.8f, paint)
+    }
 }

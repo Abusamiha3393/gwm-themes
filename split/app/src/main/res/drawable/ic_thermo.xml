@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- رمز «thermo» من مجموعة رموز صحراء سبليت، مرسوم على شبكة 48 بأسلوب لوحات الطرق -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp" android:height="48dp"
+    android:viewportWidth="48" android:viewportHeight="48">
+    <path android:pathData="M18 9 A6 6 0 0 1 30 9 V27.2 A10 10 0 1 1 18 27.2 Z M22.2 9 V30 A6 6 0 1 0 25.8 30 V9 A1.8 1.8 0 0 0 22.2 9 Z" android:fillColor="#FFFFFFFF" android:fillType="evenOdd" />
+    <path android:pathData="M22.9 20 H25.1 V33 H22.9 Z" android:fillColor="#FFFFFFFF" />
+    <path android:pathData="M24 31 A4.3 4.3 0 1 1 23.99 31 Z" android:fillColor="#FFFFFFFF" />
+</vector>

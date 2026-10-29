@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- رمز «bell» من مجموعة رموز صحراء سبليت، مرسوم على شبكة 48 بأسلوب لوحات الطرق -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp" android:height="48dp"
+    android:viewportWidth="48" android:viewportHeight="48">
+    <path android:pathData="M24 4.5 A3 3 0 0 1 27 7.5 V8.6 A12 12 0 0 1 36 20.3 V29.5 L40.5 35 V37.5 H7.5 V35 L12 29.5 V20.3 A12 12 0 0 1 21 8.6 V7.5 A3 3 0 0 1 24 4.5 Z" android:fillColor="#FFFFFFFF" />
+    <path android:pathData="M18.5 40.5 H29.5 A5.5 5.5 0 0 1 18.5 40.5 Z" android:fillColor="#FFFFFFFF" />
+</vector>

@@ -162,7 +162,7 @@ object AppPicker {
                 val icon = ImageView(context).apply { setImageDrawable(app.icon) }
                 row.addView(icon, LinearLayout.LayoutParams(context.dp(36), context.dp(36)))
                 row.addView(TextView(context).apply {
-                    text = app.label; textSize = 17f; setTextColor(Palette.fg)
+                    text = app.label; textSize = 17f; setTextColor(Palette.white)
                     setPadding(context.dp(14), 0, context.dp(14), 0)
                 })
                 return row
