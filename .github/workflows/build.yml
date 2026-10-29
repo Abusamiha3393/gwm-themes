@@ -23,20 +23,18 @@ jobs:
         with:
           gradle-version: "8.9"
 
-      # اختياري: إن أضفت أسرار التوقيع في إعدادات المستودع، تُوقَّع النسخة بمفتاحك الدائم
-      - name: Decode signing key
+      - name: Check signing secret
         env:
-          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
-        if: env.KEYSTORE_BASE64 != ''
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
         run: |
-          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
-          echo "KEYSTORE_PATH=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
+          if [ -z "$KEYSTORE_PASSWORD" ]; then
+            echo "::error::أضف السر KEYSTORE_PASSWORD في Settings > Secrets and variables > Actions"
+            exit 1
+          fi
 
       - name: Build
         env:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: gradle assembleRelease --no-daemon --stacktrace
 
       - name: Rename APK

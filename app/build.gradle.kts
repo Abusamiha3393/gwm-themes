@@ -16,20 +16,15 @@ android {
     }
 
     signingConfigs {
-        // يوقّع بمفتاحك الخاص إن أضفته في أسرار GitHub، وإلا بالمفتاح الثابت dev.jks
+        // المفتاح release.jks مشفّر وموجود في المستودع، وكلمة مروره في أسرار GitHub (KEYSTORE_PASSWORD)
         create("release") {
-            val ks = System.getenv("KEYSTORE_PATH")
-            if (ks != null && file(ks).exists()) {
-                storeFile = file(ks)
-                storePassword = System.getenv("KEYSTORE_PASSWORD")
-                keyAlias = System.getenv("KEY_ALIAS")
-                keyPassword = System.getenv("KEY_PASSWORD")
-            } else {
-                // مفتاح ثابت داخل المستودع حتى تقبل الشاشة التحديثات فوق النسخة السابقة
-                storeFile = rootProject.file("dev.jks")
-                storePassword = "sahradev"
+            val pw = System.getenv("KEYSTORE_PASSWORD")
+            if (!pw.isNullOrEmpty()) {
+                storeFile = rootProject.file("release.jks")
+                storeType = "PKCS12"
+                storePassword = pw
                 keyAlias = "sahra"
-                keyPassword = "sahradev"
+                keyPassword = pw
             }
         }
     }
@@ -37,7 +32,8 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = false
-            signingConfig = signingConfigs.getByName("release")
+            val release = signingConfigs.getByName("release")
+            if (release.storeFile != null) signingConfig = release
         }
     }
 

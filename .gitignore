@@ -4,6 +4,6 @@ local.properties
 .idea/
 *.iml
 *.jks
-!dev.jks
+!release.jks
 *.keystore
 captures/

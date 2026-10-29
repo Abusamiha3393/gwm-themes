@@ -96,6 +96,29 @@ class OverlayService : Service(), VehicleRepository.Listener {
         VehicleRepository.start(packageName)
         VehicleRepository.addListener(this)
         MediaTracker.addListener(mediaListener)
+        if (prefs.autoUpdateCheck && Updater.due(this)) {
+            Thread { (Updater.check(this) as? Updater.Result.Available)?.let { notifyUpdate(it.release) } }.start()
+        }
+    }
+
+    /** إشعار عند توفر إصدار جديد؛ الضغط عليه يفتح الإعدادات حيث زر التثبيت. */
+    private fun notifyUpdate(r: Updater.Release) {
+        val nm = getSystemService(NotificationManager::class.java)
+        if (nm.getNotificationChannel("updates") == null) {
+            nm.createNotificationChannel(NotificationChannel("updates", "التحديثات", NotificationManager.IMPORTANCE_DEFAULT))
+        }
+        val open = PendingIntent.getActivity(
+            this, 3, Intent(this, MainActivity::class.java),
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+        )
+        val n = Notification.Builder(this, "updates")
+            .setSmallIcon(R.drawable.ic_launcher)
+            .setContentTitle("تحديث جديد متاح")
+            .setContentText("الإصدار 1.0.${r.number} — اضغط للتثبيت")
+            .setContentIntent(open)
+            .setAutoCancel(true)
+            .build()
+        runCatching { nm.notify(8, n) }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {

@@ -13,8 +13,17 @@ class Prefs(context: Context) {
         when (v) {
             is String -> putString(k, v); is Int -> putInt(k, v)
             is Boolean -> putBoolean(k, v); is Float -> putFloat(k, v)
+            is Long -> putLong(k, v)
         }
     }.apply()
+
+    var lastUpdateCheck: Long
+        get() = sp.getLong("last_update_check", 0L)
+        set(v) = put("last_update_check", v)
+
+    var autoUpdateCheck: Boolean
+        get() = sp.getBoolean("auto_update", true)
+        set(v) = put("auto_update", v)
 
     var themeId: String
         get() = str("theme", Themes.all.first().id)

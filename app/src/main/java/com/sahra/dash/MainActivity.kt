@@ -45,6 +45,10 @@ class MainActivity : Activity(), VehicleRepository.Listener {
     private lateinit var splitRightBtn: Button
     private lateinit var floatBtn: Button
     private lateinit var wallpaperText: TextView
+    private lateinit var updateText: TextView
+    private lateinit var updateBtn: Button
+    private var pending: Updater.Release? = null
+    private var updating = false
     private val accentViews = mutableListOf<Pair<String, View>>()
     private var learning: ((SteeringAction) -> Unit)? = null
     private var learnDialog: AlertDialog? = null
@@ -68,6 +72,7 @@ class MainActivity : Activity(), VehicleRepository.Listener {
         VehicleRepository.start(packageName)
         VehicleRepository.addListener(this)
         refreshPermissions()
+        if (prefs.autoUpdateCheck && Updater.due(this)) checkUpdate(quiet = true)
     }
 
     override fun onPause() {
@@ -90,6 +95,14 @@ class MainActivity : Activity(), VehicleRepository.Listener {
         }
         root.addView(text(getString(R.string.app_name), 28f, fg, bold = true))
         root.addView(text("عدادات وثيمات لشاشات هافال وتانك", 15f, muted).apply { setPadding(0, dp(2), 0, dp(12)) })
+
+        // التحديثات
+        val upd = section(root, "التحديثات")
+        updateText = text("الإصدار الحالي ${Updater.currentName(this)}", 14f, muted)
+        upd.addView(updateText)
+        updateBtn = button("تحقق من وجود تحديث") { onUpdateButton() }
+        upd.addView(updateBtn)
+        upd.addView(switch("تحقق تلقائيًا من التحديثات", prefs.autoUpdateCheck) { prefs.autoUpdateCheck = it })
 
         // البيانات الحية
         val live = section(root, "بيانات السيارة")
@@ -235,6 +248,57 @@ class MainActivity : Activity(), VehicleRepository.Listener {
     }
 
     // ---------------- الإجراءات ----------------
+
+    private fun onUpdateButton() {
+        val r = pending
+        if (r == null) checkUpdate(quiet = false) else installUpdate(r)
+    }
+
+    private fun checkUpdate(quiet: Boolean) {
+        if (updating) return
+        updating = true
+        if (!quiet) updateText.text = "جارٍ التحقق…"
+        Thread {
+            val result = Updater.check(this)
+            runOnUiThread {
+                updating = false
+                val cur = "الإصدار الحالي ${Updater.currentName(this)}"
+                when (result) {
+                    is Updater.Result.Available -> {
+                        pending = result.release
+                        updateText.text = "$cur — يتوفر إصدار جديد 1.0.${result.release.number}"
+                        updateBtn.text = "ثبّت التحديث 1.0.${result.release.number}"
+                        updateBtn.background = GradientDrawable().apply { setColor(accent); cornerRadius = dp(10).toFloat() }
+                        updateBtn.setTextColor(bg)
+                    }
+                    is Updater.Result.UpToDate -> updateText.text = "$cur — أحدث نسخة ✓"
+                    is Updater.Result.Failed -> if (!quiet) updateText.text = "$cur — ${result.message}"
+                }
+            }
+        }.start()
+    }
+
+    private fun installUpdate(r: Updater.Release) {
+        if (updating) return
+        if (!Updater.canInstall(this)) {
+            toast("اسمح للتطبيق بتثبيت التحديثات، ثم ارجع واضغط الزر مرة أخرى")
+            startActivity(Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:$packageName")))
+            return
+        }
+        updating = true
+        updateText.text = "جارٍ التنزيل… 0٪"
+        Thread {
+            try {
+                val file = Updater.download(this, r) { p -> runOnUiThread { updateText.text = "جارٍ التنزيل… $p٪" } }
+                runOnUiThread { updateText.text = "اكتمل التنزيل، أكّد التثبيت في النافذة التي ستظهر" }
+                Updater.install(this, file)
+            } catch (e: Exception) {
+                runOnUiThread { updateText.text = "فشل التنزيل، حاول مرة أخرى" }
+            } finally {
+                updating = false
+            }
+        }.start()
+    }
 
     private fun startOverlay() {
         if (!Settings.canDrawOverlays(this)) {
