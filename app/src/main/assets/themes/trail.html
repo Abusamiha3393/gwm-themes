@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>مسار</title>
+<style>
+  :root{--bg:#0b0f0d;--panel:#131a16;--line:#24312a;--ink:#e6efe7;--dim:#7d9185;--moss:#9cc46b;--amber:#f0b44c;--red:#e5583f}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--ink);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans Arabic",sans-serif;-webkit-user-select:none;user-select:none}
+  body{background:linear-gradient(180deg,#0e1512,#070908)}
+  .wrap{position:absolute;inset:0;display:grid;grid-template-columns:1fr 1fr 1fr;grid-template-rows:auto 1fr;gap:2vh 2vw;padding:2vh 2.5vw 3vh}
+  .top{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;color:var(--dim);font-size:min(1.2vw,2.2vh)}
+  .top .btns{display:flex;gap:.8vw}
+  .top button{background:var(--panel);border:1px solid var(--line);color:var(--ink);border-radius:50%;width:5.5vh;height:5.5vh;font-size:2.6vh}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:2vh;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2vh 1.5vw;min-height:0}
+  .card h3{position:absolute;top:1.6vh;right:1.4vw;font-size:min(1.1vw,2.1vh);color:var(--dim);font-weight:600;letter-spacing:.04em}
+  .incl{width:100%;flex:1;min-height:0;display:flex;align-items:center;justify-content:center}
+  .incl svg{height:100%;max-height:52vh;width:auto;overflow:visible}
+  .val{font-size:min(4.4vw,8.5vh);font-weight:800;font-variant-numeric:tabular-nums;line-height:1}
+  .val.warn{color:var(--amber)} .val.bad{color:var(--red)}
+  .sub{color:var(--dim);font-size:min(1.1vw,2.1vh);margin-top:.6vh}
+  .mid{display:grid;grid-template-rows:auto 1fr auto;gap:2vh;min-height:0}
+  .tape{height:9vh;overflow:hidden;position:relative;border-radius:1.4vh;background:var(--panel);border:1px solid var(--line);direction:ltr}
+  .tape .strip{position:absolute;top:0;height:100%;display:flex;align-items:center;will-change:transform}
+  .tape .strip span{width:6vw;text-align:center;font-weight:700;color:var(--dim);font-size:min(1.5vw,2.8vh)}
+  .tape .strip span.card4{color:var(--ink)}
+  .tape:after{content:'';position:absolute;left:50%;top:0;bottom:0;width:2px;background:var(--moss);box-shadow:0 0 10px var(--moss)}
+  .speed{display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .speed .val{font-size:min(9vw,18vh)}
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:1vw}
+  .stat{background:var(--panel);border:1px solid var(--line);border-radius:1.4vh;padding:1.2vh .8vw;text-align:center}
+  .stat b{display:block;font-size:min(1.9vw,3.6vh);font-variant-numeric:tabular-nums}
+  .stat small{color:var(--dim);font-size:min(1vw,1.9vh)}
+  .wheel{width:13vh;height:13vh;margin-top:1vh}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div><span id="clock">--:--</span> · الخارج <span id="ext">--°</span> <span id="src" style="color:var(--amber)"></span></div>
+    <div class="btns"><button id="next" aria-label="الثيم التالي">⟳</button><button id="close" aria-label="إغلاق">✕</button></div>
+  </div>
+
+  <div class="card">
+    <h3>الميلان الأمامي</h3>
+    <div class="incl"><svg viewBox="-110 -80 220 160" id="pitchSvg"></svg></div>
+    <div class="val" id="pitch">0°</div>
+    <div class="sub" id="pitchHint">مستوٍ</div>
+  </div>
+
+  <div class="mid">
+    <div class="tape" id="tape"><div class="strip" id="strip"></div></div>
+    <div class="card speed">
+      <h3>السرعة</h3>
+      <div class="val" id="speed">0</div>
+      <div class="sub">كم/س · الغيار <b id="gear">P</b></div>
+      <svg class="wheel" viewBox="-50 -50 100 100" id="wheel">
+        <circle r="44" fill="none" stroke="#3b4a41" stroke-width="7"/>
+        <path d="M-44 0 H-14 M14 0 H44 M0 14 V44" stroke="#3b4a41" stroke-width="7" stroke-linecap="round"/>
+        <circle r="13" fill="#131a16" stroke="#9cc46b" stroke-width="3"/>
+        <path d="M0 -50 V-38" stroke="#9cc46b" stroke-width="4" stroke-linecap="round"/>
+      </svg>
+      <div class="sub" id="steer">زاوية المقود 0°</div>
+    </div>
+    <div class="stats">
+      <div class="stat"><small>الارتفاع</small><b id="alt">—</b></div>
+      <div class="stat"><small>الوقود</small><b id="fuel">—</b></div>
+      <div class="stat"><small>حرارة المحرك</small><b id="cool">—</b></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>الميلان الجانبي</h3>
+    <div class="incl"><svg viewBox="-110 -80 220 160" id="rollSvg"></svg></div>
+    <div class="val" id="roll">0°</div>
+    <div class="sub" id="rollHint">مستوٍ</div>
+  </div>
+</div>
+
+<script>
+(function(){
+  function $(id){return document.getElementById(id);}
+  // رسومات مبسطة أصلية لمركبة من الجانب ومن الخلف
+  var SIDE='<g id="body"><line x1="-105" y1="42" x2="105" y2="42" stroke="#24312a" stroke-width="2"/>'+
+    '<path d="M-78 18 L-70 -8 L-40 -12 L-22 -34 L32 -34 L46 -12 L78 -8 L82 18 Z" fill="#1d2822" stroke="#9cc46b" stroke-width="2.5" stroke-linejoin="round"/>'+
+    '<path d="M-16 -29 L-4 -29 L-4 -13 L-32 -13 Z M2 -29 L28 -29 L38 -13 L2 -13 Z" fill="#0b0f0d" opacity=".8"/>'+
+    '<circle cx="-48" cy="20" r="17" fill="#0b0f0d" stroke="#9cc46b" stroke-width="3"/><circle cx="50" cy="20" r="17" fill="#0b0f0d" stroke="#9cc46b" stroke-width="3"/>'+
+    '<circle cx="-48" cy="20" r="6" fill="#3b4a41"/><circle cx="50" cy="20" r="6" fill="#3b4a41"/></g>';
+  var REAR='<g id="body"><line x1="-105" y1="42" x2="105" y2="42" stroke="#24312a" stroke-width="2"/>'+
+    '<path d="M-56 22 L-56 -6 L-44 -36 L44 -36 L56 -6 L56 22 Z" fill="#1d2822" stroke="#9cc46b" stroke-width="2.5" stroke-linejoin="round"/>'+
+    '<path d="M-38 -30 L38 -30 L46 -10 L-46 -10 Z" fill="#0b0f0d" opacity=".8"/>'+
+    '<rect x="-52" y="-2" width="14" height="7" rx="2" fill="#e5583f"/><rect x="38" y="-2" width="14" height="7" rx="2" fill="#e5583f"/>'+
+    '<rect x="-64" y="18" width="20" height="24" rx="5" fill="#0b0f0d" stroke="#9cc46b" stroke-width="3"/><rect x="44" y="18" width="20" height="24" rx="5" fill="#0b0f0d" stroke="#9cc46b" stroke-width="3"/></g>';
+  function scale(){var s='';for(var a=-40;a<=40;a+=10){var r=-a*Math.PI/180,x=Math.sin(r)*96,y=-Math.cos(r)*96+40;
+    s+='<text x="'+x.toFixed(1)+'" y="'+(y-46).toFixed(1)+'" fill="#7d9185" font-size="8" text-anchor="middle">'+Math.abs(a)+'</text>';}return s;}
+  $('pitchSvg').innerHTML=scale()+SIDE;
+  $('rollSvg').innerHTML=scale()+REAR;
+  var pBody=$('pitchSvg').querySelector('#body'),rBody=$('rollSvg').querySelector('#body');
+
+  // شريط البوصلة
+  var dirs={0:'ش',45:'ش ق',90:'ق',135:'ج ق',180:'ج',225:'ج غ',270:'غ',315:'ش غ'};
+  var strip=$('strip'),html='';
+  for(var k=-2;k<=2;k++){for(var d=0;d<360;d+=15){var lab=dirs[d]||d;html+='<span class="'+(dirs[d]?'card4':'')+'">'+lab+'</span>';}}
+  strip.innerHTML=html;
+
+  var cur={p:0,r:0,c:0,s:0,w:0},tgt={p:0,r:0,c:0,s:0,w:0};
+  function cls(v){v=Math.abs(v);return v>=30?'val bad':v>=20?'val warn':'val';}
+  function hint(v,pos,neg){var a=Math.abs(v);if(a<2)return 'مستوٍ';return (v>0?pos:neg)+(a>=30?' — خطر':a>=20?' — انتبه':'');}
+
+  function frame(){
+    for(var k in cur)cur[k]+=(tgt[k]-cur[k])*0.15;
+    pBody.setAttribute('transform','rotate('+(-cur.p).toFixed(2)+' 0 42)');
+    rBody.setAttribute('transform','rotate('+(cur.r).toFixed(2)+' 0 42)');
+    $('wheel').style.transform='rotate('+cur.w.toFixed(1)+'deg)';
+    var spanW=strip.firstChild?strip.firstChild.getBoundingClientRect().width:60;
+    var idx=(360*2+cur.c)/15; // بداية الدورة الثالثة من خمس
+    strip.style.transform='translateX('+($('tape').clientWidth/2-(idx+0.5)*spanW).toFixed(1)+'px)';
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+
+  function n(v,d,u){return (v===null||v===undefined||!isFinite(v))?'—':Number(v).toFixed(d||0)+(u||'');}
+  var lastC=0;
+  window.onSahraData=function(d){
+    var p=d.pitch||0,r=d.roll||0;
+    tgt.p=p;tgt.r=r;tgt.s=d.speed||0;tgt.w=d.steering||0;
+    if(d.compass!=null){var c=d.compass,diff=((c-lastC+540)%360)-180;tgt.c=cur.c+diff;lastC=c;
+      if(Math.abs(cur.c)>720){cur.c=((cur.c%360)+360)%360;tgt.c=cur.c+diff;}}
+    $('pitch').textContent=n(Math.abs(p),1,'°');$('pitch').className=cls(p);$('pitchHint').textContent=hint(p,'صعود','نزول');
+    $('roll').textContent=n(Math.abs(r),1,'°');$('roll').className=cls(r);$('rollHint').textContent=hint(r,'مائل يمين','مائل يسار');
+    $('speed').textContent=Math.round(d.speed||0);
+    $('gear').textContent=d.gear||'-';
+    $('steer').textContent='زاوية المقود '+n(d.steering,0,'°');
+    $('alt').textContent=n(d.altitude,0,' م');
+    $('fuel').textContent=n(d.fuel,0,'٪');
+    $('cool').textContent=n(d.coolant,0,'°');
+    $('ext').textContent=n(d.outsideTemp,0,'°');
+    $('src').textContent=d.demo?'· تجريبي':'';
+  };
+
+  function host(fn){try{if(window.SahraHost)window.SahraHost[fn]();}catch(e){}}
+  $('close').onclick=function(){host('close');};
+  $('next').onclick=function(){host('nextTheme');};
+  function tick(){var t=new Date();$('clock').textContent=('0'+t.getHours()).slice(-2)+':'+('0'+t.getMinutes()).slice(-2);}
+  tick();setInterval(tick,10000);
+
+  if(!window.SahraHost){var t=0;setInterval(function(){t+=.1;
+    window.onSahraData({speed:20+10*Math.sin(t/3),rpm:1800,gear:'D',pitch:12*Math.sin(t/3.1),roll:8*Math.sin(t/2.3),compass:(t*6)%360,altitude:612,steering:25*Math.sin(t/2),fuel:62,coolant:88,outsideTemp:34,demo:true});},100);}
+  if(window.SahraData)window.onSahraData(window.SahraData);
+})();
+</script>
+</body>
+</html>
