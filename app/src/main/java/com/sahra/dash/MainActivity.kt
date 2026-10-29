@@ -103,6 +103,10 @@ class MainActivity : Activity(), VehicleRepository.Listener {
             button("إظهار العدادات", primary = true) { startOverlay() },
             button("إيقاف") { OverlayService.send(this, OverlayService.ACTION_STOP) },
         ))
+        run.addView(row(
+            button("مصمم العدادات") { startActivity(Intent(this, DesignerActivity::class.java)) },
+            button("معلومات السيارة والتشخيص") { startActivity(Intent(this, VehicleInfoActivity::class.java)) },
+        ))
         run.addView(switch("تشغيل تلقائي عند تشغيل السيارة", prefs.autostart) { prefs.autostart = it })
         run.addView(switch("وضع تجريبي (بيانات وهمية للتجربة)", prefs.demo) {
             prefs.demo = it
@@ -169,6 +173,7 @@ class MainActivity : Activity(), VehicleRepository.Listener {
 
         // مصمم العدادات
         val design = section(root, "شكل العدادات")
+        design.addView(text("للألوان التفصيلية وشكل الإبرة والحجم والموضع، افتح «مصمم العدادات».", 13f, muted))
         design.addView(text("اللون", 14f, muted))
         val swatches = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; setPadding(0, dp(6), 0, dp(10)) }
         Accents.all.forEach { a ->

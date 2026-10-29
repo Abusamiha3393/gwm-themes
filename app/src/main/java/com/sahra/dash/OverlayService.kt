@@ -77,7 +77,7 @@ class OverlayService : Service(), VehicleRepository.Listener {
     private var web: WebView? = null
     private var visible = false
     private var pageReady = false
-    private var style = JSONObject()
+    private var design = Design()
     private var mini: TextView? = null
     private var miniParams: WindowManager.LayoutParams? = null
     private var floatBar: View? = null
@@ -89,7 +89,7 @@ class OverlayService : Service(), VehicleRepository.Listener {
         super.onCreate()
         isRunning = true
         prefs = Prefs(this)
-        style = prefs.styleJson()
+        design = DesignStore(this).current
         wm = getSystemService(WINDOW_SERVICE) as WindowManager
         goForeground()
         VehicleRepository.forceDemo = prefs.demo
@@ -105,7 +105,7 @@ class OverlayService : Service(), VehicleRepository.Listener {
             ACTION_TOGGLE -> if (visible) hide() else show()
             ACTION_RELOAD -> {
                 VehicleRepository.forceDemo = prefs.demo
-                style = prefs.styleJson()
+                design = DesignStore(this).current
                 if (visible) { hide(); show() } else updateMini()
             }
             ACTION_FLOAT_APP -> floatApp()
@@ -357,22 +357,7 @@ class OverlayService : Service(), VehicleRepository.Listener {
     private fun push() {
         val w = web ?: return
         if (!pageReady) return
-        val s = VehicleRepository.state
-        val data = s.toJson()
-        val m = MediaTracker.current
-        data.put("media", JSONObject().apply {
-            put("title", m.title); put("artist", m.artist); put("playing", m.playing)
-            put("app", m.app); put("art", m.artDataUrl)
-        })
-        data.put("style", style)
-        data.put("alerts", if (prefs.alerts) Alerts.compute(s) else JSONArray())
-        data.put("layout", prefs.layout.name.lowercase())
-        data.put("theme", prefs.themeId)
-        data.put("time", System.currentTimeMillis())
-        w.evaluateJavascript(
-            "(function(d){window.SahraData=d;if(window.__sahra)window.__sahra(d);else if(window.onSahraData)window.onSahraData(d);})($data);",
-            null,
-        )
+        w.evaluateJavascript(Payload.script(Payload.build(prefs, design)), null)
     }
 
     private fun nextTheme() {

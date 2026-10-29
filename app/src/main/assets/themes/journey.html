@@ -12,9 +12,9 @@
     font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans Arabic",sans-serif;-webkit-user-select:none;user-select:none}
   body{background:linear-gradient(135deg,#17121f 0%,#0d0b10 55%,#120f0a 100%)}
   .wrap{position:absolute;inset:0;display:grid;grid-template-columns:1.1fr 1fr;gap:2.5vw;padding:3vh 3vw}
-  .card{background:var(--panel);border:1px solid var(--line);border-radius:2.4vh;padding:2.6vh 2vw;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+  .card{background:var(--panel);border:1px solid var(--panel-c,var(--line));border-radius:2.4vh;padding:2.6vh 2vw;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
   .left{display:flex;flex-direction:column;gap:2.4vh;min-height:0}
-  .time{font-size:min(9vw,20vh);font-weight:200;line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-.03em}
+  .time{color:var(--num,var(--ink));font-size:min(9vw,20vh);font-weight:200;line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-.03em}
   .date{color:var(--dim);font-size:min(1.6vw,3vh);margin-top:.6vh}
   .weather{display:flex;gap:2vw;margin-top:1.4vh;color:var(--dim);font-size:min(1.3vw,2.5vh)}
   .weather b{color:var(--ink);font-weight:600}
@@ -45,7 +45,7 @@
     .music{flex-direction:row;justify-content:flex-start;text-align:start;gap:3vw}
     .music .art{width:22vh;height:22vh;flex:none}
     .music .meta{min-width:0;display:flex;flex-direction:column;gap:1vh}
-    .time{font-size:min(16vw,15vh)}
+    .time{color:var(--num,var(--ink));font-size:min(16vw,15vh)}
     .date,.weather,.heading,.music .artist{font-size:min(2.4vw,2.4vh)} .stat small{font-size:min(2vw,2vh)} .stat b{font-size:min(4.4vw,4vh)}
     .music .title{font-size:min(3.6vw,3.4vh)}
   }

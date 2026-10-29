@@ -38,6 +38,15 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".DesignerActivity"
+            android:exported="false"
+            android:screenOrientation="landscape" />
+
+        <activity
+            android:name=".VehicleInfoActivity"
+            android:exported="false" />
+
         <service
             android:name=".OverlayService"
             android:exported="false"

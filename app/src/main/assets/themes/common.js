@@ -36,6 +36,13 @@
     speedMax: function (d) { var m = (d.style && d.style.speedMax) || 220; return (d.style && d.style.units === 'mph') ? Math.round(m / 1.609 / 10) * 10 : m; },
     rpmMax: function (d) { return (d.style && d.style.rpmMax) || 7000; },
     accent: function (d) { return (d.style && d.style.accent) || null; },
+    design: function (d) { return (d.style && d.style.design) || {}; },
+    /** شكل الإبرة في مربع 200×200 ومركزه (100,100) */
+    needlePath: function (style) {
+      if (style === 'thin') return 'M99.2 24 L100.8 24 L101.6 108 L98.4 108 Z';
+      if (style === 'arrow') return 'M100 22 L106 38 L102 38 L102.5 100 L97.5 100 L98 38 L94 38 Z';
+      return 'M100 30 L103 100 L97 100 Z';
+    },
     num: function (v, digits, suffix) {
       return (v === null || v === undefined || !isFinite(v)) ? '—' : Number(v).toFixed(digits || 0) + (suffix || '');
     },
@@ -46,10 +53,27 @@
     clock: function () { var t = new Date(); return ('0' + t.getHours()).slice(-2) + ':' + ('0' + t.getMinutes()).slice(-2); }
   };
 
+  // تصميم المصمم: ألوان العناصر والحجم والموضع والتبديل، كمتغيرات CSS يستخدمها كل ثيم
+  var lastDesign = '';
+  function applyDesign(g) {
+    var key = JSON.stringify(g);
+    if (key === lastDesign) return;
+    lastDesign = key;
+    var r = document.documentElement.style;
+    [['needleColor', '--needle'], ['tickColor', '--tick'], ['numberColor', '--num'], ['panelColor', '--panel-c']].forEach(function (p) {
+      if (g[p[0]]) r.setProperty(p[1], g[p[0]]); else r.removeProperty(p[1]);
+    });
+    r.setProperty('--g-scale', ((g.scale || 100) / 100).toString());
+    r.setProperty('--g-shift', (g.shift || 0) + 'vw');
+    document.documentElement.classList.toggle('swap', !!g.swap);
+    document.documentElement.setAttribute('data-needle', g.needleStyle || 'classic');
+  }
+
   window.__sahra = function (d) {
     ensure();
     var s = d.style || {};
     if (s.accent) document.documentElement.style.setProperty('--accent', s.accent);
+    applyDesign(s.design || {});
     if (s.wallpaper !== lastWp) {
       lastWp = s.wallpaper || null;
       if (lastWp) {
@@ -86,7 +110,10 @@
         batteryVoltage: 14.1, batteryLevel: 86, steering: 25 * Math.sin(t / 2), pitch: 12 * Math.sin(t / 3.1),
         roll: 8 * Math.sin(t / 2.3), compass: (t * 6) % 360, altitude: 612 + 40 * Math.sin(t / 9), demo: true,
         media: { title: 'أغنية تجريبية', artist: 'فنان', playing: true, art: '' },
-        style: { accent: q.get('accent') || null, speedMax: 220, rpmMax: 7000, units: q.get('units') || 'kmh', wallpaper: null, wallpaperDim: 0.55 },
+        style: { accent: q.get('accent') || null, speedMax: 220, rpmMax: 7000, units: q.get('units') || 'kmh', wallpaper: null, wallpaperDim: 0.55,
+          design: { needleStyle: q.get('needle') || 'classic', swap: q.has('swap'), scale: +(q.get('scale') || 100), shift: +(q.get('shift') || 0),
+            needleColor: q.get('nc') ? '#' + q.get('nc') : '', tickColor: q.get('tc') ? '#' + q.get('tc') : '',
+            numberColor: q.get('num') ? '#' + q.get('num') : '', panelColor: q.get('pc') ? '#' + q.get('pc') : '' } },
         alerts: q.has('lowfuel') ? [{ id: 'fuel', text: 'الوقود منخفض', level: 'warn' }] : [],
         layout: 'full'
       });

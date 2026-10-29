@@ -145,6 +145,8 @@ object Themes {
         Theme("trail", "مسار — الطرق الوعرة", "themes/trail.html"),
         Theme("pulse", "نبض — رقمي", "themes/pulse.html"),
         Theme("journey", "رحلة — معلومات وموسيقى", "themes/journey.html"),
+        Theme("horizon", "أفق — قوس عريض", "themes/horizon.html"),
+        Theme("track", "مضمار — أضواء التبديل", "themes/track.html"),
     )
 
     fun byId(id: String) = all.firstOrNull { it.id == id } ?: all.first()

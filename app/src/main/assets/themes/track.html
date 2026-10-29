@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>مضمار</title>
+<style>
+  :root{--bg:#0a0a0b;--ink:#f5f5f2;--dim:#7c7c78;--line:#222224;--accent:#e5583f;--ok:#3ccf6e;--warn:#f2b632}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{background:var(--bg)}
+  html,body{width:100%;height:100%;overflow:hidden;color:var(--ink);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans Arabic",sans-serif;-webkit-user-select:none;user-select:none}
+  /* نسيج مربعات خفيف */
+  body{background:
+    repeating-linear-gradient(45deg,rgba(255,255,255,.018) 0 6px,transparent 6px 12px),
+    repeating-linear-gradient(-45deg,rgba(255,255,255,.018) 0 6px,transparent 6px 12px),var(--bg)}
+  .chrome{position:absolute;top:1.6vh;left:1.4vw;right:1.4vw;display:flex;justify-content:space-between;align-items:center;color:var(--dim);font-size:min(1.2vw,2.3vh);z-index:5}
+  .chrome button{background:#151516;border:1px solid var(--line);color:var(--ink);border-radius:50%;width:5.5vh;height:5.5vh;font-size:2.6vh;margin-inline-start:.6vw}
+  .lights{position:absolute;top:9vh;left:50%;transform:translateX(-50%);display:flex;gap:1.1vw;direction:ltr}
+  .lights i{width:min(3.4vw,6.5vh);height:min(3.4vw,6.5vh);border-radius:50%;background:#1a1a1c;border:2px solid #262628;transition:background .06s,box-shadow .06s}
+  .lights i.on.g{background:var(--ok);box-shadow:0 0 2vh var(--ok)}
+  .lights i.on.y{background:var(--warn);box-shadow:0 0 2vh var(--warn)}
+  .lights i.on.r{background:var(--accent);box-shadow:0 0 2vh var(--accent)}
+  .lights.flash i.on{animation:flash .16s steps(1) infinite}
+  @keyframes flash{50%{background:#1a1a1c;box-shadow:none}}
+  .main{position:absolute;left:0;right:0;top:22vh;bottom:14vh;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;direction:ltr;padding:0 5vw;
+    transform:translateX(var(--g-shift,0)) scale(var(--g-scale,1));transition:transform .3s}
+  html.swap .main{direction:rtl}
+  .side{display:flex;flex-direction:column;gap:.4vh}
+  .side.r{align-items:flex-end;text-align:right}
+  .side small{color:var(--dim);font-size:min(1.2vw,2.3vh);letter-spacing:.1em}
+  .side .n{font-size:min(7vw,15vh);font-weight:800;line-height:1;font-variant-numeric:tabular-nums;color:var(--num,var(--ink));font-style:italic}
+  .gear{width:min(18vw,40vh);height:min(18vw,40vh);border-radius:3vh;border:.6vh solid var(--panel-c,var(--accent));display:flex;align-items:center;justify-content:center;
+    font-size:min(14vw,30vh);font-weight:900;font-style:italic;color:var(--num,var(--ink));background:#111112;box-shadow:inset 0 0 6vh rgba(0,0,0,.6)}
+  .bars{position:absolute;left:5vw;right:5vw;bottom:4vh;display:grid;grid-template-columns:1fr 1fr 1fr;gap:3vw;direction:rtl}
+  .bar small{display:flex;justify-content:space-between;color:var(--dim);font-size:min(1.1vw,2.1vh);margin-bottom:.8vh}
+  .bar small b{color:var(--ink);font-weight:700}
+  .bar .t{height:1vh;background:var(--line);border-radius:1vh;overflow:hidden;direction:ltr}
+  .bar .t i{display:block;height:100%;width:0;background:var(--tick,var(--dim));transition:width .5s}
+  .bar .t i.hot{background:var(--accent)}
+
+  @media (max-aspect-ratio:16/9){
+    .main{grid-template-columns:1fr 1fr;grid-template-rows:auto auto;gap:2vh 4vw;top:20vh}
+    .gear{grid-column:1/3;justify-self:center;width:30vh;height:30vh;font-size:24vh}
+    .side .n{font-size:min(12vw,11vh)} .side small,.chrome,.bar small{font-size:min(2.4vw,2.2vh)}
+    .lights{gap:1.4vw} .lights i{width:min(5vw,5vh);height:min(5vw,5vh)}
+    .bars{grid-template-columns:1fr 1fr} .bar:nth-child(3){display:none}
+  }
+  @media (max-aspect-ratio:1/1){
+    .lights i:nth-child(n+9){display:none}
+    .side.l{display:none} .main{grid-template-columns:1fr} .gear{grid-column:1}
+    .bars{grid-template-columns:1fr} .bar:nth-child(2){display:none}
+  }
+</style>
+</head>
+<body>
+<div class="chrome">
+  <div><span id="clock">--:--</span> · <span id="ext">--°</span> <span id="src" style="color:var(--accent)"></span></div>
+  <div><button id="next" aria-label="الثيم التالي">⟳</button><button id="close" aria-label="إغلاق">✕</button></div>
+</div>
+<div class="lights" id="lights"></div>
+<div class="main">
+  <div class="side l"><small>RPM</small><div class="n" id="rpm">0</div></div>
+  <div class="gear" id="gear">P</div>
+  <div class="side r"><small id="unit">كم/س</small><div class="n" id="speed">0</div></div>
+</div>
+<div class="bars">
+  <div class="bar"><small><span>الوقود</span><b id="fuelT">—</b></small><div class="t"><i id="fuel"></i></div></div>
+  <div class="bar"><small><span>حرارة المحرك</span><b id="coolT">—</b></small><div class="t"><i id="cool"></i></div></div>
+  <div class="bar"><small><span>البطارية</span><b id="battT">—</b></small><div class="t"><i id="batt"></i></div></div>
+</div>
+
+<script src="common.js"></script>
+<script>
+(function(){
+  function $(id){return document.getElementById(id);}
+  // 12 مصباحًا تبدأ من 35٪ من أقصى دورات: أخضر ثم أصفر ثم أحمر، وتومض عند 85٪
+  var L=12,lights=[],box=$('lights');
+  for(var i=0;i<L;i++){var e=document.createElement('i');e.className=i<5?'g':i<9?'y':'r';box.appendChild(e);lights.push(e);}
+  var cur=0,target=0,max=7000;
+  function frame(){
+    cur+=(target-cur)*0.3;
+    var from=max*0.35,to=max*0.85,f=Math.max(0,Math.min(1,(cur-from)/(to-from))),on=Math.round(f*L);
+    for(var i=0;i<L;i++){var c=lights[i].classList;if((i<on)!==c.contains('on'))c.toggle('on');}
+    box.classList.toggle('flash',cur>=to);
+    $('rpm').textContent=Math.round(cur/10)*10;
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+
+  var n=Sahra.num;
+  function bar(id,v,min,maxV,hot){var f=v==null?0:Math.max(0,Math.min(1,(v-min)/(maxV-min)));var e=$(id);e.style.width=(f*100)+'%';e.className=hot?'hot':'';}
+  window.onSahraData=function(d){
+    max=Sahra.rpmMax(d); target=d.rpm||0;
+    $('speed').textContent=Math.round(Sahra.speed(d));
+    $('unit').textContent=Sahra.unit(d);
+    $('gear').textContent=d.gear||'-';
+    $('fuelT').textContent=n(d.fuel,0,'٪'); bar('fuel',d.fuel,0,100,d.fuel!=null&&d.fuel<15);
+    $('coolT').textContent=n(d.coolant,0,'°'); bar('cool',d.coolant,40,130,d.coolant!=null&&d.coolant>=106);
+    $('battT').textContent=n(d.batteryVoltage,1,' V'); bar('batt',d.batteryVoltage,10,15,d.batteryVoltage!=null&&d.batteryVoltage<11.8);
+    $('ext').textContent=n(d.outsideTemp,0,'°');
+    $('src').textContent=d.demo?'· تجريبي':'';
+  };
+  $('close').onclick=function(){Sahra.host('close');};
+  $('next').onclick=function(){Sahra.host('nextTheme');};
+  function tick(){$('clock').textContent=Sahra.clock();}
+  tick();setInterval(tick,10000);
+})();
+</script>
+</body>
+</html>
