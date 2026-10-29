@@ -6,28 +6,29 @@
 <title>كثبان</title>
 <style>
   :root{
-    --bg:#0f0c09; --bg2:#1c150f; --sand:#e8a24a; --sand2:#c97b2c; --ink:#f4e3c3; --dim:#8e7b62; --line:#3a2e22; --red:#e0573a; --ok:#8fc06a;
+    --bg:#0f0c09; --bg2:#1c150f; --accent:#e8a24a; --ink:#f4e3c3; --dim:#8e7b62; --line:#3a2e22; --red:#e0573a;
   }
   *{box-sizing:border-box;margin:0;padding:0}
-  html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--ink);
+  html{background:var(--bg)}
+  html,body{width:100%;height:100%;overflow:hidden;color:var(--ink);
     font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans Arabic",sans-serif;-webkit-user-select:none;user-select:none}
   body{background:radial-gradient(120% 90% at 50% 120%,#3b2614 0%,var(--bg) 60%)}
   .stage{position:absolute;inset:0;display:grid;grid-template-columns:1fr minmax(0,.8fr) 1fr;align-items:center;padding:3vh 3vw;gap:2vw;direction:ltr}
   .gauge{position:relative;width:100%;aspect-ratio:1/1;max-height:88vh;justify-self:center}
   .gauge svg{width:100%;height:100%;overflow:visible}
-  .readout{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none}
+  .readout{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;padding-top:62%}
   .big{font-size:min(5.5vw,11vh);font-weight:800;line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
-  .unit{font-size:min(1.4vw,2.6vh);color:var(--dim);margin-top:.6vh;letter-spacing:.15em}
+  .unit{font-size:min(1.4vw,2.6vh);color:var(--dim);margin-top:.6vh;letter-spacing:.1em}
   .center{display:flex;flex-direction:column;gap:2.2vh;align-items:stretch;direction:rtl}
   .gear{direction:ltr;display:flex;justify-content:center;gap:1.2vw;font-size:min(2.8vw,5.5vh);font-weight:800;color:var(--line)}
-  .gear span.on{color:var(--sand);text-shadow:0 0 18px rgba(232,162,74,.55)}
+  .gear span.on{color:var(--accent);text-shadow:0 0 18px var(--accent)}
   .tiles{display:grid;grid-template-columns:1fr 1fr;gap:1vh 1vw}
   .tile{background:linear-gradient(180deg,var(--bg2),rgba(28,21,15,.4));border:1px solid var(--line);border-radius:1.2vh;padding:1.2vh 1vw}
   .tile b{display:block;font-size:min(2vw,4vh);font-weight:700;font-variant-numeric:tabular-nums}
   .tile small{color:var(--dim);font-size:min(1.05vw,2vh)}
   .fuel{display:flex;flex-direction:column;gap:.8vh}
   .bar{height:1.1vh;border-radius:1vh;background:var(--line);overflow:hidden;direction:ltr}
-  .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--sand2),var(--sand));transition:width .6s}
+  .bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .6s}
   .bar i.low{background:var(--red)}
   .row{display:flex;justify-content:space-between;color:var(--dim);font-size:min(1.1vw,2.1vh)}
   .media{display:flex;gap:1vw;align-items:center;background:var(--bg2);border:1px solid var(--line);border-radius:1.4vh;padding:1vh 1vw;min-height:9vh}
@@ -38,10 +39,26 @@
   .media button{background:none;border:0;color:var(--ink);font-size:min(2vw,3.8vh);width:5vh;height:5vh;border-radius:50%}
   .media button:active{background:var(--line)}
   .media.empty{opacity:.35}
-  .chrome{position:absolute;top:1.6vh;left:1.4vw;right:1.4vw;display:flex;justify-content:space-between;align-items:center;color:var(--dim);font-size:min(1.1vw,2.1vh);direction:rtl}
+  .chrome{position:absolute;top:1.6vh;left:1.4vw;right:1.4vw;display:flex;justify-content:space-between;align-items:center;color:var(--dim);font-size:min(1.1vw,2.1vh);direction:rtl;z-index:5}
   .chrome .btns{display:flex;gap:.8vw}
   .chrome button{background:rgba(28,21,15,.8);border:1px solid var(--line);color:var(--ink);border-radius:50%;width:5.5vh;height:5.5vh;font-size:2.6vh}
-  .demo{color:var(--sand)}
+  .demo{color:var(--accent)}
+
+  /* نصف الشاشة: عداد السرعة مع اللوحة الوسطى */
+  @media (max-aspect-ratio:16/9){
+    .stage{grid-template-columns:1fr 1fr}
+    #rpmGauge{display:none}
+    .big{font-size:min(9vw,11vh)} .unit{font-size:min(2.4vw,2.6vh)}
+    .tile b{font-size:min(3.6vw,4vh)} .tile small,.row,.chrome{font-size:min(2vw,2.1vh)}
+    .gear{font-size:min(5vw,5.5vh)} .media .t b{font-size:min(2.4vw,2.5vh)} .media .t small{font-size:min(2vw,2vh)}
+  }
+  /* ثلث الشاشة: عمود واحد */
+  @media (max-aspect-ratio:1/1){
+    .stage{grid-template-columns:1fr;grid-template-rows:auto auto;align-content:center;padding-top:8vh}
+    .gauge{max-height:46vh;width:auto;height:46vh}
+    .tiles,.media{display:none}
+    .big{font-size:9vh} .unit,.row,.chrome{font-size:2.2vh} .gear{font-size:5vh}
+  }
 </style>
 </head>
 <body>
@@ -79,6 +96,7 @@
   <div class="gauge" id="rpmGauge"></div>
 </div>
 
+<script src="common.js"></script>
 <script>
 (function(){
   var NS='http://www.w3.org/2000/svg';
@@ -92,13 +110,12 @@
   function el(tag,attrs,parent){var e=document.createElementNS(NS,tag);for(var k in attrs)e.setAttribute(k,attrs[k]);if(parent)parent.appendChild(e);return e;}
 
   function makeGauge(host,opt){
+    host.innerHTML='';
     var svg=el('svg',{viewBox:'0 0 200 200'});
-    var defs=el('defs',{},svg);
-    var g=el('linearGradient',{id:opt.id+'g',x1:'0',y1:'1',x2:'1',y2:'0'},defs);
-    el('stop',{offset:'0','stop-color':'#c97b2c'},g);el('stop',{offset:'1','stop-color':opt.hot||'#ffd28a'},g);
     el('path',{d:arc(100,100,86,START,START+SWEEP),fill:'none',stroke:'#2a2119','stroke-width':'9','stroke-linecap':'round'},svg);
     if(opt.red){el('path',{d:arc(100,100,86,START+SWEEP*opt.red,START+SWEEP),fill:'none',stroke:'#e0573a','stroke-width':'9','stroke-linecap':'round',opacity:'.55'},svg);}
-    var val=el('path',{d:arc(100,100,86,START,START+0.1),fill:'none',stroke:'url(#'+opt.id+'g)','stroke-width':'9','stroke-linecap':'round'},svg);
+    var val=el('path',{d:arc(100,100,86,START,START+0.1),fill:'none',stroke:'var(--accent)','stroke-width':'9','stroke-linecap':'round'},svg);
+    val.style.stroke='var(--accent)';
     for(var i=0;i<=opt.major;i++){
       var a=START+SWEEP*i/opt.major,o=polar(100,100,74,a),n=polar(100,100,66,a),t=polar(100,100,55,a);
       el('line',{x1:o[0],y1:o[1],x2:n[0],y2:n[1],stroke:'#8e7b62','stroke-width':'1.6'},svg);
@@ -109,42 +126,53 @@
     }
     var needle=el('g',{},svg);
     el('path',{d:'M100 30 L103 100 L97 100 Z',fill:'#f4e3c3'},needle);
-    el('circle',{cx:100,cy:100,r:6,fill:'#1c150f',stroke:'#e8a24a','stroke-width':'2'},svg);
+    var hub=el('circle',{cx:100,cy:100,r:6,fill:'#1c150f','stroke-width':'2'},svg);
+    hub.style.stroke='var(--accent)';
     host.appendChild(svg);
     var ro=document.createElement('div');ro.className='readout';
     ro.innerHTML='<div class="big">0</div><div class="unit">'+opt.unit+'</div>';
-    ro.style.paddingTop='62%';
     host.appendChild(ro);
-    var big=ro.querySelector('.big'),cur=0,target=0;
+    var big=ro.querySelector('.big'),cur=0,target=0,alive=true;
     function draw(){
-      cur+= (target-cur)*0.18;
+      if(!alive)return;
+      cur+=(target-cur)*0.18;
       var f=Math.max(0,Math.min(1,cur/opt.max)),a=START+SWEEP*f;
       val.setAttribute('d',arc(100,100,86,START,Math.max(START+0.1,a)));
-      needle.setAttribute('transform','rotate('+(a)+' 100 100)');
+      needle.setAttribute('transform','rotate('+a+' 100 100)');
       big.textContent=opt.fmt(cur);
       requestAnimationFrame(draw);
     }
     requestAnimationFrame(draw);
-    return {set:function(v){target=isFinite(v)?v:0;}};
+    return {set:function(v){target=isFinite(v)?v:0;},stop:function(){alive=false;}};
   }
 
-  var speed=makeGauge(document.getElementById('speedGauge'),{id:'sp',max:220,major:11,minor:4,unit:'كم/س',label:function(i){return i*20;},fmt:function(v){return Math.round(v);}});
-  var rpm=makeGauge(document.getElementById('rpmGauge'),{id:'rp',max:7000,major:7,minor:5,red:5.5/7,hot:'#ff9a5c',unit:'×1000 دورة',label:function(i){return i;},fmt:function(v){return (v/1000).toFixed(1);}});
+  // تقسيم العداد لعدد مناسب من العلامات حسب أقصى قيمة
+  function steps(max){var s=[10,20,25,40,50];for(var i=0;i<s.length;i++)if(max/s[i]<=12)return s[i];return 50;}
+
+  var speed=null,rpm=null,cfg='';
+  function build(d){
+    var sm=Sahra.speedMax(d),rm=Sahra.rpmMax(d),u=Sahra.unit(d),key=sm+'|'+rm+'|'+u;
+    if(key===cfg)return; cfg=key;
+    if(speed)speed.stop(); if(rpm)rpm.stop();
+    var st=steps(sm),rk=Math.round(rm/1000);
+    speed=makeGauge(document.getElementById('speedGauge'),{max:sm,major:Math.round(sm/st),minor:4,unit:u,label:function(i){return i*st;},fmt:function(v){return Math.round(v);}});
+    rpm=makeGauge(document.getElementById('rpmGauge'),{max:rk*1000,major:rk,minor:5,red:(rk-1.5)/rk,unit:'×1000 دورة',label:function(i){return i;},fmt:function(v){return (v/1000).toFixed(1);}});
+  }
 
   function $(id){return document.getElementById(id);}
-  function n(v,d,u){return (v===null||v===undefined||!isFinite(v))?'—':Number(v).toFixed(d||0)+(u||'');}
-  function fmtInt(v){return (v===null||v===undefined)?'—':Math.round(v).toLocaleString('en-US');}
+  var n=Sahra.num;
 
   window.onSahraData=function(d){
-    speed.set(d.speed); rpm.set(d.rpm);
+    build(d);
+    speed.set(Sahra.speed(d)); rpm.set(d.rpm);
     var gs=$('gear').children;for(var i=0;i<gs.length;i++)gs[i].className=(gs[i].textContent===d.gear)?'on':'';
     $('fuelTxt').textContent=n(d.fuel,0,'٪');
     var fb=$('fuelBar');fb.style.width=(d.fuel==null?0:d.fuel)+'%';fb.className=(d.fuel!=null&&d.fuel<15)?'low':'';
-    $('range').textContent=d.range==null?'—':fmtInt(d.range)+' كم';
+    $('range').textContent=d.range==null?'—':Sahra.int(d.range)+' كم';
     $('coolant').textContent=n(d.coolant,0,'°');
     $('batt').textContent=n(d.batteryVoltage,1,' V');
     $('inside').textContent=n(d.insideTemp,0,'°');
-    $('odo').textContent=d.odometer==null?'—':fmtInt(d.odometer);
+    $('odo').textContent=Sahra.int(d.odometer);
     $('ext').textContent=n(d.outsideTemp,0,'°');
     $('src').textContent=d.demo?'· تجريبي':'';
     var m=d.media||{};
@@ -155,20 +183,14 @@
     $('play').textContent=m.playing?'⏸':'▶';
   };
 
-  function host(fn,arg){try{if(window.SahraHost)window.SahraHost[fn](arg);}catch(e){}}
-  $('close').onclick=function(){host('close');};
-  $('next').onclick=function(){host('nextTheme');};
-  $('prev').onclick=function(){host('media','prev');};
-  $('play').onclick=function(){host('media','toggle');};
-  $('nextT').onclick=function(){host('media','next');};
+  $('close').onclick=function(){Sahra.host('close');};
+  $('next').onclick=function(){Sahra.host('nextTheme');};
+  $('prev').onclick=function(){Sahra.host('media','prev');};
+  $('play').onclick=function(){Sahra.host('media','toggle');};
+  $('nextT').onclick=function(){Sahra.host('media','next');};
 
-  function tick(){var t=new Date();$('clock').textContent=('0'+t.getHours()).slice(-2)+':'+('0'+t.getMinutes()).slice(-2);}
+  function tick(){$('clock').textContent=Sahra.clock();}
   tick();setInterval(tick,10000);
-
-  // عند فتح الملف في متصفح عادي للمعاينة: بيانات وهمية
-  if(!window.SahraHost){var t=0;setInterval(function(){t+=.1;var c=(Math.sin(t/6)+1)/2;
-    window.onSahraData({speed:c*140,rpm:900+c*3800,gear:c<.01?'N':'D',fuel:62,range:438,odometer:23518,coolant:88,outsideTemp:34,insideTemp:23,batteryVoltage:14.1,demo:true,media:{title:'أغنية تجريبية',artist:'فنان',playing:true}});},100);}
-  if(window.SahraData)window.onSahraData(window.SahraData);
 })();
 </script>
 </body>

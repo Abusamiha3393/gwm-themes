@@ -3,6 +3,8 @@ package com.sahra.dash
 import android.app.Activity
 import android.app.AlertDialog
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
@@ -18,12 +20,19 @@ import android.widget.LinearLayout
 import android.widget.RadioButton
 import android.widget.RadioGroup
 import android.widget.ScrollView
+import android.widget.SeekBar
 import android.widget.Switch
 import android.widget.TextView
+import android.widget.Toast
 import java.util.Locale
+import kotlin.math.max
 
-/** شاشة الإعدادات: الصلاحيات، اختيار الثيم والموضع، أزرار المقود، والبيانات الحية. */
+/** شاشة الإعدادات: الصلاحيات، الثيم والموضع، تقسيم الشاشة، النوافذ العائمة، الشكل، الخلفية، أزرار المقود. */
 class MainActivity : Activity(), VehicleRepository.Listener {
+
+    companion object {
+        private const val PICK_WALLPAPER = 41
+    }
 
     private lateinit var prefs: Prefs
     private lateinit var liveText: TextView
@@ -31,6 +40,12 @@ class MainActivity : Activity(), VehicleRepository.Listener {
     private lateinit var overlayBtn: Button
     private lateinit var mediaBtn: Button
     private lateinit var keysText: TextView
+    private lateinit var panelBtn: Button
+    private lateinit var splitLeftBtn: Button
+    private lateinit var splitRightBtn: Button
+    private lateinit var floatBtn: Button
+    private lateinit var wallpaperText: TextView
+    private val accentViews = mutableListOf<Pair<String, View>>()
     private var learning: ((SteeringAction) -> Unit)? = null
     private var learnDialog: AlertDialog? = null
 
@@ -61,6 +76,11 @@ class MainActivity : Activity(), VehicleRepository.Listener {
         super.onPause()
     }
 
+    /** يطبق التغييرات على العرض إن كان يعمل. */
+    private fun reload() {
+        if (OverlayService.isRunning) OverlayService.send(this, OverlayService.ACTION_RELOAD)
+    }
+
     // ---------------- بناء الواجهة ----------------
 
     private fun build(): View {
@@ -87,8 +107,9 @@ class MainActivity : Activity(), VehicleRepository.Listener {
         run.addView(switch("وضع تجريبي (بيانات وهمية للتجربة)", prefs.demo) {
             prefs.demo = it
             VehicleRepository.forceDemo = it
-            if (OverlayService.isRunning) OverlayService.send(this, OverlayService.ACTION_RELOAD)
+            reload()
         })
+        run.addView(switch("تنبيهات الوقود والحرارة والبطارية والميلان", prefs.alerts) { prefs.alerts = it; reload() })
 
         // الصلاحيات
         val perms = section(root, "الصلاحيات")
@@ -101,24 +122,94 @@ class MainActivity : Activity(), VehicleRepository.Listener {
         // الثيمات
         val themes = section(root, "الثيم")
         val tg = RadioGroup(this)
-        Themes.all.forEachIndexed { i, t ->
-            tg.addView(radio(t.name, i, t.id == prefs.themeId))
-        }
-        tg.setOnCheckedChangeListener { _, id ->
-            prefs.themeId = Themes.all[id].id
-            if (OverlayService.isRunning) OverlayService.send(this, OverlayService.ACTION_RELOAD)
-        }
+        Themes.all.forEachIndexed { i, t -> tg.addView(radio(t.name, i, t.id == prefs.themeId)) }
+        tg.setOnCheckedChangeListener { _, id -> prefs.themeId = Themes.all[id].id; reload() }
         themes.addView(tg)
 
-        // الموضع
-        val pos = section(root, "موضع العدادات على الشاشة")
+        // الموضع وتقسيم الشاشة
+        val pos = section(root, "الموضع وتقسيم الشاشة")
         val pg = RadioGroup(this)
         OverlayLayout.entries.forEachIndexed { i, l -> pg.addView(radio(l.label, i, l == prefs.layout)) }
-        pg.setOnCheckedChangeListener { _, id ->
-            prefs.layout = OverlayLayout.entries[id]
-            if (OverlayService.isRunning) OverlayService.send(this, OverlayService.ACTION_RELOAD)
-        }
+        pg.setOnCheckedChangeListener { _, id -> prefs.layout = OverlayLayout.entries[id]; reload() }
         pos.addView(pg)
+        pos.addView(text("عند اختيار نصف أو ثلث، يُفتح هذا التطبيق في باقي الشاشة:", 14f, muted).apply { setPadding(0, dp(10), 0, 0) })
+        panelBtn = button("") { pickApp(allowNone = true) { prefs.panelApp = it; refreshApps(); reload() } }
+        pos.addView(panelBtn)
+
+        // تقسيم بين تطبيقين
+        val split = section(root, "تقسيم الشاشة بين تطبيقين")
+        splitLeftBtn = button("") { pickApp(false) { prefs.splitLeft = it; refreshApps() } }
+        splitRightBtn = button("") { pickApp(false) { prefs.splitRight = it; refreshApps() } }
+        split.addView(splitLeftBtn); split.addView(splitRightBtn)
+        val ratioLabel = text("", 14f, muted)
+        split.addView(ratioLabel)
+        split.addView(seek(30, 70, (prefs.splitRatio * 100).toInt()) {
+            prefs.splitRatio = it / 100f
+            ratioLabel.text = "نسبة التقسيم: ${it}٪ / ${100 - it}٪"
+        })
+        ratioLabel.text = "نسبة التقسيم: ${(prefs.splitRatio * 100).toInt()}٪ / ${100 - (prefs.splitRatio * 100).toInt()}٪"
+        split.addView(button("قسّم الشاشة الآن", primary = true) { startSplit() })
+
+        // النوافذ العائمة
+        val fl = section(root, "النوافذ العائمة")
+        fl.addView(switch("عداد سرعة صغير عائم عند إخفاء العدادات", prefs.miniGauge) {
+            prefs.miniGauge = it
+            if (it && !OverlayService.isRunning && Settings.canDrawOverlays(this)) {
+                OverlayService.send(this, OverlayService.ACTION_HIDE)
+            } else reload()
+        })
+        floatBtn = button("") { pickApp(false) { prefs.floatingApp = it; refreshApps() } }
+        fl.addView(floatBtn)
+        fl.addView(button("افتح التطبيق في نافذة عائمة", primary = true) {
+            if (prefs.floatingApp.isEmpty()) { toast("اختر التطبيق أولًا"); return@button }
+            if (!Settings.canDrawOverlays(this)) { startOverlay(); return@button }
+            OverlayService.send(this, OverlayService.ACTION_FLOAT_APP)
+        })
+        fl.addView(text("إذا كانت شاشتك لا تدعم النوافذ العائمة، يُفتح التطبيق بحجم كامل.", 13f, muted))
+
+        // مصمم العدادات
+        val design = section(root, "شكل العدادات")
+        design.addView(text("اللون", 14f, muted))
+        val swatches = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; setPadding(0, dp(6), 0, dp(10)) }
+        Accents.all.forEach { a ->
+            val v = View(this).apply {
+                contentDescription = a.name
+                setOnClickListener { prefs.accent = a.hex; refreshAccents(); reload() }
+            }
+            accentViews.add(a.hex to v)
+            swatches.addView(v, LinearLayout.LayoutParams(dp(44), dp(44)).apply { setMargins(dp(4), 0, dp(4), 0) })
+        }
+        design.addView(swatches)
+        refreshAccents()
+        design.addView(text("أقصى سرعة على العداد", 14f, muted))
+        design.addView(choices(listOf(160, 200, 220, 260), prefs.speedMax) { prefs.speedMax = it; reload() })
+        design.addView(text("أقصى دورات", 14f, muted))
+        design.addView(choices(listOf(6000, 7000, 8000), prefs.rpmMax) { prefs.rpmMax = it; reload() })
+        design.addView(switch("السرعة بالميل (mph)", prefs.mph) { prefs.mph = it; reload() })
+
+        // الخلفية
+        val wp = section(root, "الخلفية")
+        wallpaperText = text("", 14f, muted)
+        wp.addView(wallpaperText)
+        wp.addView(row(
+            button("اختر صورة") { pickWallpaper() },
+            button("إزالة") {
+                prefs.wallpaperFile.delete(); prefs.wallpaperVersion = prefs.wallpaperVersion + 1
+                refreshWallpaper(); reload()
+            },
+        ))
+        val dimLabel = text("تعتيم الخلفية: ${prefs.wallpaperDim}٪", 14f, muted)
+        wp.addView(dimLabel)
+        wp.addView(seek(0, 90, prefs.wallpaperDim) { prefs.wallpaperDim = it; dimLabel.text = "تعتيم الخلفية: $it٪" }.apply {
+            setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+                override fun onProgressChanged(s: SeekBar?, p: Int, fromUser: Boolean) {
+                    prefs.wallpaperDim = p; dimLabel.text = "تعتيم الخلفية: $p٪"
+                }
+                override fun onStartTrackingTouch(s: SeekBar?) {}
+                override fun onStopTrackingTouch(s: SeekBar?) = reload()
+            })
+        })
+        refreshWallpaper()
 
         // أزرار المقود
         val keys = section(root, "أزرار المقود")
@@ -130,12 +221,15 @@ class MainActivity : Activity(), VehicleRepository.Listener {
         ))
         keys.addView(button("مسح الأزرار") { prefs.toggleKey = 0; prefs.nextThemeKey = 0; refreshKeys() })
         refreshKeys()
+        refreshApps()
 
         return ScrollView(this).apply {
             setBackgroundColor(bg)
             addView(root, MATCH_PARENT, WRAP_CONTENT)
         }
     }
+
+    // ---------------- الإجراءات ----------------
 
     private fun startOverlay() {
         if (!Settings.canDrawOverlays(this)) {
@@ -145,17 +239,64 @@ class MainActivity : Activity(), VehicleRepository.Listener {
         OverlayService.send(this, OverlayService.ACTION_SHOW)
     }
 
-    private fun refreshPermissions() {
-        val overlay = Settings.canDrawOverlays(this)
-        overlayBtn.text = if (overlay) "✓ العرض فوق التطبيقات مسموح" else "اسمح بالعرض فوق التطبيقات (مطلوب)"
-        val media = MediaTracker.hasAccess(this)
-        mediaBtn.text = if (media) "✓ عرض الأغنية الحالية مسموح" else "اسمح بقراءة الإشعارات (لعرض الأغنية الحالية)"
+    private fun startSplit() {
+        if (prefs.splitLeft.isEmpty() || prefs.splitRight.isEmpty()) { toast("اختر التطبيقين أولًا"); return }
+        if (OverlayService.isRunning) OverlayService.send(this, OverlayService.ACTION_HIDE)
+        val size = OverlayService.screenSize(this)
+        if (!AppLauncher.splitTwo(this, prefs.splitLeft, prefs.splitRight, prefs.splitRatio, size.x, size.y)) {
+            toast("تعذر فتح التطبيق")
+        }
     }
 
-    private fun refreshKeys() {
-        fun name(c: Int) = if (c == 0) "غير محدد" else "رمز $c"
-        keysText.text = "زر الإظهار/الإخفاء: ${name(prefs.toggleKey)}\nزر الثيم التالي: ${name(prefs.nextThemeKey)}"
+    private fun pickApp(allowNone: Boolean, onPick: (String) -> Unit) {
+        val apps = AppLauncher.apps(this)
+        val labels = (if (allowNone) listOf("بدون تطبيق") else emptyList()) + apps.map { it.label }
+        AlertDialog.Builder(this)
+            .setTitle("اختر تطبيقًا")
+            .setItems(labels.toTypedArray()) { _, which ->
+                if (allowNone && which == 0) onPick("") else onPick(apps[which - if (allowNone) 1 else 0].packageName)
+            }
+            .setNegativeButton("إلغاء", null)
+            .show()
     }
+
+    @Suppress("DEPRECATION")
+    private fun pickWallpaper() {
+        val i = Intent(Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("image/*")
+        try { startActivityForResult(i, PICK_WALLPAPER) } catch (_: Exception) {
+            startActivityForResult(Intent(Intent.ACTION_GET_CONTENT).setType("image/*"), PICK_WALLPAPER)
+        }
+    }
+
+    @Deprecated("Deprecated in Java")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        @Suppress("DEPRECATION")
+        super.onActivityResult(requestCode, resultCode, data)
+        val uri = data?.data
+        if (requestCode != PICK_WALLPAPER || resultCode != RESULT_OK || uri == null) return
+        Thread {
+            val ok = saveWallpaper(uri)
+            runOnUiThread {
+                if (ok) { prefs.wallpaperVersion = prefs.wallpaperVersion + 1; refreshWallpaper(); reload(); toast("تم تعيين الخلفية") }
+                else toast("تعذرت قراءة الصورة")
+            }
+        }.start()
+    }
+
+    /** يصغّر الصورة إلى عرض الشاشة تقريبًا ويحفظها داخل التطبيق. */
+    private fun saveWallpaper(uri: Uri): Boolean = try {
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        contentResolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, bounds) }
+        var sample = 1
+        while (max(bounds.outWidth, bounds.outHeight) / (sample * 2) >= 2048) sample *= 2
+        val bmp = contentResolver.openInputStream(uri)?.use {
+            BitmapFactory.decodeStream(it, null, BitmapFactory.Options().apply { inSampleSize = sample })
+        }
+        if (bmp == null) false else {
+            prefs.wallpaperFile.outputStream().use { bmp.compress(Bitmap.CompressFormat.JPEG, 88, it) }
+            true
+        }
+    } catch (_: Exception) { false }
 
     private fun learn(save: (SteeringAction) -> Unit) {
         learning = { a ->
@@ -169,6 +310,42 @@ class MainActivity : Activity(), VehicleRepository.Listener {
             .setNegativeButton("إلغاء", null)
             .setOnDismissListener { learning = null }
             .show()
+    }
+
+    // ---------------- تحديث النصوص ----------------
+
+    private fun refreshPermissions() {
+        val overlay = Settings.canDrawOverlays(this)
+        overlayBtn.text = if (overlay) "✓ العرض فوق التطبيقات مسموح" else "اسمح بالعرض فوق التطبيقات (مطلوب)"
+        val media = MediaTracker.hasAccess(this)
+        mediaBtn.text = if (media) "✓ عرض الأغنية الحالية مسموح" else "اسمح بقراءة الإشعارات (لعرض الأغنية الحالية)"
+    }
+
+    private fun refreshKeys() {
+        fun name(c: Int) = if (c == 0) "غير محدد" else "رمز $c"
+        keysText.text = "زر الإظهار/الإخفاء: ${name(prefs.toggleKey)}\nزر الثيم التالي: ${name(prefs.nextThemeKey)}"
+    }
+
+    private fun refreshApps() {
+        fun name(p: String) = if (p.isEmpty()) "لم يُختر" else AppLauncher.label(this, p)
+        panelBtn.text = "التطبيق المجاور: ${if (prefs.panelApp.isEmpty()) "بدون" else name(prefs.panelApp)}"
+        splitLeftBtn.text = "التطبيق الأيسر: ${name(prefs.splitLeft)}"
+        splitRightBtn.text = "التطبيق الأيمن: ${name(prefs.splitRight)}"
+        floatBtn.text = "تطبيق النافذة العائمة: ${name(prefs.floatingApp)}"
+    }
+
+    private fun refreshAccents() {
+        accentViews.forEach { (hex, v) ->
+            v.background = GradientDrawable().apply {
+                shape = GradientDrawable.OVAL
+                setColor(Color.parseColor(hex))
+                if (hex.equals(prefs.accent, true)) setStroke(dp(4), Color.WHITE) else setStroke(dp(1), Color.parseColor("#55000000"))
+            }
+        }
+    }
+
+    private fun refreshWallpaper() {
+        wallpaperText.text = if (prefs.wallpaperFile.exists()) "✓ خلفية مخصصة مفعّلة" else "بدون خلفية (لون الثيم الأصلي)"
     }
 
     // ---------------- البيانات الحية ----------------
@@ -195,6 +372,8 @@ class MainActivity : Activity(), VehicleRepository.Listener {
     }
 
     // ---------------- عناصر الواجهة ----------------
+
+    private fun toast(s: String) = Toast.makeText(this, s, Toast.LENGTH_SHORT).show()
 
     private fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
 
@@ -235,6 +414,25 @@ class MainActivity : Activity(), VehicleRepository.Listener {
                 setMargins(if (i > 0) dp(8) else 0, dp(6), 0, dp(6))
             })
         }
+    }
+
+    /** صف أزرار لاختيار قيمة واحدة من عدة قيم. */
+    private fun choices(values: List<Int>, current: Int, onPick: (Int) -> Unit): RadioGroup {
+        val g = RadioGroup(this).apply { orientation = RadioGroup.HORIZONTAL }
+        values.forEachIndexed { i, v -> g.addView(radio(v.toString(), i, v == current)) }
+        g.setOnCheckedChangeListener { _, id -> onPick(values[id]) }
+        return g
+    }
+
+    private fun seek(lo: Int, hi: Int, value: Int, onChange: (Int) -> Unit) = SeekBar(this).apply {
+        this.max = hi - lo
+        progress = value - lo
+        setPadding(dp(8), dp(12), dp(8), dp(12))
+        setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(s: SeekBar?, p: Int, fromUser: Boolean) = onChange(p + lo)
+            override fun onStartTrackingTouch(s: SeekBar?) {}
+            override fun onStopTrackingTouch(s: SeekBar?) {}
+        })
     }
 
     @Suppress("DEPRECATION")

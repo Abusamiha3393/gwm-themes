@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>نبض</title>
+<style>
+  :root{--bg:#06080b;--panel:#0d1218;--line:#1b2430;--ink:#e9f1fa;--dim:#6b7a8c;--accent:#4fa3e8;--red:#ff5a4f}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{background:var(--bg)}
+  html,body{width:100%;height:100%;overflow:hidden;color:var(--ink);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans Arabic",sans-serif;-webkit-user-select:none;user-select:none}
+  body{background:radial-gradient(70% 60% at 50% 55%,#0f1a26 0%,var(--bg) 70%)}
+  .wrap{position:absolute;inset:0;display:grid;grid-template-rows:auto auto 1fr auto;padding:2vh 3vw 3vh;gap:2vh}
+  .top{display:flex;justify-content:space-between;align-items:center;color:var(--dim);font-size:min(1.2vw,2.3vh);position:relative;z-index:5}
+  .top button{background:var(--panel);border:1px solid var(--line);color:var(--ink);border-radius:50%;width:5.5vh;height:5.5vh;font-size:2.6vh;margin-inline-start:.6vw}
+
+  /* شريط الدورات المقسّم */
+  .rpm{direction:ltr;display:grid;gap:.35vw;height:6vh}
+  .rpm i{border-radius:.5vh;background:var(--line);transition:background .08s}
+  .rpm i.on{background:var(--accent);box-shadow:0 0 1.4vh var(--accent)}
+  .rpm i.red{background:#3a1715}
+  .rpm i.red.on{background:var(--red);box-shadow:0 0 1.4vh var(--red)}
+  .rpmScale{direction:ltr;display:flex;justify-content:space-between;color:var(--dim);font-size:min(1vw,1.9vh);margin-top:-1vh}
+
+  .main{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:3vw;direction:ltr}
+  .side{display:flex;flex-direction:column;gap:2.4vh;direction:rtl}
+  .side.left{align-items:flex-end;text-align:left;direction:ltr}
+  .kv small{display:block;color:var(--dim);font-size:min(1.1vw,2.1vh)}
+  .kv b{font-size:min(2.6vw,5vh);font-weight:700;font-variant-numeric:tabular-nums}
+  .speed{text-align:center}
+  .speed .n{font-size:min(16vw,34vh);font-weight:200;line-height:.9;font-variant-numeric:tabular-nums;letter-spacing:-.04em}
+  .speed .u{color:var(--dim);font-size:min(1.4vw,2.6vh);letter-spacing:.2em}
+  .gear{display:inline-block;margin-top:1.4vh;padding:.4vh 1.6vw;border:2px solid var(--accent);border-radius:1vh;color:var(--accent);font-weight:800;font-size:min(2.4vw,4.6vh)}
+
+  .bottom{display:grid;grid-template-columns:2fr 1fr;gap:2vw;align-items:center}
+  .fuel{display:flex;align-items:center;gap:1vw}
+  .fuel .bar{flex:1;height:1.2vh;background:var(--line);border-radius:1vh;overflow:hidden;direction:ltr}
+  .fuel .bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .6s}
+  .fuel .bar i.low{background:var(--red)}
+  .fuel span{color:var(--dim);font-size:min(1.2vw,2.3vh);white-space:nowrap}
+  .now{color:var(--dim);font-size:min(1.2vw,2.3vh);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:left}
+  .now b{color:var(--ink);font-weight:600}
+
+  @media (max-aspect-ratio:16/9){
+    .main{grid-template-columns:1fr;gap:2vh}
+    .side{flex-direction:row;justify-content:space-around;text-align:center}
+    .side.left{direction:rtl;align-items:center}
+    .speed .n{font-size:min(30vw,30vh)} .kv b{font-size:min(5vw,4.2vh)} .kv small,.top,.fuel span,.now,.rpmScale{font-size:min(2.4vw,2.2vh)}
+    .bottom{grid-template-columns:1fr} .now{text-align:center}
+  }
+  @media (max-aspect-ratio:1/1){ .side.left{display:none} .speed .n{font-size:min(38vw,26vh)} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div><span id="clock">--:--</span> · <span id="ext">--°</span> <span id="src" style="color:var(--accent)"></span></div>
+    <div><button id="next" aria-label="الثيم التالي">⟳</button><button id="close" aria-label="إغلاق">✕</button></div>
+  </div>
+  <div>
+    <div class="rpm" id="rpm"></div>
+    <div class="rpmScale" id="rpmScale"></div>
+  </div>
+
+  <div class="main">
+    <div class="side">
+      <div class="kv"><small>حرارة المحرك</small><b id="cool">—</b></div>
+      <div class="kv"><small>البطارية</small><b id="batt">—</b></div>
+    </div>
+    <div class="speed">
+      <div class="n" id="speed">0</div>
+      <div class="u" id="unit">كم/س</div>
+      <div class="gear" id="gear">P</div>
+    </div>
+    <div class="side left">
+      <div class="kv"><small>الدورات</small><b id="rpmN">—</b></div>
+      <div class="kv"><small>العداد الكلي</small><b id="odo">—</b></div>
+    </div>
+  </div>
+
+  <div class="bottom">
+    <div class="fuel"><span>الوقود <b id="fuelTxt">—</b></span><div class="bar"><i id="fuelBar"></i></div><span id="range">—</span></div>
+    <div class="now" id="now"></div>
+  </div>
+</div>
+
+<script src="common.js"></script>
+<script>
+(function(){
+  function $(id){return document.getElementById(id);}
+  var SEG=40,segs=[],built='';
+  function build(max){
+    if(built===String(max))return; built=String(max);
+    var bar=$('rpm');bar.innerHTML='';segs=[];
+    bar.style.gridTemplateColumns='repeat('+SEG+',1fr)';
+    var redFrom=Math.floor(SEG*(max-1500)/max);
+    for(var i=0;i<SEG;i++){var s=document.createElement('i');if(i>=redFrom)s.className='red';bar.appendChild(s);segs.push(s);}
+    var sc=$('rpmScale'),k=Math.round(max/1000),h='';for(var j=0;j<=k;j++)h+='<span>'+j+'</span>';sc.innerHTML=h;
+  }
+  var cur=0,target=0;
+  function frame(){
+    cur+=(target-cur)*0.25;
+    var on=Math.round(cur*SEG);
+    for(var i=0;i<segs.length;i++){var c=segs[i].classList;if((i<on)!==c.contains('on'))c.toggle('on');}
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+
+  var n=Sahra.num;
+  window.onSahraData=function(d){
+    var max=Sahra.rpmMax(d);build(max);
+    target=Math.max(0,Math.min(1,(d.rpm||0)/max));
+    $('speed').textContent=Math.round(Sahra.speed(d));
+    $('unit').textContent=Sahra.unit(d);
+    $('gear').textContent=d.gear||'-';
+    $('rpmN').textContent=Sahra.int(d.rpm);
+    $('cool').textContent=n(d.coolant,0,'°');
+    $('batt').textContent=n(d.batteryVoltage,1,' V');
+    $('odo').textContent=Sahra.int(d.odometer);
+    $('ext').textContent=n(d.outsideTemp,0,'°');
+    $('fuelTxt').textContent=n(d.fuel,0,'٪');
+    var fb=$('fuelBar');fb.style.width=(d.fuel==null?0:d.fuel)+'%';fb.className=(d.fuel!=null&&d.fuel<15)?'low':'';
+    $('range').textContent=d.range==null?'—':Sahra.int(d.range)+' كم';
+    $('src').textContent=d.demo?'· تجريبي':'';
+    var m=d.media||{};
+    $('now').innerHTML='';
+    if(m.title){var b=document.createElement('b');b.textContent=m.title;$('now').appendChild(document.createTextNode((m.playing?'♪ ':'❚❚ ')));$('now').appendChild(b);
+      if(m.artist)$('now').appendChild(document.createTextNode(' — '+m.artist));}
+  };
+  $('close').onclick=function(){Sahra.host('close');};
+  $('next').onclick=function(){Sahra.host('nextTheme');};
+  $('now').onclick=function(){Sahra.host('media','toggle');};
+  function tick(){$('clock').textContent=Sahra.clock();}
+  tick();setInterval(tick,10000);
+})();
+</script>
+</body>
+</html>

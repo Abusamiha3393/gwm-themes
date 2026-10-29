@@ -12,6 +12,14 @@
     <uses-permission android:name="com.gwm.permission.VEHICLE_DATA" />
     <uses-permission android:name="com.gwm.permission.VEHICLE_SIGNAL" />
 
+    <!-- لعرض قائمة التطبيقات في تقسيم الشاشة والنافذة العائمة -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent>
+    </queries>
+
     <application
         android:allowBackup="false"
         android:icon="@drawable/ic_launcher"
