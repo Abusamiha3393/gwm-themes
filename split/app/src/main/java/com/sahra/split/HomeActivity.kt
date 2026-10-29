@@ -126,6 +126,18 @@ class HomeActivity : Activity() {
             }, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT).apply { topMargin = dp(8) })
         }
 
+        val due = Logbook.dueReminders(this)
+        if (due.isNotEmpty()) {
+            col.addView(TextView(this).apply {
+                text = "⏰ " + due.joinToString(" · ") { it.text }
+                textSize = 15f
+                setTextColor(Palette.fg)
+                background = rounded(Palette.warn, dp(10f))
+                setPadding(dp(12), dp(8), dp(12), dp(8))
+                setOnClickListener { startActivity(Intent(this@HomeActivity, LogActivity::class.java).putExtra("tab", 2)) }
+            }, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT).apply { topMargin = dp(8) })
+        }
+
         // خانتا التطبيقين، بنفس نسبة التقسيم. الترتيب الفعلي يتبع الشاشة (يسار ثم يمين)
         val slots = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
@@ -149,6 +161,7 @@ class HomeActivity : Activity() {
             prefs.updatePreset { it.copy(navApp = it.musicApp, musicApp = it.navApp) }
             setContentView(build())
         }, lp())
+        dock.addView(pill("☰  السجل") { startActivity(Intent(this, LogActivity::class.java)) }, lp())
         dock.addView(pill("⚙  الإعدادات") { startActivity(Intent(this, SettingsActivity::class.java)) }, lp())
         col.addView(dock, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT))
         return col

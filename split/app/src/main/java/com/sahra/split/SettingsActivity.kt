@@ -83,6 +83,12 @@ class SettingsActivity : Activity() {
         permission("الموقع", "للطقس وأوقات الشروق والغروب", hasLoc) {
             requestPermissions(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION), 5)
         }
+        if (android.os.Build.VERSION.SDK_INT >= 33) {
+            val ok = checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+            permission("الإشعارات", "لتنبيهات التذكيرات", ok) {
+                requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 6)
+            }
+        }
         permission("الشاشة الرئيسية الافتراضية", "اختر «صحراء سبليت» ليكون اللانشر", isDefaultHome()) {
             runCatching { startActivity(Intent(Settings.ACTION_HOME_SETTINGS)) }
                 .onFailure { startActivity(Intent(Settings.ACTION_SETTINGS)) }

@@ -219,6 +219,9 @@ class OverlayService : Service(), VehicleRepository.Listener {
             panelHidden = !panelHidden
             rebuild()
         }
+        item("☰  السجل") {
+            startActivity(Intent(this, LogActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        }
         item("▦  التطبيقات") {
             startActivity(Intent(this, AppsActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
         }
@@ -226,7 +229,7 @@ class OverlayService : Service(), VehicleRepository.Listener {
         val size = AppLauncher.screenSize(this)
         val lp = params(WindowManager.LayoutParams.WRAP_CONTENT, WindowManager.LayoutParams.WRAP_CONTENT).apply {
             x = if (bp.x > size.x / 2) (bp.x - dp(230)).coerceAtLeast(0) else bp.x + dp(72)
-            y = bp.y.coerceAtMost(size.y - dp(420)).coerceAtLeast(0)
+            y = bp.y.coerceAtMost(size.y - dp(470)).coerceAtLeast(0)
         }
         runCatching { wm.addView(col, lp); menu = col }
     }

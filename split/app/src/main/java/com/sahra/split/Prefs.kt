@@ -164,6 +164,10 @@ class Prefs(context: Context) {
         get() = sp.getFloat("refuel_fuel", 0f)
         set(v) = put("refuel_fuel", v)
 
+    var lastFuel: Float
+        get() = sp.getFloat("last_fuel", Float.NaN)
+        set(v) = put("last_fuel", v)
+
     var refuelAt: Long
         get() = sp.getLong("refuel_at", 0L)
         set(v) = put("refuel_at", v)

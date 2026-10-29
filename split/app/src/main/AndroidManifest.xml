@@ -59,6 +59,10 @@
             android:excludeFromRecents="true" />
 
         <activity
+            android:name=".LogActivity"
+            android:exported="false" />
+
+        <activity
             android:name=".SettingsActivity"
             android:exported="false" />
 

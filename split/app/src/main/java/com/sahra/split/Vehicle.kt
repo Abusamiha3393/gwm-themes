@@ -142,6 +142,7 @@ object VehicleRepository {
                     lastSample = now
                     History.add(s)
                     FuelTracker.update(ctx, s)
+                    Logbook.onSample(ctx, s)
                 }
                 publish(s)
                 Thread.sleep(pause)
@@ -216,6 +217,7 @@ object FuelTracker {
         private set
     private var lastFuel = Float.NaN
     private var dropCount = 0
+    private var savedFuel = Float.NaN
 
     fun update(context: Context, s: VehicleState) {
         if (s.demo) return
@@ -227,17 +229,26 @@ object FuelTracker {
         if (p.refuelOdo < 0f) {
             p.refuelOdo = odo; p.refuelFuel = fuel
         }
+        // آخر نسبة محفوظة تبقى بعد إطفاء السيارة، فنرصد التعبئة التي تمت والتطبيق متوقف
+        if (lastFuel.isNaN()) lastFuel = p.lastFuel
         if (!lastFuel.isNaN() && fuel - lastFuel >= 5f) {
             // تأكيد الارتفاع في قراءتين متتاليتين حتى لا تخدعنا قراءة متذبذبة
             dropCount++
             if (dropCount >= 2) {
+                // استهلاك الخزان السابق: من آخر تعبئة حتى قبل هذه التعبئة مباشرة
+                val prevKm = odo - p.refuelOdo
+                val prevLiters = (p.refuelFuel - lastFuel) / 100f * p.tankLiters
+                val prevCons = if (prevKm >= 20f && prevLiters > 0f) prevLiters / prevKm * 100f else Float.NaN
+                Logbook.onRefuel(context, odo, lastFuel, fuel, prevCons, prevKm)
                 p.refuelOdo = odo; p.refuelFuel = fuel; p.refuelAt = System.currentTimeMillis()
                 lastFuel = fuel; dropCount = 0
+                p.lastFuel = fuel; savedFuel = fuel
             }
             return
         }
         dropCount = 0
         lastFuel = fuel
+        if (savedFuel.isNaN() || kotlin.math.abs(fuel - savedFuel) >= 0.5f) { p.lastFuel = fuel; savedFuel = fuel }
     }
 
     fun tripKm(s: VehicleState): Float =
