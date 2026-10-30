@@ -30,9 +30,9 @@ object Palette {
     val kerb = Color.parseColor("#26282B")
     val shoulder = Color.parseColor("#1F2023")
     val laneDash = Color.parseColor("#3B3D41")
-    val green = Color.parseColor("#00673F")
-    val blue = Color.parseColor("#1B4C8C")
-    val brown = Color.parseColor("#6E3B1E")
+    val green = Color.parseColor("#0A5236")
+    val blue = Color.parseColor("#1A3C6B")
+    val brown = Color.parseColor("#5A321C")
     val amber = Color.parseColor("#F3B300")
     val red = Color.parseColor("#C8102E")
     val white = Color.parseColor("#F4F5F0")
@@ -60,7 +60,18 @@ object Type {
     }
 }
 
-fun Context.dp(v: Float): Float = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, v, resources.displayMetrics)
+/**
+ * مُكبِّر الواجهة: صُمّمت المقاسات لشاشة 1280×720 وحدة. شاشات GWM الكبيرة كثافتها منخفضة
+ * (هافال H9 نحو 1920×1000 وحدة)، فتظهر كل الأشياء صغيرة. نكبّر بنسبة الشاشة، بين 1 و1.8.
+ */
+fun Context.uiScale(): Float {
+    val m = resources.displayMetrics
+    val w = maxOf(m.widthPixels, m.heightPixels) / m.density
+    val h = minOf(m.widthPixels, m.heightPixels) / m.density
+    return minOf(w / 1280f, h / 720f).coerceIn(1f, 1.8f)
+}
+
+fun Context.dp(v: Float): Float = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, v, resources.displayMetrics) * uiScale()
 fun Context.dp(v: Int): Int = dp(v.toFloat()).toInt()
 
 /**
@@ -122,7 +133,7 @@ fun rounded(color: Int, radius: Float, stroke: Int = 0, strokeColor: Int = 0) = 
 fun Context.label(text: String, size: Float = 16f, color: Int = Palette.white, bold: Boolean = false, digitsFace: Boolean = false) = TextView(this).apply {
     Type.init(this@label)
     this.text = text
-    textSize = size
+    textSize = size * this@label.uiScale()
     setTextColor(color)
     includeFontPadding = false
     typeface = when {
