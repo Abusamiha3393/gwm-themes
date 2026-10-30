@@ -93,6 +93,28 @@ class SettingsActivity : Activity() {
                 .onFailure { startActivity(Intent(Settings.ACTION_SETTINGS)) }
         }
 
+        // ---------------- شاشة العدادات ----------------
+        section("شاشة العدادات")
+        toggle("عرض الثيم على شاشة العدادات", prefs.clusterOn) { prefs.clusterOn = it; ClusterService.sync(this) }
+        choice("الثيم", ClusterThemes.all.map { it.name }, ClusterThemes.all.indexOfFirst { it.id == prefs.clusterTheme }.coerceAtLeast(0)) {
+            prefs.clusterTheme = ClusterThemes.all[it].id; ClusterService.reload(this); render()
+        }
+        val accents = listOf("") + ClusterThemes.ACCENTS
+        val accentNames = listOf("لون الثيم", "رملي", "أحمر", "أخضر", "أزرق", "أبيض", "بنفسجي")
+        choice("لون الإبرة", accentNames, accents.indexOf(prefs.clusterAccent).coerceAtLeast(0)) {
+            prefs.clusterAccent = accents[it]; render()
+        }
+        seek("أقصى سرعة في العداد", 140, 260, prefs.speedMax, { "$it" }) { prefs.speedMax = it }
+        seek("أقصى دوران في العداد", 5000, 9000, prefs.rpmMax, { "$it" }) { prefs.rpmMax = (it / 500) * 500 }
+        note("الحالة: ${ClusterService.status.ifEmpty { if (prefs.clusterOn) "جارٍ التشغيل…" else "متوقف" }}", Palette.white)
+        note("الشاشات المتصلة: ${ClusterService.displaysInfo(this)}", Palette.muted)
+
+        // ---------------- خصائص إضافية ----------------
+        section("خصائص إضافية")
+        toggle("لوحة المعلومات بجانب الشاشة الرئيسية (الساعة، الوقود، الطقس…)", prefs.showPanel) { prefs.showPanel = it }
+        toggle("الكرة العائمة (السرعة وقائمة سريعة)", prefs.ball) { prefs.ball = it; OverlayService.sync(this) }
+        row("السجل: الرحلات والتعبئات والتذكيرات", "") { startActivity(Intent(this, LogActivity::class.java)) }
+
         // ---------------- الإعداد المسبق ----------------
         val idx = prefs.presetIndex
         val p = prefs.preset
@@ -149,7 +171,6 @@ class SettingsActivity : Activity() {
         }
         note("إن لم تحترم الشاشة حدود النوافذ، جرّب «تقسيم أندرويد»، أو اجعل لوحة المعلومات عائمة.", Palette.muted)
         toggle("فتح التقسيم تلقائيًا عند تشغيل السيارة", prefs.autoSplit) { prefs.autoSplit = it }
-        toggle("الكرة العائمة (عداد سرعة وقائمة سريعة)", prefs.ball) { prefs.ball = it; OverlayService.sync(this) }
         toggle("لوحة المعلومات عائمة فوق التطبيقات", prefs.floatingPanel) { prefs.floatingPanel = it; OverlayService.sync(this) }
         toggle("التشغيل التلقائي مع السيارة", prefs.autostart) { prefs.autostart = it }
 

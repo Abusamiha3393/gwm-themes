@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>رحلة</title>
+<style>
+  :root{--bg:#0d0b10;--panel:rgba(30,26,36,.72);--line:rgba(255,255,255,.08);--ink:#f3eef7;--dim:#9a90a6;--accent:#a98bf0}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{background:var(--bg)}
+  html,body{width:100%;height:100%;overflow:hidden;color:var(--ink);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans Arabic",sans-serif;-webkit-user-select:none;user-select:none}
+  body{background:linear-gradient(135deg,#17121f 0%,#0d0b10 55%,#120f0a 100%)}
+  .wrap{position:absolute;inset:0;display:grid;grid-template-columns:1.1fr 1fr;gap:2.5vw;padding:3vh 3vw}
+  .card{background:var(--panel);border:1px solid var(--panel-c,var(--line));border-radius:2.4vh;padding:2.6vh 2vw;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+  .left{display:flex;flex-direction:column;gap:2.4vh;min-height:0}
+  .time{color:var(--num,var(--ink));font-size:min(9vw,20vh);font-weight:200;line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-.03em}
+  .date{color:var(--dim);font-size:min(1.6vw,3vh);margin-top:.6vh}
+  .weather{display:flex;gap:2vw;margin-top:1.4vh;color:var(--dim);font-size:min(1.3vw,2.5vh)}
+  .weather b{color:var(--ink);font-weight:600}
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:1.2vw;margin-top:auto}
+  .stat small{display:block;color:var(--dim);font-size:min(1.05vw,2vh)}
+  .stat b{font-size:min(2.4vw,4.6vh);font-weight:600;font-variant-numeric:tabular-nums}
+  .stat b em{font-style:normal;font-size:.5em;color:var(--dim);margin-inline-start:.3vw}
+  .heading{display:flex;align-items:center;gap:1vw;color:var(--dim);font-size:min(1.3vw,2.5vh)}
+  .heading svg{width:4.5vh;height:4.5vh;transition:transform .4s}
+  .heading b{color:var(--ink)}
+
+  .music{display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:2vh;min-height:0;position:relative;overflow:hidden}
+  .music .art{width:min(22vw,44vh);height:min(22vw,44vh);border-radius:2vh;background:linear-gradient(135deg,var(--accent),#2a2236);box-shadow:0 2vh 6vh rgba(0,0,0,.5);
+    background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center;font-size:8vh;color:rgba(255,255,255,.6)}
+  .music .title{font-size:min(2.2vw,4.2vh);font-weight:700;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .music .artist{color:var(--dim);font-size:min(1.4vw,2.7vh);max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .controls{display:flex;gap:2vw;direction:ltr}
+  .controls button{background:none;border:0;color:var(--ink);width:8vh;height:8vh;border-radius:50%;font-size:3.6vh}
+  .controls button.play{background:var(--accent);color:#120f16;font-size:4vh}
+  .controls button:active{transform:scale(.94)}
+  .music.empty .controls,.music.empty .artist{opacity:.35}
+
+  .chrome{position:absolute;top:1.6vh;left:1.4vw;display:flex;gap:.8vw;z-index:5}
+  .chrome button{background:var(--panel);border:1px solid var(--line);color:var(--ink);border-radius:50%;width:5.5vh;height:5.5vh;font-size:2.6vh}
+
+  @media (max-aspect-ratio:16/9){
+    .wrap{grid-template-columns:1fr;grid-template-rows:auto 1fr}
+    .music{flex-direction:row;justify-content:flex-start;text-align:start;gap:3vw}
+    .music .art{width:22vh;height:22vh;flex:none}
+    .music .meta{min-width:0;display:flex;flex-direction:column;gap:1vh}
+    .time{color:var(--num,var(--ink));font-size:min(16vw,15vh)}
+    .date,.weather,.heading,.music .artist{font-size:min(2.4vw,2.4vh)} .stat small{font-size:min(2vw,2vh)} .stat b{font-size:min(4.4vw,4vh)}
+    .music .title{font-size:min(3.6vw,3.4vh)}
+  }
+  @media (max-aspect-ratio:1/1){ .music .art{display:none} .stats{grid-template-columns:1fr 1fr} .stat:nth-child(3){display:none} }
+</style>
+</head>
+<body>
+<div class="chrome"><button id="next" aria-label="الثيم التالي">⟳</button><button id="close" aria-label="إغلاق">✕</button></div>
+<div class="wrap">
+  <div class="card left">
+    <div>
+      <div class="time" id="time">--:--</div>
+      <div class="date" id="date"></div>
+      <div class="weather"><span>الخارج <b id="ext">—</b></span><span>الداخل <b id="in">—</b></span><span id="src" style="color:var(--accent)"></span></div>
+    </div>
+    <div class="heading">
+      <svg viewBox="-20 -20 40 40" id="needle"><circle r="18" fill="none" stroke="currentColor" stroke-width="2" opacity=".4"/><path d="M0 -15 L5 4 L0 1 L-5 4 Z" fill="var(--accent)"/></svg>
+      <span>الاتجاه <b id="dir">—</b> · الارتفاع <b id="alt">—</b></span>
+    </div>
+    <div class="stats">
+      <div class="stat"><small>السرعة</small><b><span id="speed">0</span><em id="unit">كم/س</em></b></div>
+      <div class="stat"><small>الوقود</small><b><span id="fuel">—</span></b></div>
+      <div class="stat"><small>المدى</small><b><span id="range">—</span><em>كم</em></b></div>
+    </div>
+  </div>
+
+  <div class="card music empty" id="music">
+    <div class="art" id="art">♪</div>
+    <div class="meta">
+      <div class="title" id="title">لا يوجد تشغيل</div>
+      <div class="artist" id="artist">شغّل الراديو أو الموسيقى من أي تطبيق</div>
+      <div class="controls"><button id="prev">⏮</button><button class="play" id="play">▶</button><button id="nextT">⏭</button></div>
+    </div>
+  </div>
+</div>
+
+<script src="common.js"></script>
+<script>
+(function(){
+  function $(id){return document.getElementById(id);}
+  var n=Sahra.num;
+  var DIRS=['شمال','شمال شرق','شرق','جنوب شرق','جنوب','جنوب غرب','غرب','شمال غرب'];
+  var rot=0,last=null;
+  window.onSahraData=function(d){
+    $('speed').textContent=Math.round(Sahra.speed(d));
+    $('unit').textContent=Sahra.unit(d);
+    $('fuel').textContent=n(d.fuel,0,'٪');
+    $('range').textContent=Sahra.int(d.range);
+    $('ext').textContent=n(d.outsideTemp,0,'°');
+    $('in').textContent=n(d.insideTemp,0,'°');
+    $('alt').textContent=n(d.altitude,0,' م');
+    $('src').textContent=d.demo?'تجريبي':'';
+    if(d.compass!=null){
+      $('dir').textContent=DIRS[Math.round(d.compass/45)%8];
+      if(last!==null)rot+=((d.compass-last+540)%360)-180; else rot=d.compass;
+      last=d.compass; $('needle').style.transform='rotate('+rot+'deg)';
+    }
+    var m=d.media||{};
+    $('music').className='card music'+(m.title?'':' empty');
+    $('title').textContent=m.title||'لا يوجد تشغيل';
+    $('artist').textContent=m.title?(m.artist||''):'شغّل الراديو أو الموسيقى من أي تطبيق';
+    var art=$('art');
+    if(m.art){art.style.backgroundImage='url("'+m.art+'")';art.textContent='';}else{art.style.backgroundImage='';art.textContent='♪';}
+    $('play').textContent=m.playing?'⏸':'▶';
+  };
+  $('close').onclick=function(){Sahra.host('close');};
+  $('next').onclick=function(){Sahra.host('nextTheme');};
+  $('prev').onclick=function(){Sahra.host('media','prev');};
+  $('play').onclick=function(){Sahra.host('media','toggle');};
+  $('nextT').onclick=function(){Sahra.host('media','next');};
+  function tick(){
+    var t=new Date();$('time').textContent=Sahra.clock();
+    try{$('date').textContent=t.toLocaleDateString('ar-SA',{weekday:'long',day:'numeric',month:'long'});}catch(e){$('date').textContent=t.toDateString();}
+  }
+  tick();setInterval(tick,10000);
+})();
+</script>
+</body>
+</html>

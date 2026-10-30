@@ -53,6 +53,7 @@ class HomeActivity : Activity() {
         render()
         MediaTracker.addListener(mediaListener)
         OverlayService.sync(this)
+        ClusterService.sync(this)
         if (!autoSplitDone && prefs.autoSplit) {
             autoSplitDone = true
             window.decorView.postDelayed({ split() }, 1200)
@@ -86,18 +87,24 @@ class HomeActivity : Activity() {
             Toast.makeText(this, "اختر تطبيقي الملاحة والموسيقى أولًا (اضغط مطولًا على اللوحة)", Toast.LENGTH_LONG).show()
             return
         }
-        AppLauncher.applyPreset(this, p, prefs.windowMode)
+        AppLauncher.applyPreset(this, effective(), prefs.windowMode)
+    }
+
+    /** الإعداد المسبق كما يُطبَّق: بلا لوحة جانبية إن كانت اللوحة مطفأة. */
+    private fun effective(): Preset {
+        val p = prefs.preset
+        return if (!prefs.showPanel && !prefs.floatingPanel) p.copy(side = PanelSide.NONE) else p
     }
 
     private fun build(): View {
-        val p = prefs.preset
+        val p = effective()
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             layoutDirection = View.LAYOUT_DIRECTION_LTR
             background = AsphaltDrawable(this@HomeActivity)
         }
         val size = AppLauncher.screenSize(this)
-        val showPanel = p.side != PanelSide.NONE && !prefs.floatingPanel
+        val showPanel = prefs.showPanel && p.side != PanelSide.NONE && !prefs.floatingPanel
         val panel = if (showPanel) SplitInfoView(this, p.page) { page -> prefs.updatePreset { it.copy(page = page) } }.apply {
             layoutDirection = View.LAYOUT_DIRECTION_RTL
         } else null
@@ -112,37 +119,36 @@ class HomeActivity : Activity() {
 
     private fun kerb() = View(this).apply { setBackgroundColor(Palette.kerb) }
 
+    /**
+     * الشاشة الرئيسية في قسمين فقط: شاشة العدادات (معاينة الثيم واختياره) يمينًا،
+     * وتقسيم الشاشة (لوحتا المخرجين وزر التقسيم) يسارًا. كل ما عدا ذلك في الإعدادات.
+     */
     private fun buildMain(p: Preset): View {
         val col = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             layoutDirection = View.LAYOUT_DIRECTION_RTL
-            setPadding(dp(16), dp(12), dp(16), dp(12))
+            setPadding(dp(18), dp(14), dp(18), dp(14))
         }
 
-        // المسارات: كل إعداد مسبق مسار، والمسار الحالي مضاء بالأخضر
-        // تظهر الإعدادات المستخدمة فقط، ومسار «+» يفتح أول إعداد فارغ
+        // المسارات تظهر فقط إن استُخدم أكثر من إعداد مسبق
         val all = prefs.presets()
         val used = all.indices.filter { i -> i == prefs.presetIndex || all[i].navApp.isNotEmpty() || all[i].musicApp.isNotEmpty() }
-        val free = all.indices.firstOrNull { it !in used }
-        val lanes = used.map { LaneStrip.Lane(it, all[it].name) } + listOfNotNull(free?.let { LaneStrip.Lane(it, "إعداد جديد", plus = true) })
-        col.addView(LaneStrip(this, lanes, prefs.presetIndex, nightIndex()) { lane ->
-            val i = lane.index
-            prefs.presetIndex = i
-            if (lane.plus) {
-                startActivity(Intent(this, SettingsActivity::class.java))
-                return@LaneStrip
-            }
-            if (prefs.autoDayNight) {
-                prefs.autoDayNight = false
-                Toast.makeText(this, "أُوقف التبديل التلقائي بين النهار والليل", Toast.LENGTH_SHORT).show()
-            }
-            render()
-            OverlayService.sync(this)
-        }, LinearLayout.LayoutParams(MATCH_PARENT, dp(64)))
+        if (used.size > 1) {
+            val lanes = used.map { LaneStrip.Lane(it, all[it].name) }
+            col.addView(LaneStrip(this, lanes, prefs.presetIndex, nightIndex()) { lane ->
+                prefs.presetIndex = lane.index
+                if (prefs.autoDayNight) {
+                    prefs.autoDayNight = false
+                    Toast.makeText(this, "أُوقف التبديل التلقائي بين النهار والليل", Toast.LENGTH_SHORT).show()
+                }
+                render()
+                OverlayService.sync(this)
+            }, LinearLayout.LayoutParams(MATCH_PARENT, dp(64)).apply { bottomMargin = dp(10) })
+        }
 
         // تنبيهات: الصلاحيات الناقصة، ثم التذكيرات المستحقة
-        if (!Settings.canDrawOverlays(this) || !MediaTracker.hasAccess(this)) {
-            col.addView(banner(R.drawable.ic_settings, "أكمل الصلاحيات من الإعدادات حتى تعمل كل الخصائص", "", Palette.blue, Palette.white) {
+        if (!Settings.canDrawOverlays(this)) {
+            col.addView(banner(R.drawable.ic_settings, "اسمح بالعرض فوق التطبيقات ليظهر الثيم على شاشة العدادات", "الإعدادات", Palette.blue, Palette.white) {
                 startActivity(Intent(this, SettingsActivity::class.java))
             }, bannerLp())
         }
@@ -153,27 +159,117 @@ class HomeActivity : Activity() {
             }, bannerLp())
         }
 
-        // لوحتا المخرجين بنسبة التقسيم، بترتيبهما الفعلي على الشاشة (يسار ثم يمين)
+        // القسمان: العدادات يمينًا (بداية القراءة) والتقسيم يسارًا
+        val zones = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+        zones.addView(clusterZone(), LinearLayout.LayoutParams(0, MATCH_PARENT, 1.15f).apply { marginEnd = dp(18) })
+        zones.addView(splitZone(p), LinearLayout.LayoutParams(0, MATCH_PARENT, 1f))
+        col.addView(zones, LinearLayout.LayoutParams(MATCH_PARENT, 0, 1f).apply { topMargin = dp(10) })
+        return col
+    }
+
+    /** لسان عنوان فوق اللوحة، مثل لسان رقم المخرج. */
+    private fun zoneTab(res: Int, title: String, color: Int): View {
+        val tab = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            background = android.graphics.drawable.GradientDrawable().apply {
+                setColor(color)
+                val r = dp(10f)
+                cornerRadii = floatArrayOf(r, r, r, r, 0f, 0f, 0f, 0f)
+            }
+            setPadding(dp(18), dp(9), dp(18), dp(9))
+        }
+        tab.addView(icon(res, 24), LinearLayout.LayoutParams(dp(24), dp(24)).apply { marginEnd = dp(10) })
+        tab.addView(label(title, 18f, Palette.white, true))
+        val row = LinearLayout(this).apply { setPadding(dp(24), 0, dp(24), 0) }
+        row.addView(tab)
+        return row
+    }
+
+    // ---------------- شاشة العدادات ----------------
+
+    private var preview: ThemeView? = null
+
+    private fun clusterZone(): View {
+        val col = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        col.addView(zoneTab(R.drawable.ic_speed, "شاشة العدادات", Palette.green))
+        val board = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            background = sign(Palette.green)
+            val pd = dp(20)
+            setPadding(pd, pd, pd, pd)
+        }
+        // معاينة حية للثيم بنسبة شاشة العدادات (1920×800)
+        val frame = AspectFrame(this, 2.4f).apply { background = rounded(android.graphics.Color.BLACK, dp(8f)); clipToOutline = true }
+        val v = ThemeView(this, interactive = false)
+        frame.addView(v, FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT))
+        v.load(prefs.clusterTheme)
+        preview = v
+        board.addView(frame, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT))
+
+        // الثيمات: لوحات صغيرة، المختار أخضر بإطار
+        val grid = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        ClusterThemes.all.chunked(3).forEach { rowThemes ->
+            val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+            rowThemes.forEachIndexed { i, t ->
+                val on = t.id == prefs.clusterTheme
+                val chip = LinearLayout(this).apply {
+                    orientation = LinearLayout.VERTICAL
+                    gravity = Gravity.CENTER
+                    background = if (on) smallSign(Palette.green) else rounded(Palette.gantry, dp(10f), dp(2), 0x55F4F5F0)
+                    setOnClickListener {
+                        prefs.clusterTheme = t.id
+                        ClusterService.reload(this@HomeActivity)
+                        render()
+                    }
+                }.also { it.pressable(dp(10f)) }
+                chip.addView(label(t.name, 18f, Palette.white, true))
+                chip.addView(label(t.note, 13f, if (on) Palette.legendDim else Palette.muted).apply { setPadding(0, dp(3), 0, 0) })
+                row.addView(chip, LinearLayout.LayoutParams(0, dp(72), 1f).apply { if (i > 0) marginStart = dp(8) })
+            }
+            grid.addView(row, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT).apply { topMargin = dp(8) })
+        }
+        board.addView(grid, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT).apply { topMargin = dp(6) })
+        board.addView(View(this), LinearLayout.LayoutParams(1, 0, 1f))
+
+        // تشغيل/إيقاف العرض على العدادات، وحالته
+        val on = prefs.clusterOn
+        val foot = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+        val toggle = signButton(if (on) R.drawable.ic_check else R.drawable.ic_speed, if (on) "يعرض على العدادات" else "اعرض على العدادات",
+            if (on) Palette.green else Palette.blue) {
+            prefs.clusterOn = !prefs.clusterOn
+            ClusterService.sync(this)
+            window.decorView.postDelayed({ render() }, 400)
+        }
+        foot.addView(toggle, LinearLayout.LayoutParams(WRAP_CONTENT, dp(64)))
+        val st = when {
+            !on -> "متوقف"
+            !Settings.canDrawOverlays(this) -> "يحتاج صلاحية العرض فوق التطبيقات"
+            else -> ClusterService.status.ifEmpty { "جارٍ التشغيل…" }
+        }
+        foot.addView(label(st, 14f, Palette.legendDim).apply { setPadding(dp(14), 0, 0, 0); maxLines = 2 },
+            LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f))
+        board.addView(foot, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT).apply { topMargin = dp(12) })
+        col.addView(board, LinearLayout.LayoutParams(MATCH_PARENT, 0, 1f))
+        return col
+    }
+
+    // ---------------- تقسيم الشاشة ----------------
+
+    private fun splitZone(p: Preset): View {
+        val col = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         val exits = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             layoutDirection = View.LAYOUT_DIRECTION_LTR
         }
-        val both = p.navApp.isNotEmpty() && p.musicApp.isNotEmpty()
-        val navW = if (!both) 0.5f else p.ratio
-        exits.addView(exit(true, p.navApp), LinearLayout.LayoutParams(0, MATCH_PARENT, navW).apply { marginEnd = dp(14) })
-        exits.addView(exit(false, p.musicApp), LinearLayout.LayoutParams(0, MATCH_PARENT, 1f - navW))
-        col.addView(exits, LinearLayout.LayoutParams(MATCH_PARENT, 0, 1f).apply { topMargin = dp(10); bottomMargin = dp(14) })
+        exits.addView(exit(true, p.navApp), LinearLayout.LayoutParams(0, MATCH_PARENT, 1f).apply { marginEnd = dp(12) })
+        exits.addView(exit(false, p.musicApp), LinearLayout.LayoutParams(0, MATCH_PARENT, 1f))
+        col.addView(exits, LinearLayout.LayoutParams(MATCH_PARENT, 0, 1f).apply { bottomMargin = dp(14) })
 
-        // صف لوحات الأوامر
         val dock = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.TOP }
         dock.addView(signButton(R.drawable.ic_split, "تقسيم الشاشة", Palette.green) { split() }.apply { minimumHeight = dp(84) },
-            LinearLayout.LayoutParams(0, dp(84), 1.6f).apply { marginEnd = dp(12) })
+            LinearLayout.LayoutParams(0, dp(84), 1.8f).apply { marginEnd = dp(12) })
         dockItem(dock, R.drawable.ic_apps, "التطبيقات") { startActivity(Intent(this, AppsActivity::class.java)) }
-        dockItem(dock, R.drawable.ic_swap, "تبديل") {
-            prefs.updatePreset { it.copy(navApp = it.musicApp, musicApp = it.navApp) }
-            render()
-        }
-        dockItem(dock, R.drawable.ic_log, "السجل") { startActivity(Intent(this, LogActivity::class.java)) }
         dockItem(dock, R.drawable.ic_settings, "الإعدادات") { startActivity(Intent(this, SettingsActivity::class.java)) }
         col.addView(dock, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT))
         return col
@@ -228,14 +324,15 @@ class HomeActivity : Activity() {
             val pd = dp(22)
             setPadding(pd + dp(8), pd + dp(4), pd + dp(8), pd)
         }
-        val app = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+        // اللوحة ضيقة الآن (نصف قسم التقسيم): الرمز فوق الاسم
+        val app = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.START }
         val plate = FrameLayout(this).apply { background = rounded(Palette.white, dp(20f)) }
         val appIcon = AppLauncher.icon(this, pkg)
         if (appIcon != null) plate.addView(ImageView(this).apply { setImageDrawable(appIcon) }, FrameLayout.LayoutParams(dp(66), dp(66), Gravity.CENTER))
         else plate.addView(icon(R.drawable.ic_plus, 40, color), FrameLayout.LayoutParams(dp(40), dp(40), Gravity.CENTER))
-        app.addView(plate, LinearLayout.LayoutParams(dp(92), dp(92)).apply { marginEnd = dp(20) })
+        app.addView(plate, LinearLayout.LayoutParams(dp(88), dp(88)).apply { bottomMargin = dp(14) })
         val names = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-        val name = label(if (pkg.isEmpty()) "اختر تطبيق $title" else AppLauncher.label(this, pkg), 30f, Palette.white, true).apply {
+        val name = label(if (pkg.isEmpty()) "اختر تطبيق $title" else AppLauncher.label(this, pkg), 24f, Palette.white, true).apply {
             maxLines = 1; ellipsize = TextUtils.TruncateAt.END
         }
         names.addView(name)
@@ -243,7 +340,7 @@ class HomeActivity : Activity() {
             maxLines = 1; ellipsize = TextUtils.TruncateAt.END; setPadding(0, dp(8), 0, 0)
         }
         names.addView(sub)
-        app.addView(names, LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f))
+        app.addView(names, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT))
         board.addView(app)
         board.addView(View(this), LinearLayout.LayoutParams(1, 0, 1f))
 
@@ -266,7 +363,7 @@ class HomeActivity : Activity() {
         board.setOnClickListener {
             if (pkg.isEmpty()) pick(title, nav) else {
                 val size = AppLauncher.screenSize(this)
-                val l = AppLauncher.layoutFor(prefs.preset, size.x, size.y, dp(4))
+                val l = AppLauncher.layoutFor(effective(), size.x, size.y, dp(4))
                 AppLauncher.launch(this, pkg, if (nav) l.nav else l.music, prefs.windowMode)
             }
         }
@@ -279,13 +376,13 @@ class HomeActivity : Activity() {
     private fun navOnLeft() = true
 
     private fun roundControl(res: Int, primary: Boolean, onClick: () -> Unit): View {
-        val size = dp(if (primary) 80 else 72)
+        val size = dp(if (primary) 72 else 64)
         val f = FrameLayout(this).apply {
             background = if (primary) rounded(Palette.white, size / 2f) else rounded(0, size / 2f, dp(3), Palette.white)
             setOnClickListener { onClick() }
         }.also { it.pressable(size / 2f) }
         f.addView(icon(res, 32, if (primary) Palette.blue else Palette.white), FrameLayout.LayoutParams(dp(32), dp(32), Gravity.CENTER))
-        f.layoutParams = LinearLayout.LayoutParams(size, size).apply { setMargins(dp(7), 0, dp(7), 0) }
+        f.layoutParams = LinearLayout.LayoutParams(size, size).apply { setMargins(dp(4), 0, dp(4), 0) }
         return f
     }
 
@@ -414,5 +511,14 @@ class LaneStrip(
             if (lane.plus || lane.index != selected) onPick(lane)
         }
         return true
+    }
+}
+
+/** إطار بنسبة عرض/ارتفاع ثابتة (لمعاينة شاشة العدادات). */
+class AspectFrame(context: Context, private val ratio: Float) : FrameLayout(context) {
+    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+        val w = MeasureSpec.getSize(widthMeasureSpec)
+        val h = (w / ratio).toInt()
+        super.onMeasure(MeasureSpec.makeMeasureSpec(w, MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(h, MeasureSpec.EXACTLY))
     }
 }

@@ -67,7 +67,7 @@ class Prefs(context: Context) {
 
     /** الكرة العائمة (قائمة سريعة وعداد سرعة). */
     var ball: Boolean
-        get() = sp.getBoolean("ball", true)
+        get() = sp.getBoolean("ball", false)
         set(v) = put("ball", v)
 
     var ballX: Int
@@ -88,7 +88,36 @@ class Prefs(context: Context) {
         get() = sp.getInt("window_mode", AppLauncher.MODE_FREEFORM)
         set(v) = put("window_mode", v)
 
-    /** 0 = عقارب، 1 = رقمية */
+    // ---------- شاشة العدادات ----------
+
+    /** عرض الثيم على شاشة العدادات خلف المقود. */
+    var clusterOn: Boolean
+        get() = sp.getBoolean("cluster_on", true)
+        set(v) = put("cluster_on", v)
+
+    var clusterTheme: String
+        get() = sp.getString("cluster_theme", "dune") ?: "dune"
+        set(v) = put("cluster_theme", v)
+
+    /** لون الإبرة والعلامات، فارغ = لون الثيم الأصلي. */
+    var clusterAccent: String
+        get() = sp.getString("cluster_accent", "") ?: ""
+        set(v) = put("cluster_accent", v)
+
+    var speedMax: Int
+        get() = sp.getInt("speed_max", 220)
+        set(v) = put("speed_max", v)
+
+    var rpmMax: Int
+        get() = sp.getInt("rpm_max", 7000)
+        set(v) = put("rpm_max", v)
+
+    /** لوحة المعلومات الجانبية في الشاشة الرئيسية (اختيارية). */
+    var showPanel: Boolean
+        get() = sp.getBoolean("show_panel", false)
+        set(v) = put("show_panel", v)
+
+    /** 0 = أرقام، 1 = عقارب */
     var clockStyle: Int
         get() = sp.getInt("clock_style", 0)
         set(v) = put("clock_style", v)

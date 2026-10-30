@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>كثبان</title>
+<style>
+  :root{
+    --bg:#0f0c09; --bg2:#1c150f; --accent:#e8a24a; --ink:#f4e3c3; --dim:#8e7b62; --line:#3a2e22; --red:#e0573a;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{background:var(--bg)}
+  html,body{width:100%;height:100%;overflow:hidden;color:var(--ink);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans Arabic",sans-serif;-webkit-user-select:none;user-select:none}
+  body{background:radial-gradient(120% 90% at 50% 120%,#3b2614 0%,var(--bg) 60%)}
+  .stage{position:absolute;inset:0;display:grid;grid-template-columns:1fr minmax(0,.8fr) 1fr;align-items:center;padding:3vh 3vw;gap:2vw;direction:ltr}
+  .gauge{position:relative;width:100%;aspect-ratio:1/1;max-height:88vh;justify-self:center;transform:scale(var(--g-scale,1));transition:transform .3s}
+  .stage{transform:translateX(var(--g-shift,0));transition:transform .3s}
+  html.swap .stage{direction:rtl}
+  html.swap .center{direction:rtl}
+  .gauge svg{width:100%;height:100%;overflow:visible}
+  .readout{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;padding-top:62%}
+  .big{color:var(--num,var(--ink));font-size:min(5.5vw,11vh);font-weight:800;line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+  .unit{font-size:min(1.4vw,2.6vh);color:var(--dim);margin-top:.6vh;letter-spacing:.1em}
+  .center{display:flex;flex-direction:column;gap:2.2vh;align-items:stretch;direction:rtl}
+  .gear{direction:ltr;display:flex;justify-content:center;gap:1.2vw;font-size:min(2.8vw,5.5vh);font-weight:800;color:var(--line)}
+  .gear span.on{color:var(--accent);text-shadow:0 0 18px var(--accent)}
+  .tiles{display:grid;grid-template-columns:1fr 1fr;gap:1vh 1vw}
+  .tile{background:linear-gradient(180deg,var(--bg2),rgba(28,21,15,.4));border:1px solid var(--panel-c,var(--line));border-radius:1.2vh;padding:1.2vh 1vw}
+  .tile b{color:var(--num,var(--ink));display:block;font-size:min(2vw,4vh);font-weight:700;font-variant-numeric:tabular-nums}
+  .tile small{color:var(--dim);font-size:min(1.05vw,2vh)}
+  .fuel{display:flex;flex-direction:column;gap:.8vh}
+  .bar{height:1.1vh;border-radius:1vh;background:var(--line);overflow:hidden;direction:ltr}
+  .bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .6s}
+  .bar i.low{background:var(--red)}
+  .row{display:flex;justify-content:space-between;color:var(--dim);font-size:min(1.1vw,2.1vh)}
+  .media{display:flex;gap:1vw;align-items:center;background:var(--bg2);border:1px solid var(--panel-c,var(--line));border-radius:1.4vh;padding:1vh 1vw;min-height:9vh}
+  .media img{width:7vh;height:7vh;border-radius:.8vh;object-fit:cover;background:var(--line)}
+  .media .t{flex:1;min-width:0}
+  .media .t b{display:block;font-size:min(1.3vw,2.5vh);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .media .t small{color:var(--dim);font-size:min(1.05vw,2vh);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+  .media button{background:none;border:0;color:var(--ink);font-size:min(2vw,3.8vh);width:5vh;height:5vh;border-radius:50%}
+  .media button:active{background:var(--line)}
+  .media.empty{opacity:.35}
+  .chrome{position:absolute;top:1.6vh;left:1.4vw;right:1.4vw;display:flex;justify-content:space-between;align-items:center;color:var(--dim);font-size:min(1.1vw,2.1vh);direction:rtl;z-index:5}
+  .chrome .btns{display:flex;gap:.8vw}
+  .chrome button{background:rgba(28,21,15,.8);border:1px solid var(--line);color:var(--ink);border-radius:50%;width:5.5vh;height:5.5vh;font-size:2.6vh}
+  .demo{color:var(--accent)}
+
+  /* نصف الشاشة: عداد السرعة مع اللوحة الوسطى */
+  @media (max-aspect-ratio:16/9){
+    .stage{grid-template-columns:1fr 1fr}
+    #rpmGauge{display:none}
+    .big{font-size:min(9vw,11vh)} .unit{font-size:min(2.4vw,2.6vh)}
+    .tile b{font-size:min(3.6vw,4vh)} .tile small,.row,.chrome{font-size:min(2vw,2.1vh)}
+    .gear{font-size:min(5vw,5.5vh)} .media .t b{font-size:min(2.4vw,2.5vh)} .media .t small{font-size:min(2vw,2vh)}
+  }
+  /* ثلث الشاشة: عمود واحد */
+  @media (max-aspect-ratio:1/1){
+    .stage{grid-template-columns:1fr;grid-template-rows:auto auto;align-content:center;padding-top:8vh}
+    .gauge{max-height:46vh;width:auto;height:46vh}
+    .tiles,.media{display:none}
+    .big{font-size:9vh} .unit,.row,.chrome{font-size:2.2vh} .gear{font-size:5vh}
+  }
+</style>
+</head>
+<body>
+<div class="chrome">
+  <div><span id="clock">--:--</span> · <span id="ext">--°</span> <span id="src" class="demo"></span></div>
+  <div class="btns">
+    <button id="next" aria-label="الثيم التالي">⟳</button>
+    <button id="close" aria-label="إغلاق">✕</button>
+  </div>
+</div>
+
+<div class="stage">
+  <div class="gauge" id="speedGauge"></div>
+
+  <div class="center">
+    <div class="gear" id="gear"><span>P</span><span>R</span><span>N</span><span>D</span></div>
+    <div class="fuel">
+      <div class="row"><span>الوقود</span><span id="fuelTxt">—</span></div>
+      <div class="bar"><i id="fuelBar"></i></div>
+      <div class="row"><span>المدى المتبقي</span><span id="range">—</span></div>
+    </div>
+    <div class="tiles">
+      <div class="tile"><small>حرارة المحرك</small><b id="coolant">—</b></div>
+      <div class="tile"><small>البطارية</small><b id="batt">—</b></div>
+      <div class="tile"><small>داخل السيارة</small><b id="inside">—</b></div>
+      <div class="tile"><small>العداد الكلي</small><b id="odo">—</b></div>
+    </div>
+    <div class="media empty" id="media">
+      <img id="art" alt="">
+      <div class="t"><b id="mTitle">لا يوجد تشغيل</b><small id="mArtist"></small></div>
+      <button id="prev">⏮</button><button id="play">⏯</button><button id="nextT">⏭</button>
+    </div>
+  </div>
+
+  <div class="gauge" id="rpmGauge"></div>
+</div>
+
+<script src="common.js"></script>
+<script>
+(function(){
+  var NS='http://www.w3.org/2000/svg';
+  var START=225, SWEEP=270; // قوس مع عقارب الساعة من الأسفل يسارًا إلى الأسفل يمينًا
+
+  function polar(cx,cy,r,deg){var a=(deg-90)*Math.PI/180;return [cx+r*Math.cos(a),cy+r*Math.sin(a)];}
+  function arc(cx,cy,r,a0,a1){
+    var p0=polar(cx,cy,r,a0),p1=polar(cx,cy,r,a1),large=(a1-a0)>180?1:0;
+    return 'M'+p0[0].toFixed(2)+' '+p0[1].toFixed(2)+' A'+r+' '+r+' 0 '+large+' 1 '+p1[0].toFixed(2)+' '+p1[1].toFixed(2);
+  }
+  function el(tag,attrs,parent){var e=document.createElementNS(NS,tag);for(var k in attrs)e.setAttribute(k,attrs[k]);if(parent)parent.appendChild(e);return e;}
+
+  function makeGauge(host,opt){
+    host.innerHTML='';
+    var svg=el('svg',{viewBox:'0 0 200 200'});
+    var track=el('path',{d:arc(100,100,86,START,START+SWEEP),fill:'none',stroke:'#2a2119','stroke-width':'9','stroke-linecap':'round'},svg);
+    if(opt.red){el('path',{d:arc(100,100,86,START+SWEEP*opt.red,START+SWEEP),fill:'none',stroke:'#e0573a','stroke-width':'9','stroke-linecap':'round',opacity:'.55'},svg);}
+    var val=el('path',{d:arc(100,100,86,START,START+0.1),fill:'none',stroke:'var(--accent)','stroke-width':'9','stroke-linecap':'round'},svg);
+    val.style.stroke='var(--accent)';
+    for(var i=0;i<=opt.major;i++){
+      var a=START+SWEEP*i/opt.major,o=polar(100,100,74,a),n=polar(100,100,66,a),t=polar(100,100,55,a);
+      el('line',{x1:o[0],y1:o[1],x2:n[0],y2:n[1],stroke:'#8e7b62','stroke-width':'1.6'},svg).style.stroke='var(--tick,#8e7b62)';
+      var tx=el('text',{x:t[0],y:t[1]+3,'text-anchor':'middle',fill:'#8e7b62','font-size':'9','font-family':'system-ui,sans-serif'},svg);tx.style.fill='var(--num,#8e7b62)';
+      tx.textContent=opt.label(i);
+      if(i<opt.major){for(var j=1;j<opt.minor;j++){var b=a+SWEEP/opt.major*j/opt.minor,p=polar(100,100,74,b),q=polar(100,100,70,b);
+        el('line',{x1:p[0],y1:p[1],x2:q[0],y2:q[1],stroke:'#4a3c2d','stroke-width':'1',opacity:'.6'},svg).style.stroke='var(--tick,#4a3c2d)';}}
+    }
+    var needle=el('g',{},svg);
+    el('path',{d:Sahra.needlePath(opt.needle),fill:'#f4e3c3'},needle).style.fill='var(--needle,#f4e3c3)';
+    var hub=el('circle',{cx:100,cy:100,r:6,fill:'#1c150f','stroke-width':'2'},svg);
+    hub.style.stroke='var(--accent)';
+    host.appendChild(svg);
+    var ro=document.createElement('div');ro.className='readout';
+    ro.innerHTML='<div class="big">0</div><div class="unit">'+opt.unit+'</div>';
+    host.appendChild(ro);
+    var big=ro.querySelector('.big'),cur=0,target=0,alive=true;
+    function draw(){
+      if(!alive)return;
+      cur+=(target-cur)*0.18;
+      var f=Math.max(0,Math.min(1,cur/opt.max)),a=START+SWEEP*f;
+      val.setAttribute('d',arc(100,100,86,START,Math.max(START+0.1,a)));
+      needle.setAttribute('transform','rotate('+a+' 100 100)');
+      big.textContent=opt.fmt(cur);
+      requestAnimationFrame(draw);
+    }
+    requestAnimationFrame(draw);
+    return {set:function(v){target=isFinite(v)?v:0;},stop:function(){alive=false;}};
+  }
+
+  // تقسيم العداد لعدد مناسب من العلامات حسب أقصى قيمة
+  function steps(max){var s=[10,20,25,40,50];for(var i=0;i<s.length;i++)if(max/s[i]<=12)return s[i];return 50;}
+
+  var speed=null,rpm=null,cfg='';
+  function build(d){
+    var sm=Sahra.speedMax(d),rm=Sahra.rpmMax(d),u=Sahra.unit(d),nd=Sahra.design(d).needleStyle||'classic',key=sm+'|'+rm+'|'+u+'|'+nd;
+    if(key===cfg)return; cfg=key;
+    if(speed)speed.stop(); if(rpm)rpm.stop();
+    var st=steps(sm),rk=Math.round(rm/1000);
+    speed=makeGauge(document.getElementById('speedGauge'),{needle:nd,max:sm,major:Math.round(sm/st),minor:4,unit:u,label:function(i){return i*st;},fmt:function(v){return Math.round(v);}});
+    rpm=makeGauge(document.getElementById('rpmGauge'),{needle:nd,max:rk*1000,major:rk,minor:5,red:(rk-1.5)/rk,unit:'×1000 دورة',label:function(i){return i;},fmt:function(v){return (v/1000).toFixed(1);}});
+  }
+
+  function $(id){return document.getElementById(id);}
+  var n=Sahra.num;
+
+  window.onSahraData=function(d){
+    build(d);
+    speed.set(Sahra.speed(d)); rpm.set(d.rpm);
+    var gs=$('gear').children;for(var i=0;i<gs.length;i++)gs[i].className=(gs[i].textContent===d.gear)?'on':'';
+    $('fuelTxt').textContent=n(d.fuel,0,'٪');
+    var fb=$('fuelBar');fb.style.width=(d.fuel==null?0:d.fuel)+'%';fb.className=(d.fuel!=null&&d.fuel<15)?'low':'';
+    $('range').textContent=d.range==null?'—':Sahra.int(d.range)+' كم';
+    $('coolant').textContent=n(d.coolant,0,'°');
+    $('batt').textContent=n(d.batteryVoltage,1,' V');
+    $('inside').textContent=n(d.insideTemp,0,'°');
+    $('odo').textContent=Sahra.int(d.odometer);
+    $('ext').textContent=n(d.outsideTemp,0,'°');
+    $('src').textContent=d.demo?'· تجريبي':'';
+    var m=d.media||{};
+    $('media').className='media'+(m.title?'':' empty');
+    $('mTitle').textContent=m.title||'لا يوجد تشغيل';
+    $('mArtist').textContent=m.artist||'';
+    if(m.art){$('art').src=m.art;$('art').style.visibility='visible';}else{$('art').style.visibility='hidden';}
+    $('play').textContent=m.playing?'⏸':'▶';
+  };
+
+  $('close').onclick=function(){Sahra.host('close');};
+  $('next').onclick=function(){Sahra.host('nextTheme');};
+  $('prev').onclick=function(){Sahra.host('media','prev');};
+  $('play').onclick=function(){Sahra.host('media','toggle');};
+  $('nextT').onclick=function(){Sahra.host('media','next');};
+
+  function tick(){$('clock').textContent=Sahra.clock();}
+  tick();setInterval(tick,10000);
+})();
+</script>
+</body>
+</html>

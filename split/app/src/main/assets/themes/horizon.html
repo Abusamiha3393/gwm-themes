@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>أفق</title>
+<style>
+  :root{--bg:#070a12;--ink:#eef2fb;--dim:#7f8aa3;--line:#1c2436;--accent:#f0a35a}
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{background:var(--bg)}
+  html,body{width:100%;height:100%;overflow:hidden;color:var(--ink);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans Arabic",sans-serif;-webkit-user-select:none;user-select:none}
+  body{background:linear-gradient(180deg,#0b1020 0%,#141a2e 45%,#2a1d24 78%,#3b2420 100%)}
+  /* شمس الغروب خلف القوس */
+  .glow{position:absolute;left:0;right:0;bottom:-38vh;height:70vh;border-radius:50%;
+    background:radial-gradient(closest-side,rgba(240,163,90,.38),rgba(240,163,90,0));pointer-events:none}
+  .chrome{position:absolute;top:1.6vh;left:1.4vw;right:1.4vw;display:flex;justify-content:space-between;align-items:center;color:var(--dim);font-size:min(1.2vw,2.3vh);z-index:5}
+  .chrome button{background:rgba(20,26,44,.8);border:1px solid var(--line);color:var(--ink);border-radius:50%;width:5.5vh;height:5.5vh;font-size:2.6vh;margin-inline-start:.6vw}
+  .arcwrap{position:absolute;left:2vw;right:2vw;top:9vh;height:62vh;transform:translateX(var(--g-shift,0)) scale(var(--g-scale,1));transform-origin:50% 60%;transition:transform .3s}
+  .arcwrap svg{width:100%;height:100%;overflow:visible}
+  .readout{position:absolute;left:0;right:0;top:30vh;text-align:center;pointer-events:none}
+  .readout .n{font-size:min(11vw,24vh);font-weight:300;line-height:1;font-variant-numeric:tabular-nums;color:var(--num,var(--ink));letter-spacing:-.03em}
+  .readout .u{color:var(--dim);font-size:min(1.4vw,2.7vh);letter-spacing:.2em;margin-top:.6vh}
+  .readout .g{display:inline-flex;gap:1.2vw;margin-top:1.4vh;font-weight:800;font-size:min(1.8vw,3.4vh);color:#39425a;direction:ltr}
+  .readout .g span.on{color:var(--accent)}
+  .bottom{position:absolute;left:4vw;right:4vw;bottom:3vh;display:grid;grid-template-columns:repeat(5,1fr);gap:1.4vw}
+  .kv{border-top:1px solid var(--panel-c,var(--line));padding-top:1.2vh}
+  .kv small{display:block;color:var(--dim);font-size:min(1vw,1.9vh)}
+  .kv b{font-size:min(2.1vw,4vh);font-weight:600;font-variant-numeric:tabular-nums;color:var(--num,var(--ink))}
+
+  @media (max-aspect-ratio:16/9){
+    .bottom{grid-template-columns:repeat(3,1fr)} .kv:nth-child(n+4){display:none}
+    .readout .n{font-size:min(20vw,22vh)} .readout .u,.chrome{font-size:min(2.4vw,2.4vh)} .readout .g{font-size:min(3.6vw,3.4vh)}
+    .kv small{font-size:min(2vw,2vh)} .kv b{font-size:min(4.2vw,4vh)}
+  }
+  @media (max-aspect-ratio:1/1){
+    .arcwrap{top:12vh;height:44vh} .readout{top:30vh}
+    .bottom{grid-template-columns:1fr 1fr} .kv:nth-child(n+3){display:none}
+  }
+</style>
+</head>
+<body>
+<div class="glow"></div>
+<div class="chrome">
+  <div><span id="clock">--:--</span> · <span id="ext">--°</span> <span id="src" style="color:var(--accent)"></span></div>
+  <div><button id="next" aria-label="الثيم التالي">⟳</button><button id="close" aria-label="إغلاق">✕</button></div>
+</div>
+<div class="arcwrap"><svg id="arc" viewBox="-170 -50 1340 540" preserveAspectRatio="xMidYMid meet"></svg></div>
+<div class="readout">
+  <div class="n" id="speed">0</div>
+  <div class="u" id="unit">كم/س</div>
+  <div class="g" id="gear"><span>P</span><span>R</span><span>N</span><span>D</span></div>
+</div>
+<div class="bottom">
+  <div class="kv"><small>الوقود</small><b id="fuel">—</b></div>
+  <div class="kv"><small>المدى</small><b id="range">—</b></div>
+  <div class="kv"><small>حرارة المحرك</small><b id="cool">—</b></div>
+  <div class="kv"><small>الدورات</small><b id="rpmN">—</b></div>
+  <div class="kv"><small>البطارية</small><b id="batt">—</b></div>
+</div>
+
+<script src="common.js"></script>
+<script>
+(function(){
+  var NS='http://www.w3.org/2000/svg';
+  // قوس عريض: مركزه أسفل الشاشة، يمتد من 200° إلى 340° (من اليسار إلى اليمين)
+  var CX=500,CY=660,R=600,A0=200,A1=340;
+  function pt(r,deg){var a=deg*Math.PI/180;return [CX+r*Math.cos(a),CY+r*Math.sin(a)];}
+  function arc(r,a0,a1){var p=pt(r,a0),q=pt(r,a1);return 'M'+p[0].toFixed(1)+' '+p[1].toFixed(1)+' A'+r+' '+r+' 0 0 1 '+q[0].toFixed(1)+' '+q[1].toFixed(1);}
+  function el(t,a,p){var e=document.createElementNS(NS,t);for(var k in a)e.setAttribute(k,a[k]);p.appendChild(e);return e;}
+  var svg=document.getElementById('arc'),valArc,rpmArc,marker,cfg='';
+
+  function build(d){
+    var max=Sahra.speedMax(d),key=max+'|'+Sahra.unit(d);
+    if(key===cfg)return; cfg=key; svg.innerHTML='';
+    el('path',{d:arc(R,A0,A1),fill:'none',stroke:'#1c2436','stroke-width':'14','stroke-linecap':'round'},svg);
+    valArc=el('path',{d:arc(R,A0,A0+0.1),fill:'none','stroke-width':'14','stroke-linecap':'round'},svg);valArc.style.stroke='var(--accent)';
+    el('path',{d:arc(R-34,A0,A1),fill:'none',stroke:'#161d2c','stroke-width':'5','stroke-linecap':'round'},svg);
+    rpmArc=el('path',{d:arc(R-34,A0,A0+0.1),fill:'none',stroke:'#7f8aa3','stroke-width':'5','stroke-linecap':'round',opacity:'.8'},svg);
+    var step=max>200?20:max>120?20:10;
+    for(var v=0;v<=max;v+=step/2){
+      var a=A0+(A1-A0)*v/max,major=(v%step===0),o=pt(R+16,a),i=pt(R+(major?40:28),a);
+      var ln=el('line',{x1:o[0],y1:o[1],x2:i[0],y2:i[1],stroke:'#7f8aa3','stroke-width':major?3:1.5,opacity:major?1:.5},svg);ln.style.stroke='var(--tick,#7f8aa3)';
+      if(major){var t=pt(R+70,a),tx=el('text',{x:t[0],y:t[1]+8,'text-anchor':'middle','font-size':'24',fill:'#7f8aa3','font-family':'system-ui,sans-serif'},svg);tx.textContent=v;tx.style.fill='var(--num,#7f8aa3)';}
+    }
+    marker=el('g',{},svg);
+    var m=el('path',{d:'M0 -30 L9 0 L0 22 L-9 0 Z',fill:'#eef2fb'},marker);m.style.fill='var(--needle,#eef2fb)';
+  }
+
+  var cs=0,ts=0,cr=0,tr=0,max=220,rmax=7000;
+  function frame(){
+    cs+=(ts-cs)*0.18; cr+=(tr-cr)*0.2;
+    if(valArc){
+      var a=A0+(A1-A0)*Math.max(0,Math.min(1,cs/max));
+      valArc.setAttribute('d',arc(R,A0,Math.max(A0+0.1,a)));
+      var p=pt(R,a);marker.setAttribute('transform','translate('+p[0].toFixed(1)+' '+p[1].toFixed(1)+') rotate('+(a+90)+')');
+      var b=A0+(A1-A0)*Math.max(0,Math.min(1,cr/rmax));
+      rpmArc.setAttribute('d',arc(R-34,A0,Math.max(A0+0.1,b)));
+    }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+
+  function $(id){return document.getElementById(id);}
+  var n=Sahra.num;
+  window.onSahraData=function(d){
+    build(d); max=Sahra.speedMax(d); rmax=Sahra.rpmMax(d);
+    ts=Sahra.speed(d); tr=d.rpm||0;
+    $('speed').textContent=Math.round(Sahra.speed(d));
+    $('unit').textContent=Sahra.unit(d);
+    var gs=$('gear').children;for(var i=0;i<gs.length;i++)gs[i].className=(gs[i].textContent===d.gear)?'on':'';
+    $('fuel').textContent=n(d.fuel,0,'٪');
+    $('range').textContent=d.range==null?'—':Sahra.int(d.range)+' كم';
+    $('cool').textContent=n(d.coolant,0,'°');
+    $('rpmN').textContent=Sahra.int(d.rpm);
+    $('batt').textContent=n(d.batteryVoltage,1,' V');
+    $('ext').textContent=n(d.outsideTemp,0,'°');
+    $('src').textContent=d.demo?'· تجريبي':'';
+  };
+  $('close').onclick=function(){Sahra.host('close');};
+  $('next').onclick=function(){Sahra.host('nextTheme');};
+  function tick(){$('clock').textContent=Sahra.clock();}
+  tick();setInterval(tick,10000);
+})();
+</script>
+</body>
+</html>

@@ -9,5 +9,6 @@ class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         if (!Prefs(context).autostart) return
         runCatching { OverlayService.sync(context) }
+        runCatching { ClusterService.sync(context) }
     }
 }
