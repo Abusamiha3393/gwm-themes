@@ -99,7 +99,7 @@ object ClusterPayload {
             put("design", JSONObject().put("needleStyle", "classic").put("scale", 100).put("shift", 0).put("swap", false))
         })
         d.put("alerts", alerts(s))
-        d.put("layout", "full")
+        d.put("layout", "cluster")
         d.put("theme", p.clusterTheme)
         d.put("time", System.currentTimeMillis())
         return d
@@ -193,6 +193,16 @@ class ClusterService : Service() {
             return dm.getDisplay(2) ?: dm.displays.firstOrNull { it.displayId != Display.DEFAULT_DISPLAY }
         }
 
+        /** نسبة عرض نافذة الثيم إلى ارتفاعها، للمعاينة في الشاشة الرئيسية. */
+        fun aspect(context: Context): Float {
+            val d = findDisplay(context) ?: return 2.4f
+            val m = android.util.DisplayMetrics().also { @Suppress("DEPRECATION") d.getRealMetrics(it) }
+            val p = Prefs(context)
+            val w = m.widthPixels * (100 - 2 * p.clusterSide) / 100f
+            val h = m.heightPixels * (100 - p.clusterTop - p.clusterBottom) / 100f
+            return if (h > 0) w / h else 2.4f
+        }
+
         fun displaysInfo(context: Context): String {
             val dm = context.getSystemService(DisplayManager::class.java) ?: return "—"
             return dm.displays.joinToString("، ") { d ->
@@ -216,6 +226,20 @@ class ClusterService : Service() {
 
     private var view: ThemeView? = null
     private var wm: WindowManager? = null
+    private var shown: Display? = null
+
+    /** موضع الثيم وحجمه على شاشة العدادات حسب الهوامش التي يضبطها السائق (نسبة من الشاشة). */
+    private fun frame(display: Display, lp: WindowManager.LayoutParams) {
+        val m = android.util.DisplayMetrics().also { @Suppress("DEPRECATION") display.getRealMetrics(it) }
+        val p = Prefs(this)
+        val x = m.widthPixels * p.clusterSide / 100
+        val top = m.heightPixels * p.clusterTop / 100
+        val bottom = m.heightPixels * p.clusterBottom / 100
+        lp.gravity = android.view.Gravity.TOP or android.view.Gravity.START
+        lp.x = x; lp.y = top
+        lp.width = m.widthPixels - 2 * x
+        lp.height = m.heightPixels - top - bottom
+    }
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -233,6 +257,13 @@ class ClusterService : Service() {
         if (v != null) {
             v.load(theme)
             v.push(force = true)
+            // تحديث الهوامش إن تغيّرت
+            val d = shown
+            if (d != null) runCatching {
+                val lp = v.layoutParams as WindowManager.LayoutParams
+                frame(d, lp)
+                wm?.updateViewLayout(v, lp)
+            }
         } else show(theme)
         return START_STICKY
     }
@@ -262,9 +293,10 @@ class ClusterService : Service() {
                     WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS or WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED,
                 PixelFormat.OPAQUE,
             )
+            frame(display, lp)
             w.addView(v, lp)
             v.load(theme)
-            view = v; wm = w
+            view = v; wm = w; shown = display
             status = "يعرض على الشاشة ${display.displayId}"
         } catch (e: Exception) {
             Log.w(TAG, "overlay on display ${display.displayId} failed: ${e.message}")
@@ -284,7 +316,7 @@ class ClusterService : Service() {
 
     private fun remove() {
         view?.let { v -> runCatching { wm?.removeView(v) }; v.destroy() }
-        view = null; wm = null
+        view = null; wm = null; shown = null
         ClusterActivity.finishAll()
     }
 

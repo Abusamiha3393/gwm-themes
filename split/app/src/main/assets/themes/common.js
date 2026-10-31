@@ -15,7 +15,9 @@
     'box-shadow:0 6px 24px rgba(0,0,0,.45);animation:sahraIn .3s ease-out}' +
     '#sahra-alerts .warn{background:#b7791f}#sahra-alerts .danger{background:#c53030;animation:sahraIn .3s ease-out,sahraPulse 1.2s infinite}' +
     '@keyframes sahraIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1}}' +
-    '@keyframes sahraPulse{50%{filter:brightness(1.35)}}';
+    '@keyframes sahraPulse{50%{filter:brightness(1.35)}}' +
+    // على شاشة العدادات لا لمس، فتختفي الأزرار
+    'html.cluster button,html.cluster .btns{display:none!important}';
   var st = document.createElement('style');
   st.textContent = css;
   document.head.appendChild(st);
@@ -71,6 +73,7 @@
 
   window.__sahra = function (d) {
     ensure();
+    document.documentElement.classList.toggle('cluster', d.layout === 'cluster');
     var s = d.style || {};
     if (s.accent) document.documentElement.style.setProperty('--accent', s.accent);
     applyDesign(s.design || {});

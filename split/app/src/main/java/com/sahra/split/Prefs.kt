@@ -104,6 +104,19 @@ class Prefs(context: Context) {
         get() = sp.getString("cluster_accent", "") ?: ""
         set(v) = put("cluster_accent", v)
 
+    /** هوامش الثيم على شاشة العدادات (نسبة مئوية) حتى لا يغطي مؤشرات السيارة. */
+    var clusterTop: Int
+        get() = sp.getInt("cluster_top", 0)
+        set(v) = put("cluster_top", v)
+
+    var clusterBottom: Int
+        get() = sp.getInt("cluster_bottom", 0)
+        set(v) = put("cluster_bottom", v)
+
+    var clusterSide: Int
+        get() = sp.getInt("cluster_side", 0)
+        set(v) = put("cluster_side", v)
+
     var speedMax: Int
         get() = sp.getInt("speed_max", 220)
         set(v) = put("speed_max", v)

@@ -200,7 +200,7 @@ class HomeActivity : Activity() {
             setPadding(pd, pd, pd, pd)
         }
         // معاينة حية للثيم بنسبة شاشة العدادات (1920×800)
-        val frame = AspectFrame(this, 2.4f).apply { background = rounded(android.graphics.Color.BLACK, dp(8f)); clipToOutline = true }
+        val frame = AspectFrame(this, ClusterService.aspect(this)).apply { background = rounded(android.graphics.Color.BLACK, dp(8f)); clipToOutline = true }
         val v = ThemeView(this, interactive = false)
         frame.addView(v, FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT))
         v.load(prefs.clusterTheme)
@@ -223,8 +223,13 @@ class HomeActivity : Activity() {
                         render()
                     }
                 }.also { it.pressable(dp(10f)) }
-                chip.addView(label(t.name, 18f, Palette.white, true))
-                chip.addView(label(t.note, 13f, if (on) Palette.legendDim else Palette.muted).apply { setPadding(0, dp(3), 0, 0) })
+                // النص بعرض اللوحة وفي وسطها، بهامش يمنع قصّ أطراف الحروف الكوفية
+                chip.addView(label(t.name, 18f, Palette.white, true).apply {
+                    gravity = Gravity.CENTER; maxLines = 1; setPadding(dp(10), 0, dp(10), 0)
+                }, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT))
+                chip.addView(label(t.note, 13f, if (on) Palette.legendDim else Palette.muted).apply {
+                    gravity = Gravity.CENTER; maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END; setPadding(dp(10), dp(3), dp(10), 0)
+                }, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT))
                 row.addView(chip, LinearLayout.LayoutParams(0, dp(72), 1f).apply { if (i > 0) marginStart = dp(8) })
             }
             grid.addView(row, LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT).apply { topMargin = dp(8) })
