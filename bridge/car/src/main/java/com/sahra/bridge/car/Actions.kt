@@ -60,6 +60,7 @@ object Actions {
         when (item.type) {
             "geo" -> openGeo(context, item, store.navPackage)
             "link" -> view(context, Uri.parse(item.uri), null)
+            "file" -> openFile(context, item)
             "text" -> {
                 val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                 cm.setPrimaryClip(ClipData.newPlainText("HAVAL Bridge", item.detail))
@@ -67,6 +68,44 @@ object Actions {
             }
         }
         store.markOpened(item.id)
+    }
+
+    private fun openFile(context: Context, item: Item) {
+        val uri = Uri.parse(item.uri)
+        val file = BridgeFiles.fileOf(context, uri)
+        if (file == null) {
+            toast(context, "لم يعد الملف موجودًا على الشاشة")
+            return
+        }
+        when {
+            Uploads.isApk(item.mime, file.name) -> Installer.install(context, file)
+            item.mime.startsWith("image/") -> context.startActivity(
+                Intent(context, ImageActivity::class.java).putExtra(ImageActivity.EXTRA_NAME, file.name)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+            )
+            else -> {
+                val i = Intent(Intent.ACTION_VIEW).setDataAndType(uri, item.mime.ifEmpty { Uploads.guessMime(file.name) })
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                try {
+                    context.startActivity(i)
+                } catch (e: Exception) {
+                    toast(context, "لا يوجد تطبيق على الشاشة يفتح هذا النوع (${file.name})")
+                }
+            }
+        }
+    }
+
+    /** نص زر الفتح حسب نوع العنصر. */
+    fun openLabel(item: Item): String = when (item.type) {
+        "geo" -> "ابدأ الملاحة"
+        "text" -> "انسخ"
+        "file" -> when {
+            Uploads.isApk(item.mime, item.title) -> "تثبيت"
+            item.mime.startsWith("image/") -> "عرض"
+            item.mime.startsWith("video/") || item.mime.startsWith("audio/") -> "تشغيل"
+            else -> "افتح"
+        }
+        else -> "افتح"
     }
 
     private fun openGeo(context: Context, item: Item, pkg: String) {
@@ -106,7 +145,16 @@ object Actions {
     fun icon(type: String) = when (type) {
         "geo" -> "📍"
         "link" -> "🔗"
+        "file" -> "📎"
         else -> "📝"
+    }
+
+    fun icon(item: Item): String = if (item.type != "file") icon(item.type) else when {
+        item.mime.startsWith("image/") -> "🖼"
+        item.mime.startsWith("video/") -> "🎬"
+        item.mime.startsWith("audio/") -> "🎵"
+        Uploads.isApk(item.mime, item.title) -> "📦"
+        else -> "📄"
     }
 
     fun toast(context: Context, msg: String) = Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()

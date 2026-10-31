@@ -10,7 +10,9 @@ import android.os.Build
 import android.provider.Settings
 import org.json.JSONArray
 import org.json.JSONObject
+import java.io.File
 import java.io.IOException
+import java.io.RandomAccessFile
 import kotlin.concurrent.thread
 
 /** ما يحفظه الجوال: السيارة المقترنة، الطابور، والسجل. */
@@ -100,6 +102,7 @@ object Sender {
 
     /** يرسل عنصرًا، أو يضعه في الطابور إن لم تكن السيارة متاحة. متزامن: من خيط خلفي فقط. */
     fun deliver(context: Context, item: JSONObject): Result {
+        appContext = context.applicationContext
         val store = PhoneStore(context)
         if (!store.paired) return Result.NOT_PAIRED
         item.put("localId", item.optString("localId").ifEmpty { System.nanoTime().toString() })
@@ -121,6 +124,7 @@ object Sender {
 
     /** يرسل ما في الطابور. يعيد true إن فرغ الطابور. */
     fun flush(context: Context, known: Car? = null): Boolean {
+        appContext = context.applicationContext
         val store = PhoneStore(context)
         val items = store.pending()
         if (items.isEmpty()) return true
@@ -135,10 +139,13 @@ object Sender {
             }
         }
         store.dropPending(done)
-        return store.pending().isEmpty()
+        val left = store.pending()
+        Outbox.cleanup(context, left.mapNotNull { it.optJSONObject("payload")?.optString("path") }.toSet())
+        return left.isEmpty()
     }
 
     private fun post(store: PhoneStore, car: Car, item: JSONObject): Result {
+        if (item.optString("type") == "file") return upload(store, car, item)
         val wire = JSONObject().put("type", item.optString("type"))
             .put("payload", item.optJSONObject("payload") ?: JSONObject())
             .put("sentAt", item.optLong("sentAt"))
@@ -158,6 +165,78 @@ object Sender {
             }
         } catch (e: IOException) {
             Result.QUEUED
+        }
+    }
+
+    /** يُستدعى من deliver/flush ويحمل سياق التطبيق لإشعار التقدّم. */
+    @Volatile private var appContext: Context? = null
+
+    /** رفع ملف على أجزاء. إن انقطع الاتصال يبقى في الطابور ويكمل من حيث توقف. */
+    private fun upload(store: PhoneStore, car: Car, item: JSONObject): Result {
+        val p = item.optJSONObject("payload") ?: return Result.REJECTED
+        val f = File(p.optString("path"))
+        if (!f.exists()) return Result.REJECTED
+        val size = f.length()
+        val name = p.optString("name")
+        val meta = JSONObject().put("name", name).put("size", size)
+            .put("mime", p.optString("mime")).put("sha256", p.optString("sha256"))
+        val progress = appContext?.let { Progress(it) }
+        try {
+            var st = Client.uploadStart(car.host, car.port, store.token, meta)
+            val id = st.optString("id")
+            var offset = st.optLong("received")
+            val chunk = st.optInt("chunk", 4 shl 20).coerceIn(256 shl 10, 4 shl 20)
+            var retries = 0
+            if (!st.optBoolean("done")) {
+                RandomAccessFile(f, "r").use { raf ->
+                    val buf = ByteArray(chunk)
+                    while (offset < size) {
+                        progress?.update(name, offset, size)
+                        val want = minOf(chunk.toLong(), size - offset).toInt()
+                        raf.seek(offset)
+                        var got = 0
+                        while (got < want) {
+                            val n = raf.read(buf, got, want - got)
+                            if (n < 0) throw IOException("short read")
+                            got += n
+                        }
+                        try {
+                            st = Client.uploadChunk(car.host, car.port, store.token, id, offset, buf, got)
+                            offset = st.optLong("received", offset + got)
+                            if (st.optBoolean("done")) break
+                        } catch (e: HttpError) {
+                            // 409: الشاشة لديها جزء مختلف؛ 422: البصمة لم تطابق فبدأت من الصفر
+                            if ((e.code == 409 || e.code == 422) && retries++ < 3) {
+                                offset = e.body?.optLong("received", 0L) ?: 0L
+                            } else {
+                                throw e
+                            }
+                        }
+                    }
+                }
+            }
+            progress?.clear()
+            val record = JSONObject(item.toString()).put("status", "sent").put("at", System.currentTimeMillis())
+            record.optJSONObject("payload")?.remove("path")
+            store.record(record)
+            f.delete()
+            return Result.SENT
+        } catch (e: HttpError) {
+            progress?.clear()
+            return when (e.code) {
+                401 -> {
+                    store.unpair()
+                    Result.REVOKED
+                }
+                400, 404, 413, 422, 507 -> {
+                    f.delete()
+                    Result.REJECTED
+                }
+                else -> Result.QUEUED
+            }
+        } catch (e: IOException) {
+            progress?.clear()
+            return Result.QUEUED
         }
     }
 

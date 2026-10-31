@@ -105,10 +105,31 @@ class MainActivity : Activity() {
         right.addView(ui.text(status, 16f, if (BridgeService.running) Palette.amber else Palette.grey))
         right.addView(ui.gap(14))
 
+        Pairing.pending()?.let { r ->
+            val ask = ui.column(22).apply { background = ui.rounded(Palette.shoulder, 14, Palette.amber) }
+            ask.addView(ui.text("📱  طلب اقتران من «${r.phone}»", 20f, Palette.amber, bold = true))
+            ask.addView(ui.gap(10))
+            val buttons = ui.row()
+            buttons.addView(ui.button("سماح", Palette.green, heightDp = 64) {
+                BridgeService.answer(r.id, true)
+                render()
+            }, ui.weight(1f))
+            buttons.addView(ui.gap(12))
+            buttons.addView(ui.button("رفض", Palette.kerb, heightDp = 64) {
+                BridgeService.answer(r.id, false)
+                render()
+            }, ui.weight(1f))
+            ask.addView(buttons, ui.matchWidth())
+            right.addView(ask, ui.matchWidth())
+            right.addView(ui.gap(12))
+        }
+
         val pairCard = card()
         pairCard.addView(ui.text("اقتران جوال جديد", 22f, bold = true))
-        pairCard.addView(ui.text("افتح «رفيق الهافال» على الجوال، اختر هذه السيارة، ثم أدخل الرمز:", 15f, Palette.grey))
-        pairCard.addView(ui.text(store.currentCode().chunked(3).joinToString(" "), 60f, Palette.amber).apply {
+        pairCard.addView(ui.text("في «رفيق الهافال» على الجوال اضغط «ابحث عن السيارة»، ثم اضغط «سماح» هنا. يتم ذلك مرة واحدة فقط.", 15f, Palette.grey))
+        pairCard.addView(ui.gap(10))
+        pairCard.addView(ui.text("أو أدخل هذا الرمز في الجوال:", 14f, Palette.grey))
+        pairCard.addView(ui.text(store.currentCode().chunked(3).joinToString(" "), 40f, Palette.amber).apply {
             typeface = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD)
             textDirection = View.TEXT_DIRECTION_LTR
             textAlignment = View.TEXT_ALIGNMENT_CENTER
@@ -179,7 +200,7 @@ class MainActivity : Activity() {
         left.addView(ui.gap(10))
 
         if (items.isEmpty()) {
-            left.addView(ui.text("لا شيء بعد. شارك موقعًا أو رابطًا من الجوال واختر «أرسل إلى الهافال».", 16f, Palette.grey))
+            left.addView(ui.text("لا شيء بعد. شارك موقعًا أو رابطًا أو صورة من الجوال واختر «أرسل إلى الهافال».", 16f, Palette.grey))
         }
         items.forEach { item ->
             val row = ui.row().apply {
@@ -188,7 +209,7 @@ class MainActivity : Activity() {
                 alpha = if (item.opened) 0.6f else 1f
             }
             val col = ui.column()
-            col.addView(ui.text("${Actions.icon(item.type)}  ${item.title}", 18f, bold = true).apply {
+            col.addView(ui.text("${Actions.icon(item)}  ${item.title}", 18f, bold = true).apply {
                 maxLines = 1
                 ellipsize = TextUtils.TruncateAt.END
             })
@@ -201,11 +222,7 @@ class MainActivity : Activity() {
             col.addView(ui.text("من ${item.from} · ${time.format(Date(item.at))}", 13f, Palette.grey))
             row.addView(col, ui.weight(1f))
             row.addView(ui.gap(12))
-            val label = when (item.type) {
-                "geo" -> "ملاحة"
-                "text" -> "نسخ"
-                else -> "فتح"
-            }
+            val label = if (item.type == "geo") "ملاحة" else Actions.openLabel(item)
             row.addView(ui.button(label, Palette.green, heightDp = 56) {
                 Actions.open(this, item, store)
                 render()

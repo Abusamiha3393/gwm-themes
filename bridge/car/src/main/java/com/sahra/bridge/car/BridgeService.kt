@@ -40,22 +40,35 @@ class BridgeService : Service() {
     private val hideCard = Runnable { removeCard() }
     private val failures = AtomicInteger()
     @Volatile private var lockedUntil = 0L
+    private lateinit var uploads: Uploads
 
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onCreate() {
         super.onCreate()
         store = Store(this)
+        uploads = Uploads(this)
+        Thread { uploads.cleanup() }.start()
         startInForeground()
         startServer()
         advertise()
         running = true
+        instance = this
     }
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int = START_STICKY
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        // أزرار إشعار طلب الاقتران (حين لا تتوفر البطاقة العائمة)
+        val id = intent?.getStringExtra(EXTRA_REQUEST)
+        when (intent?.action) {
+            ACTION_APPROVE -> if (id != null) approve(id)
+            ACTION_DENY -> if (id != null) deny(id)
+        }
+        return START_STICKY
+    }
 
     override fun onDestroy() {
         running = false
+        instance = null
         main.removeCallbacksAndMessages(null)
         removeCard()
         server?.stop()
@@ -84,6 +97,11 @@ class BridgeService : Service() {
     private fun handle(req: Request): Response = when {
         req.method == "GET" && req.path == "/v1/info" -> ok(info())
         req.method == "POST" && req.path == "/v1/pair" -> pair(req)
+        req.method == "POST" && req.path == "/v1/pair/request" -> pairRequest(req)
+        req.method == "GET" && req.path.startsWith("/v1/pair/request/") -> pairStatus(req.path.substringAfterLast('/'))
+        req.method == "POST" && req.path == "/v1/uploads" -> uploadStart(req)
+        req.method == "GET" && req.path.startsWith("/v1/uploads/") -> uploadStatus(req)
+        req.method == "PUT" && req.path.startsWith("/v1/uploads/") -> uploadChunk(req)
         req.method == "GET" && req.path == "/v1/ping" ->
             if (auth(req) != null) ok(JSONObject().put("ok", true)) else unauthorized()
         req.method == "POST" && req.path == "/v1/items" -> receive(req)
@@ -95,6 +113,7 @@ class BridgeService : Service() {
         .put("protocol", PROTOCOL)
         .put("id", store.deviceId)
         .put("name", store.carName)
+        .put("features", org.json.JSONArray().put("approve").put("files"))
 
     private fun pair(req: Request): Response {
         if (System.currentTimeMillis() < lockedUntil) return Response(429, """{"error":"locked"}""")
@@ -119,6 +138,124 @@ class BridgeService : Service() {
             changed()
         }
         return ok(info().put("token", token))
+    }
+
+    // ---- الاقتران بالموافقة على الشاشة ----
+
+    private fun pairRequest(req: Request): Response {
+        val body = try {
+            JSONObject(req.body)
+        } catch (e: Exception) {
+            return Response(400, """{"error":"bad_json"}""")
+        }
+        val phone = body.optString("phone").trim().ifEmpty { "جوال" }
+        val r = Pairing.open(phone) ?: return Response(429, """{"error":"slow_down"}""")
+        main.post { askApproval(r) }
+        return ok(JSONObject().put("request", r.id).put("ttl", PairRequest.TTL))
+    }
+
+    private fun pairStatus(id: String): Response {
+        val r = Pairing.find(id) ?: return ok(JSONObject().put("status", PairRequest.EXPIRED))
+        val o = JSONObject().put("status", r.status)
+        val token = r.token
+        if (r.status == PairRequest.APPROVED && token != null) {
+            info().keys().forEach { k -> o.put(k, info().get(k)) }
+            o.put("token", token)
+            Pairing.consumed(id)
+        }
+        return ok(o)
+    }
+
+    private fun approve(id: String) {
+        removeCard()
+        cancelPairNotification()
+        val r = Pairing.approve(this, id) ?: return
+        Actions.toast(this, "تم اقتران ${r.phone} ✓")
+        changed()
+    }
+
+    private fun deny(id: String) {
+        removeCard()
+        cancelPairNotification()
+        Pairing.deny(id)
+        changed()
+    }
+
+    private fun askApproval(r: PairRequest) {
+        changed()
+        if (!Settings.canDrawOverlays(this)) {
+            notifyPair(r)
+            return
+        }
+        val ui = Ui(this)
+        val box = ui.column(22).apply {
+            background = ui.rounded(Palette.asphalt, 16, Palette.amber)
+            elevation = ui.dp(8).toFloat()
+            layoutDirection = View.LAYOUT_DIRECTION_RTL
+        }
+        box.addView(ui.text("📱  طلب اقتران جديد", 15f, Palette.amber))
+        box.addView(ui.text("السماح لـ «${r.phone}» بالإرسال إلى الشاشة؟", 22f, bold = true))
+        box.addView(ui.text("بعد الموافقة يتصل تلقائيًا في كل مرة دون رمز.", 15f, Palette.grey))
+        box.addView(ui.gap(14))
+        val buttons = ui.row()
+        buttons.addView(ui.button("سماح", Palette.green, heightDp = 76) { approve(r.id) }, ui.weight(1f))
+        buttons.addView(ui.gap(12))
+        buttons.addView(ui.button("رفض", Palette.kerb, heightDp = 76) { deny(r.id) }, ui.weight(1f))
+        box.addView(buttons, ui.matchWidth())
+        addCard(box, PairRequest.TTL)
+    }
+
+    private fun notifyPair(r: PairRequest) {
+        val nm = getSystemService(NotificationManager::class.java)
+        if (nm.getNotificationChannel(CH_ITEMS) == null) {
+            nm.createNotificationChannel(NotificationChannel(CH_ITEMS, "العناصر الواردة", NotificationManager.IMPORTANCE_HIGH))
+        }
+        fun action(a: String, code: Int) = PendingIntent.getService(
+            this, code, Intent(this, BridgeService::class.java).setAction(a).putExtra(EXTRA_REQUEST, r.id),
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+        )
+        val n = Notification.Builder(this, CH_ITEMS)
+            .setSmallIcon(R.drawable.ic_launcher)
+            .setContentTitle("طلب اقتران من ${r.phone}")
+            .setContentText("اسمح له بالإرسال إلى الشاشة؟")
+            .addAction(Notification.Action.Builder(android.graphics.drawable.Icon.createWithResource(this, R.drawable.ic_launcher), "سماح", action(ACTION_APPROVE, 11)).build())
+            .addAction(Notification.Action.Builder(android.graphics.drawable.Icon.createWithResource(this, R.drawable.ic_launcher), "رفض", action(ACTION_DENY, 12)).build())
+            .setTimeoutAfter(PairRequest.TTL)
+            .build()
+        nm.notify(PAIR_NOTIF, n)
+    }
+
+    private fun cancelPairNotification() = getSystemService(NotificationManager::class.java).cancel(PAIR_NOTIF)
+
+    // ---- الملفات ----
+
+    private fun uploadStart(req: Request): Response {
+        val device = auth(req) ?: return unauthorized()
+        val body = try {
+            JSONObject(req.body)
+        } catch (e: Exception) {
+            return Response(400, """{"error":"bad_json"}""")
+        }
+        val r = uploads.start(device, body)
+        return Response(r.code, r.json.toString())
+    }
+
+    private fun uploadStatus(req: Request): Response {
+        auth(req) ?: return unauthorized()
+        val r = uploads.status(req.path.substringAfterLast('/'))
+        return Response(r.code, r.json.toString())
+    }
+
+    private fun uploadChunk(req: Request): Response {
+        auth(req) ?: return unauthorized()
+        val offset = req.headers["x-offset"]?.toLongOrNull() ?: return Response(400, """{"error":"no_offset"}""")
+        val r = uploads.chunk(req.path.substringAfterLast('/'), offset, req.bytes)
+        val item = r.item
+        if (item != null) {
+            store.addItem(item)
+            main.post { arrived(item) }
+        }
+        return Response(r.code, r.json.toString())
     }
 
     private fun receive(req: Request): Response {
@@ -195,7 +332,7 @@ class BridgeService : Service() {
             elevation = ui.dp(8).toFloat()
             layoutDirection = View.LAYOUT_DIRECTION_RTL
         }
-        box.addView(ui.text("${Actions.icon(item.type)}  من ${item.from}", 15f, Palette.grey))
+        box.addView(ui.text("${Actions.icon(item)}  من ${item.from}", 15f, Palette.grey))
         box.addView(ui.text(item.title, 24f, bold = true).apply {
             maxLines = 2
             ellipsize = TextUtils.TruncateAt.END
@@ -208,12 +345,7 @@ class BridgeService : Service() {
         }
         box.addView(ui.gap(14))
         val buttons = ui.row()
-        val openLabel = when (item.type) {
-            "geo" -> "ابدأ الملاحة"
-            "text" -> "انسخ"
-            else -> "افتح"
-        }
-        buttons.addView(ui.button(openLabel, Palette.green, heightDp = 76) {
+        buttons.addView(ui.button(Actions.openLabel(item), Palette.green, heightDp = 76) {
             removeCard()
             Actions.open(this, item, store)
             changed()
@@ -221,7 +353,13 @@ class BridgeService : Service() {
         buttons.addView(ui.gap(12))
         buttons.addView(ui.button("لاحقًا", Palette.kerb, heightDp = 76) { removeCard() }, ui.weight(1f))
         box.addView(buttons, ui.matchWidth())
+        if (!addCard(box, CARD_MS)) notifyItem(item)
+    }
 
+    /** يعرض بطاقة عائمة أعلى الشاشة، وتختفي بعد المدة المحددة. */
+    private fun addCard(box: View, durationMs: Long): Boolean {
+        removeCard()
+        val ui = Ui(this)
         val lp = WindowManager.LayoutParams(
             ui.dp(560),
             WindowManager.LayoutParams.WRAP_CONTENT,
@@ -232,13 +370,14 @@ class BridgeService : Service() {
         lp.gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
         lp.y = ui.dp(24)
         val wm = getSystemService(Context.WINDOW_SERVICE) as WindowManager
-        try {
+        return try {
             wm.addView(box, lp)
             card = box
-            main.postDelayed(hideCard, CARD_MS)
+            main.postDelayed(hideCard, durationMs)
+            true
         } catch (e: Exception) {
             Log.w(TAG, "overlay failed", e)
-            notifyItem(item)
+            false
         }
     }
 
@@ -265,7 +404,7 @@ class BridgeService : Service() {
         )
         val n = Notification.Builder(this, CH_ITEMS)
             .setSmallIcon(R.drawable.ic_launcher)
-            .setContentTitle("${Actions.icon(item.type)} ${item.title}")
+            .setContentTitle("${Actions.icon(item)} ${item.title}")
             .setContentText("من ${item.from} — اضغط للفتح")
             .setContentIntent(open)
             .setAutoCancel(true)
@@ -304,12 +443,24 @@ class BridgeService : Service() {
         private const val CH_SERVICE = "service"
         private const val CH_ITEMS = "items"
         private const val NOTIF_ID = 7
+        private const val PAIR_NOTIF = 8
+        const val ACTION_APPROVE = "com.sahra.bridge.car.APPROVE"
+        const val ACTION_DENY = "com.sahra.bridge.car.DENY"
+        const val EXTRA_REQUEST = "request"
         private const val MAX_FAILURES = 5
         private const val LOCK_MS = 10 * 60 * 1000L
         private const val CARD_MS = 20_000L
 
         @Volatile var running = false
             private set
+
+        @Volatile private var instance: BridgeService? = null
+
+        /** موافقة أو رفض من شاشة التطبيق نفسها. */
+        fun answer(id: String, allow: Boolean) {
+            val s = instance ?: return
+            if (allow) s.approve(id) else s.deny(id)
+        }
 
         /** تستدعيه الواجهة لتحدّث نفسها عند وصول عنصر أو اقتران جهاز. يُستدعى على الخيط الرئيسي. */
         var onChanged: (() -> Unit)? = null

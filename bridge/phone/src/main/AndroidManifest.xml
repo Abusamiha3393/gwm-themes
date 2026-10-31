@@ -6,6 +6,8 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
+    <!-- إشعار تقدّم إرسال الملفات -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
         android:allowBackup="false"
@@ -26,7 +28,7 @@
             </intent-filter>
         </activity>
 
-        <!-- يظهر في قائمة المشاركة لأي نص أو رابط أو موقع -->
+        <!-- يظهر في قائمة المشاركة لأي نص أو رابط أو موقع أو ملف -->
         <activity
             android:name=".ShareActivity"
             android:exported="true"
@@ -39,6 +41,13 @@
                 <action android:name="android.intent.action.SEND" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <data android:mimeType="text/plain" />
+            </intent-filter>
+            <!-- صور وفيديو وصوت وملفات، واحدًا أو عدة -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <action android:name="android.intent.action.SEND_MULTIPLE" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="*/*" />
             </intent-filter>
         </activity>
 

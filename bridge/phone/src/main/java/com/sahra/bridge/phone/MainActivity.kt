@@ -4,6 +4,9 @@ import android.app.Activity
 import android.app.AlertDialog
 import android.content.ClipboardManager
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.text.InputType
 import android.text.TextUtils
@@ -40,6 +43,38 @@ class MainActivity : Activity() {
             addView(body)
         }
         setContentView(scroll)
+        if (Build.VERSION.SDK_INT >= 33) {
+            requestPermissions(arrayOf("android.permission.POST_NOTIFICATIONS"), 1)
+        }
+    }
+
+    @Deprecated("Deprecated in Java")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode != PICK || resultCode != RESULT_OK || data == null) return
+        val uris = ArrayList<Uri>()
+        data.data?.let { uris.add(it) }
+        val clip = data.clipData
+        if (clip != null) for (i in 0 until clip.itemCount) uris.add(clip.getItemAt(i).uri)
+        if (uris.isEmpty()) return
+        toast(if (uris.size == 1) "جارٍ الإرسال…" else "جارٍ إرسال ${uris.size} ملفات…")
+        val app = applicationContext
+        bg {
+            val items = uris.distinct().mapNotNull { Outbox.copyIn(app, it) }
+            if (items.isEmpty()) onUi { toast("تعذّرت قراءة الملفات") }
+            else ShareActivity.sendFiles(app, items) { if (alive()) refreshStatus() }
+        }
+    }
+
+    private fun pickFiles() {
+        val i = Intent(Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE)
+            .setType("*/*").putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+        try {
+            @Suppress("DEPRECATION")
+            startActivityForResult(i, PICK)
+        } catch (e: Exception) {
+            toast("لا يوجد منتقي ملفات على هذا الجوال")
+        }
     }
 
     override fun onResume() {
@@ -123,6 +158,8 @@ class MainActivity : Activity() {
         }, ui.weight(1f))
         send.addView(row, ui.matchWidth())
         send.addView(ui.gap(10))
+        send.addView(ui.button("🖼  أرسل صورًا أو ملفات", Palette.kerb) { pickFiles() }, ui.matchWidth())
+        send.addView(ui.gap(10))
         send.addView(ui.text("أو من أي تطبيق: مشاركة ← «أرسل إلى الهافال»", 14f, Palette.grey))
         body.addView(send, ui.matchWidth())
         body.addView(ui.gap(12))
@@ -137,6 +174,7 @@ class MainActivity : Activity() {
                 val icon = when (type) {
                     "geo" -> "📍"
                     "link" -> "🔗"
+                    "file" -> Outbox.icon(p?.optString("mime").orEmpty())
                     else -> "📝"
                 }
                 val title = when (type) {
@@ -146,6 +184,7 @@ class MainActivity : Activity() {
                         }
                     }
                     "link" -> p?.optString("title").orEmpty().ifEmpty { p?.optString("url").orEmpty() }
+                    "file" -> "${p?.optString("name").orEmpty()} · ${Outbox.humanSize(p?.optLong("size") ?: 0L)}"
                     else -> p?.optString("text").orEmpty()
                 }
                 val r = ui.column(14).apply { background = ui.rounded(Palette.shoulder, 12) }
@@ -184,7 +223,7 @@ class MainActivity : Activity() {
         val c = card()
         c.addView(ui.text("اقتران السيارة", 22f, bold = true))
         c.addView(ui.gap(6))
-        c.addView(ui.text("1. افتح «جسر الهافال» على شاشة السيارة.\n2. صِل الشاشة والجوال بنفس الشبكة (نقطة اتصال الجوال مثلًا).\n3. ابحث هنا ثم أدخل الرمز الظاهر على الشاشة.", 15f, Palette.grey))
+        c.addView(ui.text("1. افتح «جسر الهافال» على شاشة السيارة.\n2. صِل الشاشة والجوال بنفس الشبكة (نقطة اتصال الجوال مثلًا).\n3. ابحث هنا، ثم اضغط «سماح» على الشاشة.\nمرة واحدة فقط: بعدها يتصل تلقائيًا دون رمز.", 15f, Palette.grey))
         c.addView(ui.gap(12))
         c.addView(ui.button(if (searching) "جارٍ البحث…" else "ابحث عن السيارة", Palette.green) {
             if (!searching) search()
@@ -202,7 +241,7 @@ class MainActivity : Activity() {
         body.addView(ui.text("اختر سيارتك", 20f, bold = true))
         body.addView(ui.gap(8))
         list.forEach { car ->
-            body.addView(ui.button("🚗  ${car.name}   ·   ${car.host}", Palette.shoulder) { askCode(car) }, ui.matchWidth())
+            body.addView(ui.button("🚗  ${car.name}   ·   ${car.host}", Palette.shoulder) { requestApproval(car) }, ui.matchWidth())
             body.addView(ui.gap(8))
         }
     }
@@ -217,7 +256,7 @@ class MainActivity : Activity() {
                 searching = false
                 cars = found
                 render()
-                if (found.size == 1) askCode(found[0])
+                if (found.size == 1) requestApproval(found[0])
             }
         }
     }
@@ -243,12 +282,74 @@ class MainActivity : Activity() {
                         null
                     }
                     onUi {
-                        if (car == null) toast("لا يوجد جسر الهافال على $host") else askCode(car)
+                        if (car == null) toast("لا يوجد جسر الهافال على $host") else requestApproval(car)
                     }
                 }
             }
             .setNegativeButton("إلغاء", null)
             .show()
+    }
+
+    /** الاقتران بضغطة «سماح» على الشاشة. الرمز يبقى احتياطيًا (أو لتطبيق شاشة قديم). */
+    private fun requestApproval(car: Car) {
+        var cancelled = false
+        val dialog = AlertDialog.Builder(this, android.R.style.Theme_Material_Dialog_Alert)
+            .setTitle("اقتران ${car.name}")
+            .setMessage("اضغط «سماح» على شاشة السيارة…")
+            .setNegativeButton("إلغاء") { _, _ -> cancelled = true }
+            .setNeutralButton("استخدم الرمز") { _, _ ->
+                cancelled = true
+                askCode(car)
+            }
+            .setCancelable(false)
+            .show()
+        val phone = Sender.phoneName(this)
+        bg {
+            val result: String? = try {
+                val id = Client.pairRequest(car, phone)
+                var outcome: String? = null
+                val end = System.currentTimeMillis() + 65_000
+                while (!cancelled && outcome == null && System.currentTimeMillis() < end) {
+                    Thread.sleep(1000)
+                    val st = try {
+                        Client.pairStatus(car, id)
+                    } catch (e: IOException) {
+                        continue
+                    }
+                    when (st.optString("status")) {
+                        "approved" -> {
+                            store.savePairing(car.copy(name = st.optString("name", car.name)), st.optString("token"))
+                            outcome = "تم الاقتران بـ ${car.name} ✓"
+                        }
+                        "denied" -> outcome = "رُفض الطلب على الشاشة"
+                        "expired" -> outcome = "انتهت مهلة الطلب — حاول مجددًا"
+                    }
+                }
+                if (cancelled) null else outcome ?: "انتهت مهلة الطلب — حاول مجددًا"
+            } catch (e: HttpError) {
+                if (e.code == 404) {
+                    // تطبيق شاشة قديم لا يدعم الموافقة
+                    onUi {
+                        dialog.dismiss()
+                        askCode(car)
+                    }
+                    null
+                } else if (e.code == 429) {
+                    "انتظر ثوانٍ ثم حاول مجددًا"
+                } else {
+                    "فشل الطلب (${e.code})"
+                }
+            } catch (e: IOException) {
+                "تعذّر الاتصال بالشاشة"
+            }
+            onUi {
+                if (dialog.isShowing) dialog.dismiss()
+                if (result != null) toast(result)
+                cars = null
+                render()
+                if (store.paired) refreshStatus()
+            }
+        }
     }
 
     private fun askCode(car: Car) {
@@ -298,4 +399,8 @@ class MainActivity : Activity() {
     private fun card() = ui.column(18).apply { background = ui.rounded(Palette.shoulder, 14) }
 
     private fun toast(msg: String) = Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
+
+    companion object {
+        private const val PICK = 5
+    }
 }

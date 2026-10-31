@@ -11,7 +11,7 @@ import java.util.UUID
 /** جهاز جوال تم اقترانه. نحفظ بصمة الرمز فقط، لا الرمز نفسه. */
 data class Device(val hash: String, val name: String, val added: Long)
 
-/** عنصر وصل من الجوال: موقع أو رابط أو نص. */
+/** عنصر وصل من الجوال: موقع أو رابط أو نص أو ملف (uri لملف = content:// من BridgeFiles). */
 data class Item(
     val id: String,
     val type: String,
@@ -21,15 +21,17 @@ data class Item(
     val from: String,
     val at: Long,
     val opened: Boolean,
+    val mime: String = "",
 ) {
     fun toJson(): JSONObject = JSONObject()
         .put("id", id).put("type", type).put("title", title).put("detail", detail)
-        .put("uri", uri).put("from", from).put("at", at).put("opened", opened)
+        .put("uri", uri).put("from", from).put("at", at).put("opened", opened).put("mime", mime)
 
     companion object {
         fun fromJson(o: JSONObject) = Item(
             o.optString("id"), o.optString("type"), o.optString("title"), o.optString("detail"),
             o.optString("uri"), o.optString("from"), o.optLong("at"), o.optBoolean("opened"),
+            o.optString("mime"),
         )
     }
 }
