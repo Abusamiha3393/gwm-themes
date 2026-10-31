@@ -74,13 +74,21 @@
   window.__sahra = function (d) {
     ensure();
     document.documentElement.classList.toggle('cluster', d.layout === 'cluster');
+    // تصحيح الحجم: إن كانت الصفحة أكبر من النافذة الحقيقية (خطأ الكثافة على شاشة العدادات) نصغّرها لتطابقها
+    if (d.view && d.view.w > 0 && d.view.h > 0) {
+      var k = Math.min(d.view.w / devicePixelRatio / innerWidth, d.view.h / devicePixelRatio / innerHeight);
+      // تحجيم الصفحة كلها (يشمل وحدات vw/vh) من الزاوية العليا اليسرى
+      var z = Math.abs(k - 1) > 0.01 ? 'scale(' + k.toFixed(4) + ')' : '';
+      var h = document.documentElement.style;
+      if (h.transform !== z) { h.transform = z; h.transformOrigin = '0 0'; h.overflow = 'hidden'; }
+    }
     // قياسات للضبط: مقاس الصفحة كما يراه الثيم، ومقاس النافذة كما يراه التطبيق
     var dbg = document.getElementById('sahra-dbg');
     if (d.debug) {
       if (!dbg) { dbg = document.createElement('div'); dbg.id = 'sahra-dbg';
         dbg.style.cssText = 'position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:99;background:#ffd400;color:#000;font:bold 22px monospace;padding:10px 16px;border-radius:8px;direction:ltr;white-space:pre';
         document.body.appendChild(dbg); }
-      dbg.textContent = 'page ' + innerWidth + 'x' + innerHeight + ' dpr ' + devicePixelRatio + '\n' + (d.debug || '');
+      dbg.textContent = 'page ' + innerWidth + 'x' + innerHeight + ' dpr ' + devicePixelRatio + ' fit ' + (document.documentElement.style.transform || 'none') + '\n' + (d.debug || '');
     } else if (dbg) dbg.remove();
     var s = d.style || {};
     if (s.accent) document.documentElement.style.setProperty('--accent', s.accent);

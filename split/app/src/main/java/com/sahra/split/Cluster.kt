@@ -112,8 +112,12 @@ object ClusterPayload {
         return d
     }
 
-    fun script(context: Context) =
-        "(function(d){window.SahraData=d;if(window.__sahra)window.__sahra(d);else if(window.onSahraData)window.onSahraData(d);})(${build(context)});"
+    /**
+     * viewW/viewH: مقاس نافذة الثيم الحقيقي بالبكسل. على شاشة العدادات يخطئ المتصفح في الكثافة
+     * فيرسم الصفحة أكبر من النافذة، فيصغّرها الثيم بهذين الرقمين حتى تطابق الشاشة.
+     */
+    fun script(context: Context, viewW: Int = 0, viewH: Int = 0) =
+        "(function(d){d.view={w:$viewW,h:$viewH};window.SahraData=d;if(window.__sahra)window.__sahra(d);else if(window.onSahraData)window.onSahraData(d);})(${build(context)});"
 }
 
 /** WebView يعرض ثيمًا ويغذّيه بالبيانات، يُستخدم على شاشة العدادات وفي المعاينة. */
@@ -150,7 +154,7 @@ class ThemeView(context: Context, private val interactive: Boolean) : WebView(co
         val now = System.currentTimeMillis()
         if (!force && now - lastPush < 80) return
         lastPush = now
-        evaluateJavascript(ClusterPayload.script(context), null)
+        evaluateJavascript(ClusterPayload.script(context, width, height), null)
     }
 
     override fun onAttachedToWindow() {
