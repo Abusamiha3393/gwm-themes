@@ -56,10 +56,15 @@ object Updater {
             if (code == 404) return Result.Failed("لا توجد إصدارات منشورة، أو المستودع ما زال خاصًا")
             if (code != 200) return Result.Failed("رد غير متوقع من GitHub ($code)")
             val list = JSONArray(conn.inputStream.bufferedReader().use { it.readText() })
+            // GitHub لا يرتّب القائمة بالرقم دائمًا (ظهر split-9 قبل split-10)، فنأخذ أكبر رقم
             var json: JSONObject? = null
+            var best = -1
             for (i in 0 until list.length()) {
                 val r = list.getJSONObject(i)
-                if (r.optString("tag_name").startsWith(TAG_PREFIX) && !r.optBoolean("draft")) { json = r; break }
+                val tag = r.optString("tag_name")
+                if (!tag.startsWith(TAG_PREFIX) || r.optBoolean("draft")) continue
+                val n = tag.removePrefix(TAG_PREFIX).toIntOrNull() ?: continue
+                if (n > best) { best = n; json = r }
             }
             if (json == null) return Result.Failed("لا توجد إصدارات لصحراء سبليت بعد")
             val number = Regex("""(\d+)$""").find(json.optString("tag_name"))?.groupValues?.get(1)?.toIntOrNull()
