@@ -30,12 +30,15 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 /** ثيم عدادات (ملف HTML في assets/themes) يستقبل البيانات عبر window.onSahraData. */
-data class ClusterTheme(val id: String, val name: String, val note: String) {
-    val url get() = "file:///android_asset/themes/$id.html"
+data class ClusterTheme(val id: String, val name: String, val note: String, val file: String = "$id.html") {
+    val url get() = "file:///android_asset/themes/$file"
 }
 
 object ClusterThemes {
     val all = listOf(
+        // ثيم صور من تصميم صاحب التطبيق، بخلفيتين
+        ClusterTheme("haval", "هافال", "معدني رمادي", "image.html?t=haval&v=gray"),
+        ClusterTheme("haval_blue", "هافال أزرق", "معدني بإضاءة", "image.html?t=haval&v=blue"),
         ClusterTheme("dune", "كثبان", "عدادات كلاسيكية"),
         ClusterTheme("horizon", "أفق", "قوس عريض"),
         ClusterTheme("pulse", "نبض", "رقمي"),

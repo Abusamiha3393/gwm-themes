@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="ar"><head><meta charset="utf-8">
+<title>ثيم صور</title>
+<!--
+  عارض ثيمات الصور: يقرأ تخطيطًا (layout.js) من مجلد الثيم ويرسمه على لوحة 1920×720،
+  ثم يكبّر اللوحة لتملأ الشاشة مهما كان مقاسها. الاستخدام: image.html?t=haval&v=blue
+-->
+<style>
+  @font-face{font-family:Digits;src:url(fonts/digits.ttf)}
+  @font-face{font-family:Kufi;src:url(fonts/kufi.ttf)}
+  html,body{margin:0;height:100%;background:#000;overflow:hidden}
+  #stage{position:absolute;left:0;top:0;transform-origin:0 0;overflow:hidden;background:#000}
+  #stage img{position:absolute;pointer-events:none;user-select:none}
+  .needle{transition:transform .35s cubic-bezier(.2,.7,.2,1)}
+  .txt{position:absolute;white-space:nowrap;transform:translate(-50%,-80%);text-align:center;direction:ltr;line-height:1}
+  .txt .u{font-family:Kufi;margin-inline-start:.25em;opacity:.7}
+  .txt img.ic{position:static!important;height:.8em;vertical-align:-.05em;margin-inline-end:.3em;opacity:.85}
+</style>
+<script src="common.js"></script>
+</head><body>
+<div id="stage"></div>
+<script>
+(function () {
+  var q = new URLSearchParams(location.search), dir = (q.get('t') || 'haval') + '/';
+  var s = document.createElement('script');
+  s.src = dir + 'layout.js';
+  s.onload = build;
+  document.head.appendChild(s);
+
+  var L, stage = document.getElementById('stage'), gauges = [], texts = [];
+
+  function fit() {
+    if (!L) return;
+    var k = Math.min(innerWidth / L.canvas.w, innerHeight / L.canvas.h);
+    stage.style.width = L.canvas.w + 'px'; stage.style.height = L.canvas.h + 'px';
+    stage.style.transform = 'translate(' + (innerWidth - L.canvas.w * k) / 2 + 'px,' + (innerHeight - L.canvas.h * k) / 2 + 'px) scale(' + k + ')';
+  }
+
+  function img(file, x, y, w, h) {
+    var i = new Image(); i.src = dir + file;
+    i.style.left = x + 'px'; i.style.top = y + 'px';
+    if (w) i.style.width = w + 'px'; if (h) i.style.height = h + 'px';
+    stage.appendChild(i); return i;
+  }
+
+  function build() {
+    L = window.SAHRA_LAYOUT;
+    var v = q.get('v'), bg = (v && L.variants && L.variants[v]) || L.background;
+    if (bg) img(bg, 0, 0, L.canvas.w, L.canvas.h);
+    (L.images || []).forEach(function (m) {
+      var i = img(m.file, m.x, m.y, m.w, m.h);
+      if (m.anchor === 'center') i.style.transform = 'translate(-50%,-50%)';
+      if (m.opacity != null) i.style.opacity = m.opacity;
+    });
+    (L.gauges || []).forEach(function (g) {
+      var x = g.cx - g.size / 2, y = g.cy - g.size / 2;
+      img(g.dial, x, y, g.size, g.size);
+      var n = img(g.needle, x, y, g.size, g.size);
+      n.className = 'needle';
+      gauges.push({ g: g, n: n });
+    });
+    (L.texts || []).forEach(function (t) {
+      var e = document.createElement('div');
+      e.className = 'txt';
+      e.style.left = t.x + 'px'; e.style.top = t.y + 'px';
+      e.style.fontSize = t.size + 'px';
+      e.style.fontFamily = t.font === 'digits' ? 'Digits' : 'Kufi';
+      e.style.color = t.color || '#fff';
+      e.innerHTML = (t.icon ? '<img class="ic" src="' + dir + t.icon + '">' : '') + '<b class="v">—</b>' +
+        (t.unit ? '<span class="u" style="font-size:' + (t.unitSize || Math.round(t.size * 0.5)) + 'px">' + t.unit + '</span>' : '') +
+        // الاسم بعد الرقم، فيُقرأ بالعربية: «الخارج 34°»
+        (t.label ? '<span class="u" style="font-size:' + Math.round(t.size * 0.5) + 'px">' + t.label + '</span>' : '');
+      stage.appendChild(e);
+      texts.push({ t: t, e: e, v: e.querySelector('.v') });
+    });
+    fit();
+    if (window.SahraData) window.onSahraData(window.SahraData);
+  }
+  addEventListener('resize', fit);
+
+  function value(id, d) {
+    switch (id) {
+      case 'speed': return Sahra.speed(d);
+      case 'rpm1000': return (d.rpm || 0) / 1000;
+      case 'clock': return Sahra.clock();
+      default: return d[id];
+    }
+  }
+
+  function show(id, v) {
+    if (v === null || v === undefined || (typeof v === 'number' && !isFinite(v))) return '—';
+    if (typeof v !== 'number') return v;
+    if (id === 'odometer' || id === 'range' || id === 'speed') return Math.round(v).toLocaleString('en-US');
+    return Math.round(v).toString();
+  }
+
+  window.onSahraData = function (d) {
+    if (!L) return;
+    gauges.forEach(function (o) {
+      var g = o.g, v = value(g.value, d) || 0;
+      var f = Math.max(0, Math.min(1, (v - g.min) / (g.max - g.min)));
+      o.n.style.transform = 'rotate(' + (g.a0 + (g.a1 - g.a0) * f) + 'deg)';
+    });
+    var accent = Sahra.accent(d);
+    texts.forEach(function (o) {
+      var t = o.t, v = value(t.value, d);
+      o.v.textContent = show(t.value, v);
+      var c = t.accent && accent ? accent : (t.color || '#fff');
+      if (typeof v === 'number') {
+        if ((t.alarmBelow != null && v <= t.alarmBelow) || (t.alarmAbove != null && v >= t.alarmAbove)) c = '#FF3B30';
+        else if ((t.warnBelow != null && v <= t.warnBelow) || (t.warnAbove != null && v >= t.warnAbove)) c = '#FFC400';
+      }
+      o.e.style.color = c;
+    });
+  };
+})();
+</script>
+</body></html>
