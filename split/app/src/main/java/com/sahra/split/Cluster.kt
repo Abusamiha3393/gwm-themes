@@ -52,6 +52,9 @@ object ClusterThemes {
 
 /** البيانات التي تُرسل للثيم بنفس صيغة صحراء داش. */
 object ClusterPayload {
+    /** نص القياسات الذي يظهر وسط الثيم عند تفعيل «قياسات الشاشة». */
+    @Volatile var debugInfo = ""
+
     private fun JSONObject.num(name: String, v: Float) = put(name, if (v.isNaN()) JSONObject.NULL else v.toDouble())
 
     /** الخدمة لا تعطي ناقل الحركة بشكل موثوق، فنستنتجه من السرعة والدوران. */
@@ -100,6 +103,7 @@ object ClusterPayload {
         })
         d.put("alerts", alerts(s))
         d.put("layout", "cluster")
+        if (p.clusterDebug) d.put("debug", debugInfo)
         d.put("theme", p.clusterTheme)
         d.put("time", System.currentTimeMillis())
         return d
@@ -294,6 +298,9 @@ class ClusterService : Service() {
                 PixelFormat.OPAQUE,
             )
             frame(display, lp)
+            val m = android.util.DisplayMetrics().also { @Suppress("DEPRECATION") display.getRealMetrics(it) }
+            ClusterPayload.debugInfo = "display ${display.displayId} ${m.widthPixels}x${m.heightPixels} d=${m.density}\n" +
+                "window ${lp.width}x${lp.height} at ${lp.x},${lp.y}\nall: ${displaysInfo(this)}"
             w.addView(v, lp)
             v.load(theme)
             view = v; wm = w; shown = display

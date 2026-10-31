@@ -106,6 +106,7 @@ class SettingsActivity : Activity() {
         }
         seek("أقصى سرعة في العداد", 140, 260, prefs.speedMax, { "$it" }) { prefs.speedMax = it }
         seek("أقصى دوران في العداد", 5000, 9000, prefs.rpmMax, { "$it" }) { prefs.rpmMax = (it / 500) * 500 }
+        toggle("إظهار قياسات الشاشة وسط الثيم (للضبط)", prefs.clusterDebug) { prefs.clusterDebug = it }
         seek("هامش أعلى الثيم", 0, 30, prefs.clusterTop, { "$it%" }) { prefs.clusterTop = it; ClusterService.reload(this) }
         seek("هامش أسفل الثيم", 0, 30, prefs.clusterBottom, { "$it%" }) { prefs.clusterBottom = it; ClusterService.reload(this) }
         seek("هامش الجانبين", 0, 25, prefs.clusterSide, { "$it%" }) { prefs.clusterSide = it; ClusterService.reload(this) }

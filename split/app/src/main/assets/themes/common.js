@@ -74,6 +74,14 @@
   window.__sahra = function (d) {
     ensure();
     document.documentElement.classList.toggle('cluster', d.layout === 'cluster');
+    // قياسات للضبط: مقاس الصفحة كما يراه الثيم، ومقاس النافذة كما يراه التطبيق
+    var dbg = document.getElementById('sahra-dbg');
+    if (d.debug) {
+      if (!dbg) { dbg = document.createElement('div'); dbg.id = 'sahra-dbg';
+        dbg.style.cssText = 'position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:99;background:#ffd400;color:#000;font:bold 22px monospace;padding:10px 16px;border-radius:8px;direction:ltr;white-space:pre';
+        document.body.appendChild(dbg); }
+      dbg.textContent = 'page ' + innerWidth + 'x' + innerHeight + ' dpr ' + devicePixelRatio + '\n' + (d.debug || '');
+    } else if (dbg) dbg.remove();
     var s = d.style || {};
     if (s.accent) document.documentElement.style.setProperty('--accent', s.accent);
     applyDesign(s.design || {});

@@ -117,6 +117,11 @@ class Prefs(context: Context) {
         get() = sp.getInt("cluster_side", 0)
         set(v) = put("cluster_side", v)
 
+    /** يُظهر قياسات الشاشة وسط الثيم على العدادات (للضبط). */
+    var clusterDebug: Boolean
+        get() = sp.getBoolean("cluster_debug", true)
+        set(v) = put("cluster_debug", v)
+
     var speedMax: Int
         get() = sp.getInt("speed_max", 220)
         set(v) = put("speed_max", v)
