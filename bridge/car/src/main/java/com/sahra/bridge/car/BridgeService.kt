@@ -96,6 +96,9 @@ class BridgeService : Service() {
 
     private fun handle(req: Request): Response = when {
         req.method == "GET" && req.path == "/v1/info" -> ok(info())
+        req.method == "GET" && (req.path == "/" || req.path == "/index.html" || req.path.startsWith("/p/")) -> page()
+        req.method == "GET" && req.path == "/app.apk" -> phoneApk()
+        req.method == "POST" && req.path == "/v1/web/claim" -> claim(req)
         req.method == "POST" && req.path == "/v1/pair" -> pair(req)
         req.method == "POST" && req.path == "/v1/pair/request" -> pairRequest(req)
         req.method == "GET" && req.path.startsWith("/v1/pair/request/") -> pairStatus(req.path.substringAfterLast('/'))
@@ -138,6 +141,50 @@ class BridgeService : Service() {
             changed()
         }
         return ok(info().put("token", token))
+    }
+
+    // ---- صفحة الويب وتطبيق الجوال المضمّن ----
+
+    private fun page(): Response = try {
+        Response.raw(200, assets.open("web/index.html").use { it.readBytes() }, "text/html; charset=utf-8")
+    } catch (e: IOException) {
+        Response(500, """{"error":"no_page"}""")
+    }
+
+    /** تطبيق الجوال مضمَّن في هذا التطبيق عند البناء (assets/phone.apk). */
+    private fun phoneApk(): Response = try {
+        val bytes = assets.open("phone.apk").use { it.readBytes() }
+        Response.raw(
+            200, bytes, Uploads.APK_MIME,
+            mapOf("Content-Disposition" to "attachment; filename=\"HavalBridge-Phone.apk\""),
+        )
+    } catch (e: IOException) {
+        Response.raw(404, "تطبيق الجوال غير مضمّن في هذه النسخة".toByteArray(), "text/plain; charset=utf-8")
+    }
+
+    /** المتصفح يقدّم مفتاح QR (لمرة واحدة) ويأخذ رمز جلسة دائمًا. */
+    private fun claim(req: Request): Response {
+        if (System.currentTimeMillis() < lockedUntil) return Response(429, """{"error":"locked"}""")
+        val body = try {
+            JSONObject(req.body)
+        } catch (e: Exception) {
+            return Response(400, """{"error":"bad_json"}""")
+        }
+        if (!store.consumeWebKey(body.optString("key"))) {
+            if (failures.incrementAndGet() >= MAX_FAILURES) {
+                lockedUntil = System.currentTimeMillis() + LOCK_MS
+                failures.set(0)
+            }
+            return Response(403, """{"error":"expired"}""")
+        }
+        failures.set(0)
+        val name = body.optString("name").trim().ifEmpty { "جوال" }
+        val token = store.addDevice(name)
+        main.post {
+            Actions.toast(this, "تم ربط $name ✓")
+            changed()
+        }
+        return ok(info().put("token", token).put("host", req.headers["host"]?.substringBefore(':') ?: ""))
     }
 
     // ---- الاقتران بالموافقة على الشاشة ----

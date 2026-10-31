@@ -7,3 +7,4 @@ local.properties
 !release.jks
 *.keystore
 captures/
+bridge/car/src/main/assets/phone.apk

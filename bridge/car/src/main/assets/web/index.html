@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#18191B">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="الهافال">
+<title>جسر الهافال</title>
+<style>
+  :root {
+    --asphalt: #18191B; --shoulder: #1F2023; --kerb: #26282B; --lane: #3B3D41;
+    --green: #0A5236; --blue: #1A3C6B; --amber: #F3B300; --white: #F4F5F0; --grey: #9FA3A8;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; background: var(--asphalt); color: var(--white);
+    font: 16px/1.5 system-ui, -apple-system, "Segoe UI", "Noto Kufi Arabic", sans-serif; }
+  main { max-width: 560px; margin: 0 auto; padding: 20px 16px calc(32px + env(safe-area-inset-bottom)); }
+  h1 { font-size: 26px; margin: 0; }
+  .sub { color: var(--grey); margin: 2px 0 18px; font-size: 15px; }
+  .card { background: var(--shoulder); border-radius: 14px; padding: 18px; margin-bottom: 14px; }
+  .card h2 { font-size: 19px; margin: 0 0 10px; }
+  textarea { width: 100%; min-height: 96px; resize: vertical; border: 0; border-radius: 12px;
+    background: var(--kerb); color: var(--white); padding: 12px 14px; font: inherit; }
+  textarea::placeholder { color: var(--grey); }
+  button, .btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%;
+    min-height: 54px; border: 0; border-radius: 12px; font-family: inherit; font-weight: 700; font-size: 17px; line-height: 1.2; color: var(--white);
+    background: var(--kerb); text-decoration: none; cursor: pointer; margin-top: 10px; }
+  button:disabled { opacity: .5; }
+  .go { background: var(--green); }
+  .alt { background: var(--blue); }
+  .hint { color: var(--grey); font-size: 14px; margin: 10px 0 0; }
+  .status { display: flex; align-items: center; gap: 8px; font-size: 15px; color: var(--grey); }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--grey); flex: none; }
+  .ok .dot { background: var(--amber); } .ok { color: var(--white); }
+  .row { display: flex; gap: 10px; } .row > * { flex: 1; }
+  .item { display: flex; gap: 10px; align-items: center; padding: 10px 0; border-top: 1px solid var(--kerb); font-size: 15px; }
+  .item:first-of-type { border-top: 0; }
+  .item .t { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .item .s { color: var(--grey); font-size: 13px; white-space: nowrap; }
+  .bar { height: 6px; border-radius: 3px; background: var(--kerb); overflow: hidden; margin-top: 6px; }
+  .bar > i { display: block; height: 100%; width: 0; background: var(--amber); transition: width .2s; }
+  #toast { position: fixed; inset-inline: 16px; bottom: calc(20px + env(safe-area-inset-bottom)); max-width: 528px;
+    margin: 0 auto; background: var(--white); color: var(--asphalt); border-radius: 12px; padding: 14px 16px;
+    font-weight: 600; transform: translateY(150%); transition: transform .25s; }
+  #toast.show { transform: none; }
+  .hidden { display: none !important; }
+  .scan { text-align: center; padding: 40px 18px; }
+  .scan .big { font-size: 56px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>🚗 <span id="car">الهافال</span></h1>
+  <p class="sub">أرسل إلى شاشة السيارة</p>
+
+  <section id="needScan" class="card scan hidden">
+    <div class="big">📷</div>
+    <h2>امسح رمز QR من شاشة السيارة</h2>
+    <p class="hint">افتح «جسر الهافال» على الشاشة، ثم امسح الرمز بكاميرا الجوال.</p>
+  </section>
+
+  <div id="app" class="hidden">
+    <section class="card">
+      <div id="status" class="status"><span class="dot"></span><span id="statusText">جارٍ الاتصال…</span></div>
+    </section>
+
+    <section class="card">
+      <h2>رابط أو موقع أو نص</h2>
+      <textarea id="text" placeholder="الصق رابط خرائط Google أو رابطًا أو عنوانًا أو أي نص"></textarea>
+      <button id="sendText" class="go">أرسل إلى الشاشة</button>
+    </section>
+
+    <section class="card">
+      <h2>صور وملفات</h2>
+      <div class="row">
+        <button id="pickPhotos" class="alt">🖼 صور وفيديو</button>
+        <button id="pickFiles">📄 ملفات</button>
+      </div>
+      <input id="photos" type="file" accept="image/*,video/*" multiple class="hidden">
+      <input id="files" type="file" multiple class="hidden">
+      <div id="uploads"></div>
+    </section>
+
+    <section id="android" class="card hidden">
+      <h2>تطبيق Android</h2>
+      <p class="hint" style="margin-top:0">اختياري: يضيف «أرسل إلى الهافال» إلى قائمة المشاركة في كل التطبيقات، فلا تحتاج إلى فتح هذه الصفحة.</p>
+      <a class="btn alt" href="/app.apk" download>⬇️ ثبّت تطبيق الجوال</a>
+      <a id="linkApp" class="btn">🔗 بعد التثبيت: افتح التطبيق واربطه</a>
+    </section>
+
+    <section id="ios" class="card hidden">
+      <h2>وصول أسرع</h2>
+      <p class="hint" style="margin-top:0">في Safari: زر المشاركة ← «إضافة إلى الشاشة الرئيسية». تبقى الصفحة مربوطة بالسيارة.</p>
+    </section>
+
+    <section id="recentCard" class="card hidden">
+      <h2>آخر ما أُرسل</h2>
+      <div id="recent"></div>
+    </section>
+
+    <button id="forget" style="background:transparent;color:var(--grey);font-weight:500;font-size:15px">إلغاء ربط هذا الجوال</button>
+  </div>
+</main>
+<div id="toast"></div>
+
+<script>
+(function () {
+  "use strict";
+  var $ = function (id) { return document.getElementById(id); };
+  var CHUNK = 4 * 1024 * 1024;
+  var store = {
+    get: function (k) { try { return localStorage.getItem("hb." + k); } catch (e) { return null; } },
+    set: function (k, v) { try { localStorage.setItem("hb." + k, v); } catch (e) {} },
+    del: function (k) { try { localStorage.removeItem("hb." + k); } catch (e) {} }
+  };
+  var ua = navigator.userAgent;
+  var isAndroid = /Android/i.test(ua);
+  var isIOS = /iPhone|iPad|iPod/i.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+
+  function deviceName() {
+    if (/iPhone/i.test(ua)) return "iPhone (متصفح)";
+    if (/iPad/i.test(ua)) return "iPad (متصفح)";
+    var m = ua.match(/Android [\d.]+; ([^;)]+)/);
+    if (m && m[1] && m[1] !== "K") return m[1].trim() + " (متصفح)";
+    return isAndroid ? "Android (متصفح)" : "متصفح";
+  }
+
+  var toastTimer;
+  function toast(msg) {
+    var t = $("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { t.classList.remove("show"); }, 3500);
+  }
+
+  function api(method, path, body, headers) {
+    var h = headers || {};
+    var token = store.get("token");
+    if (token) h["Authorization"] = "Bearer " + token;
+    var opts = { method: method, headers: h, cache: "no-store" };
+    if (body !== undefined && body !== null) {
+      if (body instanceof Blob) { opts.body = body; h["Content-Type"] = "application/octet-stream"; }
+      else { opts.body = JSON.stringify(body); h["Content-Type"] = "application/json"; }
+    }
+    return fetch(path, opts).then(function (r) {
+      return r.text().then(function (t) {
+        var j = {}; try { j = t ? JSON.parse(t) : {}; } catch (e) {}
+        if (!r.ok) { var err = new Error("HTTP " + r.status); err.status = r.status; err.body = j; throw err; }
+        return j;
+      });
+    });
+  }
+
+  function showScan() { $("needScan").classList.remove("hidden"); $("app").classList.add("hidden"); }
+
+  function setStatus(ok, text) {
+    $("status").classList.toggle("ok", ok);
+    $("statusText").textContent = text;
+  }
+
+  function showApp() {
+    $("needScan").classList.add("hidden");
+    $("app").classList.remove("hidden");
+    $("car").textContent = store.get("name") || "الهافال";
+    if (isAndroid) {
+      $("android").classList.remove("hidden");
+      var q = "h=" + encodeURIComponent(location.hostname) + "&p=" + encodeURIComponent(location.port || "80") +
+        "&t=" + encodeURIComponent(store.get("token")) + "&id=" + encodeURIComponent(store.get("id") || "") +
+        "&n=" + encodeURIComponent(store.get("name") || "");
+      var fallback = encodeURIComponent(location.origin + "/app.apk");
+      $("linkApp").href = "intent://pair?" + q + "#Intent;scheme=havalbridge;package=com.sahra.bridge.phone;S.browser_fallback_url=" + fallback + ";end";
+    }
+    if (isIOS && !navigator.standalone) $("ios").classList.remove("hidden");
+    renderRecent();
+    api("GET", "/v1/ping").then(function () {
+      setStatus(true, "متصل بالشاشة");
+    }).catch(function (e) {
+      if (e.status === 401) { forget(); toast("أُلغي ربط هذا الجوال من الشاشة — امسح الرمز من جديد"); }
+      else setStatus(false, "الشاشة غير متاحة — تأكد أن الجوال على نفس الشبكة");
+    });
+  }
+
+  function forget() { store.del("token"); store.del("id"); store.del("name"); showScan(); }
+
+  // ---- السجل ----
+  function recent() { try { return JSON.parse(store.get("recent") || "[]"); } catch (e) { return []; } }
+  function remember(icon, title) {
+    var r = recent(); r.unshift({ i: icon, t: title, at: Date.now() });
+    store.set("recent", JSON.stringify(r.slice(0, 10))); renderRecent();
+  }
+  function renderRecent() {
+    var r = recent(), box = $("recent");
+    $("recentCard").classList.toggle("hidden", r.length === 0);
+    box.innerHTML = "";
+    r.forEach(function (x) {
+      var d = new Date(x.at);
+      var row = document.createElement("div"); row.className = "item";
+      var t = document.createElement("span"); t.className = "t"; t.textContent = x.i + "  " + x.t;
+      var s = document.createElement("span"); s.className = "s";
+      s.textContent = d.getHours() + ":" + String(d.getMinutes()).padStart(2, "0");
+      row.appendChild(t); row.appendChild(s); box.appendChild(row);
+    });
+  }
+
+  // ---- إرسال نص ----
+  $("sendText").addEventListener("click", function () {
+    var text = $("text").value.trim();
+    if (!text) { toast("اكتب أو الصق شيئًا أولًا"); return; }
+    var b = this; b.disabled = true;
+    api("POST", "/v1/items", { type: "share", payload: { text: text } }).then(function () {
+      $("text").value = "";
+      var icon = /maps|goo\.gl|waze|^-?\d+\.\d+\s*,/i.test(text) ? "📍" : (/^https?:/i.test(text) ? "🔗" : "📝");
+      remember(icon, text.split("\n")[0].slice(0, 80));
+      toast("✓ وصل إلى الشاشة");
+    }).catch(function (e) {
+      toast(e.status === 400 ? "لم تفهم الشاشة هذا المحتوى" : "تعذّر الإرسال — تأكد من الاتصال");
+    }).then(function () { b.disabled = false; });
+  });
+
+  // ---- رفع الملفات ----
+  $("pickPhotos").addEventListener("click", function () { $("photos").click(); });
+  $("pickFiles").addEventListener("click", function () { $("files").click(); });
+  $("photos").addEventListener("change", function () { queue(this); });
+  $("files").addEventListener("change", function () { queue(this); });
+
+  var busy = false, pending = [];
+  function queue(input) {
+    for (var i = 0; i < input.files.length; i++) pending.push(input.files[i]);
+    input.value = "";
+    if (!busy) next();
+  }
+
+  function next() {
+    var f = pending.shift();
+    if (!f) { busy = false; return; }
+    busy = true;
+    var row = document.createElement("div"); row.className = "item"; row.style.display = "block";
+    var label = document.createElement("div"); label.className = "t"; label.textContent = f.name;
+    var bar = document.createElement("div"); bar.className = "bar";
+    var fill = document.createElement("i"); bar.appendChild(fill);
+    row.appendChild(label); row.appendChild(bar); $("uploads").prepend(row);
+    upload(f, function (p) { fill.style.width = Math.round(p * 100) + "%"; }).then(function () {
+      fill.style.width = "100%";
+      label.textContent = "✓ " + f.name;
+      remember(/^image/.test(f.type) ? "🖼" : /^video/.test(f.type) ? "🎬" : "📄", f.name);
+      if (pending.length === 0) toast("✓ وصلت الملفات إلى الشاشة");
+    }).catch(function (e) {
+      label.textContent = "✗ " + f.name;
+      toast(e.status === 507 ? "لا توجد مساحة كافية على الشاشة" :
+            e.status === 413 ? "الملف أكبر من المسموح" : "تعذّر إرسال " + f.name);
+    }).then(next);
+  }
+
+  function upload(f, progress) {
+    var meta = { name: f.name, size: f.size, mime: f.type || "", modified: f.lastModified || 0, sha256: "" };
+    return api("POST", "/v1/uploads", meta).then(function (st) {
+      if (st.done) return st;
+      var id = st.id, offset = st.received || 0, tries = 0;
+      function step() {
+        progress(offset / f.size);
+        if (offset >= f.size) return Promise.resolve();
+        var end = Math.min(offset + CHUNK, f.size);
+        return api("PUT", "/v1/uploads/" + id, f.slice(offset, end), { "X-Offset": String(offset) })
+          .then(function (r) { tries = 0; offset = r.received; return r.done ? null : step(); })
+          .catch(function (e) {
+            if (tries++ >= 4) throw e;
+            if (e.status === 409 && e.body) { offset = e.body.received || 0; return step(); }
+            if (e.status) throw e;
+            // انقطاع الشبكة: ننتظر ثم نسأل الشاشة عمّا وصل
+            return new Promise(function (ok) { setTimeout(ok, 2000); })
+              .then(function () { return api("GET", "/v1/uploads/" + id); })
+              .then(function (s) { if (s.done) offset = f.size; else offset = s.received || 0; return step(); });
+          });
+      }
+      return step();
+    });
+  }
+
+  $("forget").addEventListener("click", function () {
+    if (confirm("إلغاء ربط هذا الجوال؟ ستحتاج إلى مسح الرمز مجددًا.")) forget();
+  });
+
+  // ---- البداية: مفتاح QR في الرابط؟ ----
+  var m = location.pathname.match(/^\/p\/([a-z0-9]+)/);
+  if (m) {
+    history.replaceState(null, "", "/");
+    api("POST", "/v1/web/claim", { key: m[1], name: deviceName() }).then(function (r) {
+      store.set("token", r.token); store.set("id", r.id || ""); store.set("name", r.name || "");
+      toast("✓ تم الربط بـ " + (r.name || "السيارة"));
+      showApp();
+    }).catch(function (e) {
+      if (store.get("token")) { showApp(); return; }
+      toast(e.status === 403 ? "انتهت صلاحية الرمز — امسح الرمز الظاهر الآن على الشاشة" : "تعذّر الربط");
+      showScan();
+    });
+  } else if (store.get("token")) {
+    showApp();
+  } else {
+    showScan();
+  }
+})();
+</script>
+</body>
+</html>

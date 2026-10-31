@@ -23,7 +23,19 @@ class Request(
     val body: String get() = String(bytes, Charsets.UTF_8)
 }
 
-class Response(val code: Int, val json: String)
+/** رد JSON افتراضيًا، أو أي محتوى (صفحة الويب، ملف APK) عبر raw. */
+class Response(
+    val code: Int,
+    val json: String = "",
+    val raw: ByteArray? = null,
+    val type: String = "application/json; charset=utf-8",
+    val headers: Map<String, String> = emptyMap(),
+) {
+    companion object {
+        fun raw(code: Int, bytes: ByteArray, type: String, headers: Map<String, String> = emptyMap()) =
+            Response(code, "", bytes, type, headers)
+    }
+}
 
 /**
  * خادم HTTP صغير بلا مكتبات: طلب واحد لكل اتصال. جسم JSON لا يتجاوز 64 KB،
@@ -110,10 +122,13 @@ class HttpServer(private val port: Int, private val handler: (Request) -> Respon
     }
 
     private fun write(out: OutputStream, r: Response) {
-        val bytes = r.json.toByteArray(Charsets.UTF_8)
+        val bytes = r.raw ?: r.json.toByteArray(Charsets.UTF_8)
+        val extra = r.headers.entries.joinToString("") { "${it.key}: ${it.value}\r\n" }
         val head = "HTTP/1.1 ${r.code} ${reason(r.code)}\r\n" +
-            "Content-Type: application/json; charset=utf-8\r\n" +
+            "Content-Type: ${r.type}\r\n" +
             "Content-Length: ${bytes.size}\r\n" +
+            "Cache-Control: no-store\r\n" +
+            extra +
             "Connection: close\r\n\r\n"
         out.write(head.toByteArray(Charsets.US_ASCII))
         out.write(bytes)
@@ -135,6 +150,7 @@ class HttpServer(private val port: Int, private val handler: (Request) -> Respon
 
     private fun reason(code: Int) = when (code) {
         200 -> "OK"
+        302 -> "Found"
         400 -> "Bad Request"
         401 -> "Unauthorized"
         403 -> "Forbidden"

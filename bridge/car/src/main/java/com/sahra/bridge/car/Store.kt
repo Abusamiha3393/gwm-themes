@@ -93,6 +93,34 @@ class Store(context: Context) {
         return true
     }
 
+    // ---- مفتاح QR (لمرة واحدة) ----
+
+    /** المفتاح المضمَّن في رابط QR. مسحه من داخل السيارة يكفي للاقتران. */
+    @Synchronized
+    fun currentWebKey(): String {
+        val k = p.getString("webKey", null)
+        if (k == null || System.currentTimeMillis() > p.getLong("webKeyExp", 0L)) return newWebKey()
+        return k
+    }
+
+    @Synchronized
+    fun newWebKey(): String {
+        val alphabet = "abcdefghjkmnpqrstuvwxyz23456789"
+        val k = (1..16).map { alphabet[random.nextInt(alphabet.length)] }.joinToString("")
+        p.edit().putString("webKey", k).putLong("webKeyExp", System.currentTimeMillis() + WEB_KEY_TTL).apply()
+        return k
+    }
+
+    /** يقبل المفتاح مرة واحدة ثم يولّد غيره، فلا تصلح صورة قديمة للـ QR. */
+    @Synchronized
+    fun consumeWebKey(key: String): Boolean {
+        val k = p.getString("webKey", null) ?: return false
+        if (System.currentTimeMillis() > p.getLong("webKeyExp", 0L)) return false
+        if (!MessageDigest.isEqual(k.toByteArray(), key.toByteArray())) return false
+        newWebKey()
+        return true
+    }
+
     // ---- الأجهزة الموثوقة ----
 
     @Synchronized
@@ -156,6 +184,7 @@ class Store(context: Context) {
 
     companion object {
         const val CODE_TTL = 5 * 60 * 1000L
+        const val WEB_KEY_TTL = 10 * 60 * 1000L
         const val MAX_INBOX = 50
 
         fun sha256(s: String): String = hex(MessageDigest.getInstance("SHA-256").digest(s.toByteArray()))

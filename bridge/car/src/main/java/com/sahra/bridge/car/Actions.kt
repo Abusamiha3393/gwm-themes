@@ -15,6 +15,17 @@ object Actions {
 
     /** يحوّل طلب الجوال إلى عنصر، أو null إن كان غير صالح. */
     fun parse(json: JSONObject, from: String): Item? {
+        // «share»: نص خام من صفحة الويب، نحلّله هنا كما يفعل تطبيق الجوال
+        if (json.optString("type") == "share") {
+            val text = json.optJSONObject("payload")?.optString("text").orEmpty().trim()
+            if (text.isEmpty() || text.length > 10_000) return null
+            val built = try {
+                MapLinks.build(text)
+            } catch (e: Exception) {
+                JSONObject().put("type", "text").put("payload", JSONObject().put("text", text))
+            }
+            return parse(built, from)
+        }
         val type = json.optString("type")
         val p = json.optJSONObject("payload") ?: return null
         val id = UUID.randomUUID().toString()

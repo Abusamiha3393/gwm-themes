@@ -41,17 +41,21 @@ jobs:
       - name: Build
         env:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-        run: gradle assembleRelease --no-daemon --stacktrace
+        # تطبيق الجوال يُبنى أولًا ويُضمَّن داخل تطبيق الشاشة، فتقدّمه الشاشة عبر QR
+        run: |
+          gradle :phone:assembleRelease --no-daemon --stacktrace
+          mkdir -p car/src/main/assets
+          cp phone/build/outputs/apk/release/phone-release.apk car/src/main/assets/phone.apk
+          gradle :car:assembleRelease --no-daemon --stacktrace
 
-      - name: Rename APKs
+      - name: Rename APK
         run: |
           mkdir -p out
-          cp car/build/outputs/apk/release/car-release.apk "out/HavalBridge-Car-0.1.${{ github.run_number }}.apk"
-          cp phone/build/outputs/apk/release/phone-release.apk "out/HavalBridge-Phone-0.1.${{ github.run_number }}.apk"
+          cp car/build/outputs/apk/release/car-release.apk "out/HavalBridge-0.2.${{ github.run_number }}.apk"
 
       - uses: actions/upload-artifact@v4
         with:
-          name: HavalBridge-apks
+          name: HavalBridge-apk
           path: bridge/out/*.apk
 
       # make_latest=false حتى لا يظن محدّث صحراء داش أن هذا إصداره
@@ -59,9 +63,9 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: bridge-${{ github.run_number }}
-          name: جسر الهافال 0.1.${{ github.run_number }}
+          name: جسر الهافال 0.2.${{ github.run_number }}
           body: |
-            HavalBridge-Car: يُثبّت على شاشة الهافال.
-            HavalBridge-Phone: يُثبّت على جوال Android.
+            تطبيق واحد يُثبّت على شاشة الهافال. الجوال يتصل بمسح رمز QR من الشاشة،
+            ومن الصفحة نفسها يمكن تثبيت تطبيق Android المضمَّن اختياريًا.
           make_latest: "false"
           files: bridge/out/*.apk

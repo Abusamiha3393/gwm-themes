@@ -12,7 +12,7 @@ android {
         minSdk = 26
         targetSdk = 34
         versionCode = (System.getenv("GITHUB_RUN_NUMBER") ?: "1").toInt()
-        versionName = "0.1." + (System.getenv("GITHUB_RUN_NUMBER") ?: "0")
+        versionName = "0.2." + (System.getenv("GITHUB_RUN_NUMBER") ?: "0")
     }
 
     signingConfigs {
@@ -48,4 +48,9 @@ android {
     kotlinOptions {
         jvmTarget = "17"
     }
+}
+
+dependencies {
+    // توليد رمز QR فقط (مكتبة Java خفيفة بلا AndroidX)
+    implementation("com.google.zxing:core:3.5.3")
 }

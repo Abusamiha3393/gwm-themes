@@ -4,7 +4,6 @@ import android.Manifest
 import android.app.Activity
 import android.app.AlertDialog
 import android.content.Intent
-import android.graphics.Typeface
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -12,8 +11,10 @@ import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
 import android.text.TextUtils
+import android.view.Gravity
 import android.view.View
 import android.widget.EditText
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import java.net.Inet4Address
@@ -125,30 +126,39 @@ class MainActivity : Activity() {
         }
 
         val pairCard = card()
-        pairCard.addView(ui.text("اقتران جوال جديد", 22f, bold = true))
-        pairCard.addView(ui.text("في «رفيق الهافال» على الجوال اضغط «ابحث عن السيارة»، ثم اضغط «سماح» هنا. يتم ذلك مرة واحدة فقط.", 15f, Palette.grey))
-        pairCard.addView(ui.gap(10))
-        pairCard.addView(ui.text("أو أدخل هذا الرمز في الجوال:", 14f, Palette.grey))
-        pairCard.addView(ui.text(store.currentCode().chunked(3).joinToString(" "), 40f, Palette.amber).apply {
-            typeface = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD)
-            textDirection = View.TEXT_DIRECTION_LTR
-            textAlignment = View.TEXT_ALIGNMENT_CENTER
-        }, ui.matchWidth())
-        pairCard.addView(ui.text("صالح حتى ${time.format(Date(store.codeExpiresAt()))} — يُستخدم مرة واحدة", 14f, Palette.grey).apply {
-            textAlignment = View.TEXT_ALIGNMENT_CENTER
-        }, ui.matchWidth())
-        pairCard.addView(ui.gap(10))
         val ips = addresses()
-        val where = if (ips.isEmpty()) "غير متصل بشبكة Wi-Fi — صِل الشاشة بنقطة اتصال الجوال"
-        else "عنوان السيارة: " + ips.joinToString("  ·  ") { "$it:${BridgeService.PORT}" }
-        pairCard.addView(ui.text(where, 15f, if (ips.isEmpty()) Palette.amber else Palette.white).apply {
+        val ip = ips.firstOrNull()
+        if (ip == null) {
+            pairCard.addView(ui.text("صِل الشاشة بنقطة اتصال الجوال", 22f, Palette.amber, bold = true))
+            pairCard.addView(ui.text("يظهر رمز QR هنا بعد الاتصال بشبكة Wi-Fi.", 15f, Palette.grey))
+        } else {
+            val url = "http://$ip:${BridgeService.PORT}/p/${store.currentWebKey()}"
+            val qrRow = ui.row().apply { gravity = Gravity.CENTER_VERTICAL }
+            val qr = ImageView(this).apply {
+                setImageBitmap(Qr.bitmap(url, ui.dp(240)))
+                background = ui.rounded(Palette.white, 12)
+                setPadding(ui.dp(10), ui.dp(10), ui.dp(10), ui.dp(10))
+            }
+            qrRow.addView(qr, LinearLayout.LayoutParams(ui.dp(260), ui.dp(260)))
+            qrRow.addView(ui.gap(20))
+            val words = ui.column()
+            words.addView(ui.text("امسح بكاميرا الجوال", 24f, bold = true))
+            words.addView(ui.gap(6))
+            words.addView(ui.text("تفتح صفحة ترسل منها المواقع والروابط والصور والملفات مباشرة — تعمل على iPhone وAndroid دون تثبيت شيء.", 15f, Palette.grey))
+            words.addView(ui.gap(8))
+            words.addView(ui.text("على Android يمكنك من الصفحة نفسها تثبيت التطبيق ليظهر في قائمة المشاركة.", 15f, Palette.grey))
+            words.addView(ui.gap(8))
+            words.addView(ui.text("الرمز لمرة واحدة ويتجدد كل 10 دقائق.", 13f, Palette.grey))
+            qrRow.addView(words, ui.weight(1f))
+            pairCard.addView(qrRow, ui.matchWidth())
+        }
+        pairCard.addView(ui.gap(12))
+        // طرق احتياطية: رمز من 6 أرقام وعنوان الشاشة للإدخال اليدوي في تطبيق الجوال
+        val fallback = "رمز يدوي: ${store.currentCode()}" +
+            if (ips.isEmpty()) "" else "   ·   العنوان: " + ips.joinToString("  ") { "$it:${BridgeService.PORT}" }
+        pairCard.addView(ui.text(fallback, 14f, Palette.grey).apply {
             textDirection = View.TEXT_DIRECTION_ANY_RTL
         })
-        pairCard.addView(ui.gap(12))
-        pairCard.addView(ui.button("رمز جديد", Palette.kerb) {
-            store.newCode()
-            render()
-        }, ui.wrap())
         right.addView(pairCard, ui.matchWidth())
 
         if (!Settings.canDrawOverlays(this)) {
@@ -304,6 +314,7 @@ class MainActivity : Activity() {
             .filter { it.isUp && !it.isLoopback }
             .flatMap { it.inetAddresses.toList() }
             .filterIsInstance<Inet4Address>()
+            .filter { it.isSiteLocalAddress }
             .mapNotNull { it.hostAddress }
     } catch (e: Exception) {
         emptyList()

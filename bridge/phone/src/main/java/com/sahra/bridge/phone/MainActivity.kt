@@ -46,6 +46,33 @@ class MainActivity : Activity() {
         if (Build.VERSION.SDK_INT >= 33) {
             requestPermissions(arrayOf("android.permission.POST_NOTIFICATIONS"), 1)
         }
+        linkFrom(intent)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        linkFrom(intent)
+        render()
+        if (store.paired) refreshStatus()
+    }
+
+    /** ربط فوري من صفحة الشاشة (بعد مسح QR): الرمز يأتي جاهزًا فلا بحث ولا موافقة. */
+    private fun linkFrom(i: Intent?) {
+        if (i == null) return
+        val data = i.data ?: return
+        if (data.scheme != "havalbridge" || data.host != "pair") return
+        val host = data.getQueryParameter("h").orEmpty()
+        val token = data.getQueryParameter("t").orEmpty()
+        if (host.isEmpty() || token.isEmpty()) return
+        val port = data.getQueryParameter("p")?.toIntOrNull() ?: Client.PORT
+        val car = Car(
+            data.getQueryParameter("id").orEmpty(),
+            data.getQueryParameter("n").orEmpty().ifEmpty { "الهافال" },
+            host, port,
+        )
+        store.savePairing(car, token)
+        i.data = null
+        toast("تم الربط بـ ${car.name} ✓")
     }
 
     @Deprecated("Deprecated in Java")
@@ -223,7 +250,9 @@ class MainActivity : Activity() {
         val c = card()
         c.addView(ui.text("اقتران السيارة", 22f, bold = true))
         c.addView(ui.gap(6))
-        c.addView(ui.text("1. افتح «جسر الهافال» على شاشة السيارة.\n2. صِل الشاشة والجوال بنفس الشبكة (نقطة اتصال الجوال مثلًا).\n3. ابحث هنا، ثم اضغط «سماح» على الشاشة.\nمرة واحدة فقط: بعدها يتصل تلقائيًا دون رمز.", 15f, Palette.grey))
+        c.addView(ui.text("الأسهل: امسح رمز QR الظاهر على شاشة السيارة بكاميرا الجوال، ثم اضغط في الصفحة «افتح التطبيق واربطه».", 16f, Palette.white))
+        c.addView(ui.gap(8))
+        c.addView(ui.text("أو: صِل الجهازين بنفس الشبكة، ابحث هنا، ثم اضغط «سماح» على الشاشة. مرة واحدة فقط.", 15f, Palette.grey))
         c.addView(ui.gap(12))
         c.addView(ui.button(if (searching) "جارٍ البحث…" else "ابحث عن السيارة", Palette.green) {
             if (!searching) search()

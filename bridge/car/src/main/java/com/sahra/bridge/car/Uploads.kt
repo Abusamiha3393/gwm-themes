@@ -26,11 +26,13 @@ class Uploads(private val context: Context) {
         val size = body.optLong("size", -1)
         val sha = body.optString("sha256").lowercase(Locale.US)
         val mime = body.optString("mime").ifEmpty { guessMime(name) }.take(100)
-        if (size <= 0 || !SHA_RE.matches(sha)) return Result(400, err("bad_meta"))
+        // المتصفح على http لا يملك crypto.subtle، فنقبل الرفع بلا بصمة ونعتمد على الحجم
+        if (size <= 0 || (sha.isNotEmpty() && !SHA_RE.matches(sha))) return Result(400, err("bad_meta"))
         if (size > MAX_FILE) return Result(413, err("too_large"))
         if (freeBytes() < size + RESERVE) return Result(507, err("no_space").put("free", freeBytes() - RESERVE))
 
-        val id = Store.sha256("${device.hash}:$sha:$size").take(32)
+        val key = if (sha.isNotEmpty()) sha else "name:$name:${body.optLong("modified")}"
+        val id = Store.sha256("${device.hash}:$key:$size").take(32)
         val done = File(dir, "$id.done")
         if (done.exists()) {
             return Result(200, JSONObject().put("id", id).put("received", size).put("done", true).put("chunk", CHUNK))
@@ -83,7 +85,8 @@ class Uploads(private val context: Context) {
                 digest.update(buf, 0, n)
             }
         }
-        if (Store.hex(digest.digest()) != meta.optString("sha256")) {
+        val expected = meta.optString("sha256")
+        if (expected.isNotEmpty() && Store.hex(digest.digest()) != expected) {
             part.delete()
             return Result(422, err("checksum").put("received", 0))
         }
