@@ -6,6 +6,8 @@ on:
     paths-ignore:
       - "split/**"
       - ".github/workflows/build-split.yml"
+      - "bridge/**"
+      - ".github/workflows/build-bridge.yml"
   workflow_dispatch:
 
 permissions:
