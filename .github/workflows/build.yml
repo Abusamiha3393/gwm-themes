@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths-ignore:
       - "split/**"
+      - "sahra/**"
+      - ".github/workflows/build-sahra.yml"
       - ".github/workflows/build-split.yml"
       - "bridge/**"
       - ".github/workflows/build-bridge.yml"

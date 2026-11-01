@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- رمز «pause» من مجموعة رموز صحراء سبليت، مرسوم على شبكة 48 بأسلوب لوحات الطرق -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp" android:height="48dp"
+    android:viewportWidth="48" android:viewportHeight="48">
+    <path android:pathData="M12 8 H20 V40 H12 Z" android:fillColor="#FFFFFFFF" />
+    <path android:pathData="M28 8 H36 V40 H28 Z" android:fillColor="#FFFFFFFF" />
+</vector>

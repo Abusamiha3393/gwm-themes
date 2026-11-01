@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- رمز «stats» من مجموعة رموز صحراء سبليت، مرسوم على شبكة 48 بأسلوب لوحات الطرق -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp" android:height="48dp"
+    android:viewportWidth="48" android:viewportHeight="48">
+    <path android:pathData="M17 18 H31 V43 H17 Z" android:fillColor="#FFFFFFFF" />
+    <path android:pathData="M3 28 H15 V43 H3 Z" android:fillColor="#FFFFFFFF" />
+    <path android:pathData="M33 33 H45 V43 H33 Z" android:fillColor="#FFFFFFFF" />
+    <path android:pathData="M24 4.5 L26 9 L30.8 9.4 L27.1 12.5 L28.3 17.2 L24 14.6 L19.7 17.2 L20.9 12.5 L17.2 9.4 L22 9 Z" android:fillColor="#FFFFFFFF" />
+</vector>

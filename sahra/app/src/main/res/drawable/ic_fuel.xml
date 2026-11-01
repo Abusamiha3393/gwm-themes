@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- رمز «fuel» من مجموعة رموز صحراء سبليت، مرسوم على شبكة 48 بأسلوب لوحات الطرق -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp" android:height="48dp"
+    android:viewportWidth="48" android:viewportHeight="48">
+    <path android:pathData="M8 9 A4 4 0 0 1 12 5 H25 A4 4 0 0 1 29 9 V40 H8 Z M12.5 10 H24.5 V20 H12.5 Z" android:fillColor="#FFFFFFFF" android:fillType="evenOdd" />
+    <path android:pathData="M29 15 H32 A3 3 0 0 1 35 18 V33 A3 3 0 0 0 41 33 V15 L37 10" android:strokeColor="#FFFFFFFF" android:strokeWidth="3.2" android:strokeLineCap="round" android:strokeLineJoin="round" />
+    <path android:pathData="M4 40 H33 V44 H4 Z" android:fillColor="#FFFFFFFF" />
+</vector>

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- رمز «play» من مجموعة رموز صحراء سبليت، مرسوم على شبكة 48 بأسلوب لوحات الطرق -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp" android:height="48dp"
+    android:viewportWidth="48" android:viewportHeight="48">
+    <path android:pathData="M14 8.5 Q14 6 16.3 7.4 L39 21.6 Q41 23 39 24.4 L16.3 38.6 Q14 40 14 37.5 Z" android:fillColor="#FFFFFFFF" />
+</vector>

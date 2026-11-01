@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- رمز «warning» من مجموعة رموز صحراء سبليت، مرسوم على شبكة 48 بأسلوب لوحات الطرق -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp" android:height="48dp"
+    android:viewportWidth="48" android:viewportHeight="48">
+    <path android:pathData="M24 4 L45.5 42 H2.5 Z M21.6 16 H26.4 L25.6 30 H22.4 Z M24 32.5 A2.6 2.6 0 1 1 23.99 32.5 Z" android:fillColor="#FFFFFFFF" android:fillType="evenOdd" />
+</vector>
