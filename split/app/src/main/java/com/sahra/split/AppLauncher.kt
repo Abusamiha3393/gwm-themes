@@ -70,8 +70,8 @@ object AppLauncher {
         }
     }
 
-    /** يفتح تطبيقًا داخل مستطيل محدد (أو كاملًا إن كان bounds = null). */
-    fun launch(context: Context, pkg: String, bounds: Rect?, mode: Int): Boolean {
+    /** يفتح تطبيقًا داخل مستطيل محدد (أو كاملًا إن كان bounds = null)، على شاشة معيّنة إن طُلبت. */
+    fun launch(context: Context, pkg: String, bounds: Rect?, mode: Int, displayId: Int = -1): Boolean {
         val intent = context.packageManager.getLaunchIntentForPackage(pkg) ?: return false
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
         if (bounds == null) {
@@ -81,6 +81,7 @@ object AppLauncher {
             intent.addFlags(Intent.FLAG_ACTIVITY_LAUNCH_ADJACENT)
         }
         val options = ActivityOptions.makeBasic()
+        if (displayId >= 0) options.setLaunchDisplayId(displayId)
         options.setLaunchBounds(Rect(bounds))
         setWindowingMode(options, mode)
         return try {
@@ -125,6 +126,8 @@ object AppLauncher {
         val musicMode = if (mode == MODE_SPLIT_PRIMARY) MODE_SPLIT_SECONDARY else mode
         var delay = 0L
         l.music?.let { r -> main.postDelayed({ launch(context, p.musicApp, r, musicMode) }, delay); delay += 700 }
+        // إن كانت الملاحة على العدادات فلا نسحبها إلى الشاشة الرئيسية
+        if (Prefs(context).navOnCluster) return
         l.nav?.let { r -> main.postDelayed({ launch(context, p.navApp, r, navMode) }, delay) }
     }
 
@@ -134,7 +137,7 @@ object AppLauncher {
         runCatching { context.startActivity(home) }
     }
 
-    private fun setWindowingMode(options: ActivityOptions, mode: Int) {
+    fun setWindowingMode(options: ActivityOptions, mode: Int) {
         try {
             ActivityOptions::class.java.getMethod("setLaunchWindowingMode", Int::class.javaPrimitiveType).invoke(options, mode)
         } catch (e: Throwable) {

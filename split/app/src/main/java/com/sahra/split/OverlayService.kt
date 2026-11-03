@@ -201,6 +201,9 @@ class OverlayService : Service(), VehicleRepository.Listener {
                 android.widget.Toast.makeText(this, "فعّل «صحراء سبليت» في إمكانية الوصول ليعمل زر الرجوع", android.widget.Toast.LENGTH_LONG).show()
             }
         }
+        item(R.drawable.ic_nav, if (NavCluster.isOn(this)) "إرجاع الملاحة" else "الملاحة إلى العدادات", Palette.green) {
+            android.widget.Toast.makeText(this, NavCluster.toggle(this), android.widget.Toast.LENGTH_SHORT).show()
+        }
         item(R.drawable.ic_swap, "تبديل التطبيقين") {
             prefs.updatePreset { it.copy(navApp = it.musicApp, musicApp = it.navApp) }
             goHomeAndSplit()

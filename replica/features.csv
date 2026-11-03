@@ -1,0 +1,68 @@
+feature,area,priority,original,clone,notes
+Two apps side by side on the head unit,split,must,yes,yes,AppLauncher bounds/windowing; existed
+Presets switched in one press,split,must,yes,yes,7 presets; existed
+Swap left and right windows,split,must,yes,yes,ball menu; existed
+Bottom menu with presets and app list,split,must,yes,partial,presets on home + ball menu; no persistent bottom bar
+Launch any installed app into a window,split,must,yes,yes,AppsActivity; existed
+Navigation on the instrument cluster (windowed and fullscreen),cluster,must,yes,partial,M1 NavCluster; needs a test on the H9
+Keep the route when moving Navi to the cluster,cluster,must,yes,partial,task kept (no reset); needs a test with Google Maps and Waze
+Cluster theme with live speed RPM fuel temp,cluster,must,yes,yes,ClusterService + HTML themes; existed
+Floating Back button,overlays,must,yes,partial,"in the ball menu, not a separate floating button"
+Floating Navi-to-cluster button,overlays,must,yes,partial,"M1: ball menu item, not a separate floating button"
+Settings screen with per-preset editor,settings,must,yes,yes,existed
+Steering wheel buttons control presets and settings,input,must,yes,no,F09
+Guided permission onboarding,onboarding,must,yes,partial,permission rows in settings; no first-run flow
+Theme picker with immediate preview,cluster,should,yes,no,S11
+Tire pressure with yellow/red thresholds,cluster,should,yes,no,
+Fuel level and range warnings,cluster,should,yes,no,
+Cruise state and speed on the cluster,cluster,should,yes,no,
+Drive mode tint (Normal Sport Eco),cluster,should,yes,no,
+Car warning messages moved out from under Navi,cluster,should,yes,no,
+Right-well info page,cluster,should,yes,no,S10
+Media info on the cluster,cluster,should,yes,no,
+Use as default launcher,launcher,should,yes,yes,HOME intent; existed
+Autostart at boot and recovery after phone call,system,should,yes,partial,boot yes; call recovery no
+In-app update,system,should,yes,yes,Updater; existed
+Auto brightness day/night for head unit and cluster,settings,should,yes,no,S20
+Auto preset by day/night,settings,should,yes,yes,Sun.kt; existed
+Right-hand-drive layout,settings,should,yes,no,
+Model support Tank 500 / H9 / H3 / F7,vehicles,should,yes,no,also T300 T700 H7 F7 Elite in changelog
+Arabic and English UI,localization,should,yes,no,their Arabic was added late; native RTL is an edge for you
+Trial then paid activation,licensing,should,yes,no,S27
+Split info dashboard pages (clocks fuel music off-road),split info,should,yes,yes,Pages.kt; existed
+Trip log with average consumption,stats,should,yes,yes,Logbook; existed
+Gear and gear number on the cluster,cluster,should,yes,no,S09 (D 6)
+Fuel range km and litres/percent bar,cluster,should,yes,no,S09
+ODO and trip inside the speed well,cluster,should,yes,no,S09
+Battery voltage on the cluster,cluster,could,yes,no,S09 13.8 V
+Coolant temperature in the RPM well,cluster,should,yes,no,S09
+Keep the stock ADAS road view visible,cluster,must,yes,no,S09 wells only at the sides
+One tyre-pressure unit everywhere (bar or psi),cluster,should,no,no,original mixes psi display with bar limit
+Left rail with climate mini-widget,head unit,should,yes,no,S30
+Floating live speed badge,overlays,should,yes,yes,SpeedRoundel; existed
+Warning thresholds for speed RPM tire pressure,cluster,should,yes,no,S06d
+Speed multiplier calibration,vehicles,should,yes,no,S06c
+Tank capacity and non-standard tank,vehicles,should,yes,partial,tank capacity yes; correction no
+Navi window margin correction per display,cluster,should,yes,no,S06d
+Save and load settings backup,settings,should,yes,no,S06e
+Native Arabic RTL with no mixed-language labels,localization,must,partial,partial,Arabic-first UI; full audit in M2
+Gulf app defaults (Google Maps Waze Anghami Qibla),media,should,no,no,M2
+Wi-Fi hotspot from the head unit,system,could,yes,no,S06c
+Gear mode settings,cluster,could,yes,no,S06d
+Floating Split ball with notifications,overlays,could,yes,partial,ball yes; notification badge no
+Weather page,split info,could,yes,partial,weather in panel pages; no fullscreen page
+Refuel log,stats,could,yes,yes,Logbook; existed
+Statistics since reset / since refuel,stats,could,yes,yes,Logbook stats; existed
+User theme import and slots,themes,could,yes,no,S13
+Custom image styles,themes,could,yes,no,S12
+Voice control,voice,could,yes,no,S24
+Volume by vertical swipe,split info,could,yes,no,
+Two Split info instances,split info,could,yes,no,
+PiP close button,overlays,could,yes,no,
+RAM and free disk info,system,could,yes,no,S26
+Their theme art and style names,themes,could,yes,skip,their assets; draw your own
+Yandex Alice and Yandex Music integration,media,could,yes,skip,Russia-specific
+Invisible mode for dealer visits,system,could,yes,skip,hides modifications from service
+TBox / SBox control and reboot,telematics,could,yes,skip,touches telematics unit; warranty and legal risk
+eSIM traffic leak warning,telematics,could,yes,skip,tied to TBox work
+Installer codes with custom logos,partners,could,yes,skip,their partner network

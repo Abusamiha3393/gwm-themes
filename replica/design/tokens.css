@@ -1,0 +1,56 @@
+/* Sahra Split tokens, generated from tokens.json. Do not edit by hand. */
+:root {
+  --c-bg: #18191B;
+  --c-bg-deep: #111214;
+  --c-surface: #1F2023;
+  --c-surface-raised: #26282B;
+  --c-border: #3B3D41;
+  --c-border-input: #74777D;
+  --c-border-sign: #F4F5F0;
+  --c-text: #F4F5F0;
+  --c-text-dim: #D2D3CF;
+  --c-text-muted: #9FA3A8;
+  --c-sign-road: #0A5236;
+  --c-sign-service: #1A3C6B;
+  --c-sign-leisure: #5A321C;
+  --c-accent: #1A3C6B;
+  --c-on-accent: #F4F5F0;
+  --c-warning: #F3B300;
+  --c-on-warning: #16130A;
+  --c-danger: #C8102E;
+  --c-danger-text: #FF5A6E;
+  --c-on-danger: #F4F5F0;
+  --c-success: #3DBE7A;
+  --c-focus: #F3B300;
+  --space-0: 0px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+  --radius-sign-sm: 10px;
+  --radius-sign: 14px;
+  --radius-sign-inset-sm: 3.5px;
+  --radius-sign-inset: 5px;
+  --radius-pill: 999px;
+  --stroke-sign-sm: 2px;
+  --stroke-sign: 2.5px;
+  --stroke-focus: 3px;
+  --type-caption: 500 13px/18px var(--font-sans);
+  --type-body: 500 16px/24px var(--font-sans);
+  --type-label: 700 17px/24px var(--font-sans);
+  --type-title: 700 24px/32px var(--font-sans);
+  --type-display: 700 34px/40px var(--font-sans);
+  --type-metric: 900 56px/56px var(--font-digits);
+  --type-metric-xl: 900 96px/96px var(--font-digits);
+  --font-sans: 'Noto Kufi Arabic', 'Sahra Kufi', sans-serif;
+  --font-digits: 'Overpass', 'Sahra Digits', sans-serif;
+  --ease: cubic-bezier(.2,.8,.2,1);
+  --t-tap: 120ms;
+  --t-panel: 200ms;
+  /* themes keep var(--accent) from common.js; default it to the service-sign blue */
+  --accent: var(--c-accent);
+}

@@ -1,0 +1,95 @@
+<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8">
+<link rel="stylesheet" href="tokens.css">
+<style>
+@font-face{font-family:"Sahra Kufi";src:url(../../split/app/src/main/assets/themes/fonts/kufi.ttf)}
+@font-face{font-family:"Sahra Digits";src:url(../../split/app/src/main/assets/themes/fonts/digits.ttf)}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--c-bg);color:var(--c-text);font:var(--type-body)}
+body{width:1280px;padding:20px;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:auto auto;gap:16px 20px;overflow:hidden}
+h2{font:var(--type-caption);color:var(--c-text-muted);margin:0 0 8px}
+.col{display:flex;flex-direction:column;gap:12px}
+.sign{position:relative;border-radius:var(--radius-sign-sm);color:var(--c-text);font:var(--type-label);min-height:64px;display:flex;align-items:center;justify-content:center;gap:10px;padding:0 18px}
+.sign::after{content:"";position:absolute;inset:3.5px;border:2px solid var(--c-border-sign);border-radius:7px;pointer-events:none}
+.road{background:var(--c-sign-road)}.svc{background:var(--c-sign-service)}.lei{background:var(--c-sign-leisure)}
+.warn{background:var(--c-warning);color:var(--c-on-warning)}.warn::after{border-color:var(--c-on-warning)}
+.dang{background:var(--c-danger)}
+.focus{outline:3px solid var(--c-focus);outline-offset:3px}
+.dis{opacity:.4}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.panel{background:var(--c-surface);border:1px solid var(--c-border-input);border-radius:14px;padding:4px 16px}
+.set{display:flex;align-items:center;justify-content:space-between;min-height:64px;border-bottom:1px solid var(--c-border)}
+.set:last-child{border:0}
+.set small{display:block;font:var(--type-caption);color:var(--c-text-muted)}
+.sw{width:56px;height:32px;border-radius:16px;background:var(--c-border-input);position:relative;flex:none}
+.sw::after{content:"";position:absolute;top:4px;right:4px;width:24px;height:24px;border-radius:50%;background:var(--c-text)}
+.sw.on{background:var(--c-success)}.sw.on::after{right:28px}
+.need{font:var(--type-caption);font-weight:700;background:var(--c-warning);color:var(--c-on-warning);padding:8px 12px;border-radius:10px}
+.step{display:flex;align-items:center;gap:8px}
+.step b{flex:1;text-align:center;font:var(--type-label)}
+.btn64{width:64px;height:64px;border-radius:10px;background:var(--c-sign-service);display:grid;place-items:center;font:var(--type-title)}
+.num{display:flex;justify-content:space-between;align-items:center;min-height:64px;border-bottom:1px solid var(--c-border)}
+.num span.v{font:var(--type-display);font-family:var(--font-digits);direction:ltr;unicode-bidi:isolate}
+.num span.v i{font:var(--type-caption);color:var(--c-text-muted);font-style:normal;margin-inline-start:6px}
+.cluster{background:#000;border-radius:14px;height:330px;position:relative;overflow:hidden;direction:ltr}
+.adas{position:absolute;left:30%;right:30%;top:0;bottom:0;border-inline:1px dashed var(--c-border);display:grid;place-items:center;color:var(--c-text-muted);font:var(--type-caption)}
+svg text{font-family:'Sahra Digits'}
+.tyres{display:grid;grid-template-columns:auto 40px auto;gap:4px 10px;align-items:center;font-family:'Sahra Digits';font-size:18px}
+.low{color:var(--c-warning)}
+.ball{width:76px;height:76px;border-radius:50%;background:var(--c-surface-raised);border:2px solid var(--c-border-sign);display:grid;place-items:center;position:relative}
+.ball::after{content:"2";position:absolute;top:-4px;left:-4px;width:24px;height:24px;border-radius:50%;background:var(--c-warning);color:var(--c-on-warning);font:700 14px/24px 'Sahra Digits';text-align:center}
+.speed{width:76px;height:76px;border-radius:50%;background:var(--c-surface-raised);border:2px solid var(--c-border-input);display:grid;place-items:center;text-align:center;line-height:1}
+.speed b{font:900 30px 'Sahra Digits'}.speed small{font:var(--type-caption);color:var(--c-text-muted)}
+.speed.over{background:var(--c-warning);color:var(--c-on-warning)}.speed.over small{color:var(--c-on-warning)}
+</style></head><body>
+<div class="col">
+ <h2>SignButton</h2>
+ <div class="row2"><div class="sign road">إعداد 1</div><div class="sign svc">التطبيقات</div></div>
+ <div class="row2"><div class="sign lei">الطقس</div><div class="sign warn">يلزم إذن</div></div>
+ <div class="row2"><div class="sign dang">مسح السجل</div><div class="sign svc focus">مركّز</div></div>
+ <div class="sign svc dis">غير متاح</div>
+ <h2>Stepper</h2>
+ <div class="step"><div class="btn64">›</div><b>رمال الليل</b><div class="btn64">‹</div></div>
+ <h2>Ball · Speed</h2>
+ <div style="display:flex;gap:16px"><div class="ball">⇆</div><div class="speed"><div><b>59</b><br><small>كم/س</small></div></div><div class="speed over"><div><b>128</b><br><small>كم/س</small></div></div><div class="speed"><div><b>—</b><br><small>كم/س</small></div></div></div>
+</div>
+<div class="col">
+ <h2>SettingRow</h2>
+ <div class="panel">
+  <div class="set"><div>إظهار الكرة العائمة<small>تبقى فوق كل التطبيقات</small></div><div class="sw on"></div></div>
+  <div class="set"><div>الملاحة على العدادات عند التشغيل</div><div class="sw"></div></div>
+  <div class="set"><div>زر الرجوع العائم<small>يحتاج إذن إمكانية الوصول</small></div><div class="need">يلزم إذن</div></div>
+ </div>
+ <h2>NumberField</h2>
+ <div class="panel">
+  <div class="num"><span>معامل السرعة</span><span class="v">1.045</span></div>
+  <div class="num"><span>سعة الخزان</span><span class="v">80<i>لتر</i></span></div>
+  <div class="num" style="border:0"><span>حد ضغط الإطارات</span><span class="v">2.10<i>بار</i></span></div>
+ </div>
+</div>
+<div class="col" style="grid-column:1/-1">
+ <h2>GaugeWell · TyreBlock — شاشة العدادات، الوسط يبقى فارغًا لمنظر الطريق</h2>
+ <div class="cluster" style="height:270px">
+  <svg width="250" height="250" viewBox="0 0 300 300" style="position:absolute;left:40px;top:10px">
+   <circle cx="150" cy="150" r="140" fill="#111214" stroke="#F4F5F0" stroke-width="4"/>
+   <path d="M 51 249 A 140 140 0 0 1 88 63" fill="none" stroke="#3DBE7A" stroke-width="18" transform="translate(9,-9) scale(.94)"/>
+   <line x1="150" y1="150" x2="78" y2="98" stroke="#F4F5F0" stroke-width="5" stroke-linecap="round"/>
+   <circle cx="150" cy="150" r="48" fill="#18191B" stroke="#F4F5F0" stroke-width="3"/>
+   <text x="150" y="168" fill="#F4F5F0" font-size="48" font-weight="900" text-anchor="middle">59</text>
+   <text x="150" y="222" fill="#9FA3A8" font-size="13" text-anchor="middle">ODO 11,230 · TRIP 248.0</text>
+   <rect x="95" y="242" width="110" height="10" rx="3" fill="#3B3D41"/><rect x="95" y="242" width="96" height="10" rx="3" fill="#3DBE7A"/>
+  </svg>
+  <div class="adas">منظر الطريق الأصلي (ADAS)</div>
+  <svg width="250" height="250" viewBox="0 0 300 300" style="position:absolute;right:40px;top:10px">
+   <circle cx="150" cy="150" r="140" fill="#111214" stroke="#F4F5F0" stroke-width="4"/>
+   <path d="M 51 249 A 140 140 0 0 1 40 160" fill="none" stroke="#3DBE7A" stroke-width="18" transform="translate(9,-9) scale(.94)"/>
+   <text x="150" y="88" fill="#F4F5F0" font-size="40" font-weight="900" text-anchor="middle">1.6</text>
+   <rect x="128" y="120" width="44" height="74" rx="12" fill="none" stroke="#F4F5F0" stroke-width="3"/>
+   <text x="118" y="140" fill="#F4F5F0" font-size="20" text-anchor="end">2.2</text>
+   <text x="182" y="140" fill="#F4F5F0" font-size="20">2.3</text>
+   <text x="118" y="188" fill="#F3B300" font-size="20" text-anchor="end">▲ 1.9</text>
+   <text x="182" y="188" fill="#F4F5F0" font-size="20">2.3</text>
+   <text x="150" y="232" fill="#9FA3A8" font-size="16" text-anchor="middle">bar · 93° · D6</text>
+  </svg>
+ </div>
+</div>
+</body></html>

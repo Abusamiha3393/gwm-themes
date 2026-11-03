@@ -111,6 +111,10 @@ class SettingsActivity : Activity() {
         seek("هامش أسفل الثيم", 0, 30, prefs.clusterBottom, { "$it%" }) { prefs.clusterBottom = it; ClusterService.reload(this) }
         seek("هامش الجانبين", 0, 25, prefs.clusterSide, { "$it%" }) { prefs.clusterSide = it; ClusterService.reload(this) }
         note("الهوامش تبعد الثيم عن مؤشرات السيارة الثابتة (P، الأضواء، السرعة أسفل الشاشة). التغيير يظهر على العدادات فورًا.", Palette.muted)
+        toggle("الملاحة على العدادات بملء الشاشة (وإلا داخل الهوامش)", prefs.navClusterFull) { prefs.navClusterFull = it }
+        row(if (prefs.navOnCluster) "أرجع الملاحة إلى الشاشة الرئيسية" else "أرسل الملاحة إلى العدادات الآن", "") {
+            toast(NavCluster.toggle(this)); render()
+        }
         note("الحالة: ${ClusterService.status.ifEmpty { if (prefs.clusterOn) "جارٍ التشغيل…" else "متوقف" }}", Palette.white)
         note("الشاشات المتصلة: ${ClusterService.displaysInfo(this)}", Palette.muted)
 
@@ -209,6 +213,7 @@ class SettingsActivity : Activity() {
         // ---------------- متقدم ----------------
         section("متقدم")
         toggle("الوضع التجريبي (بيانات وهمية)", prefs.demo) { prefs.demo = it; VehicleRepository.forceDemo = it }
+        row("مستكشف مفاتيح السيارة", "") { startActivity(Intent(this, KeyProbeActivity::class.java)) }
 
         // ---------------- التحديثات ----------------
         section("التحديثات")

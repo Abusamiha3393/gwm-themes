@@ -263,6 +263,12 @@ class ClusterService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         goForeground()
+        // الملاحة على العدادات: نُخفي الثيم حتى تعود
+        if (Prefs(this).navOnCluster) {
+            remove()
+            status = "الملاحة معروضة على شاشة العدادات"
+            return START_STICKY
+        }
         val theme = Prefs(this).clusterTheme
         val v = view
         if (v != null) {

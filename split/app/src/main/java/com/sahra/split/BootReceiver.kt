@@ -7,6 +7,8 @@ import android.content.Intent
 /** عند تشغيل السيارة: يشغّل الكرة واللوحة العائمة إذا كان التشغيل التلقائي مفعّلًا. */
 class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
+        // بعد إعادة التشغيل لا تكون الملاحة على العدادات، فيعود الثيم
+        Prefs(context).navOnCluster = false
         if (!Prefs(context).autostart) return
         runCatching { OverlayService.sync(context) }
         runCatching { ClusterService.sync(context) }

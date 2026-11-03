@@ -117,6 +117,16 @@ class Prefs(context: Context) {
         get() = sp.getInt("cluster_side", 0)
         set(v) = put("cluster_side", v)
 
+    /** الملاحة معروضة الآن على شاشة العدادات (يُخفى الثيم ما دامت هناك). */
+    var navOnCluster: Boolean
+        get() = sp.getBoolean("nav_on_cluster", false)
+        set(v) = put("nav_on_cluster", v)
+
+    /** الملاحة على العدادات بملء الشاشة، وإلا داخل هوامش الثيم. */
+    var navClusterFull: Boolean
+        get() = sp.getBoolean("nav_cluster_full", false)
+        set(v) = put("nav_cluster_full", v)
+
     /** يُظهر قياسات الشاشة وسط الثيم على العدادات (للضبط). */
     var clusterDebug: Boolean
         get() = sp.getBoolean("cluster_debug", false)
