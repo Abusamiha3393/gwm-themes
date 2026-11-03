@@ -127,6 +127,16 @@ class Prefs(context: Context) {
         get() = sp.getBoolean("nav_cluster_full", false)
         set(v) = put("nav_cluster_full", v)
 
+    /** ما تعلّمه السائق من قيم الغيار: JSON من القيمة الخام إلى الحرف، مثل {"3":"P"}. */
+    var gearMap: String
+        get() = sp.getString("gear_map", "") ?: ""
+        set(v) = put("gear_map", v)
+
+    /** حد التنبيه لضغط الإطار بالـ psi. */
+    var tireWarnPsi: Int
+        get() = sp.getInt("tire_warn_psi", 28)
+        set(v) = put("tire_warn_psi", v)
+
     /** يُظهر قياسات الشاشة وسط الثيم على العدادات (للضبط). */
     var clusterDebug: Boolean
         get() = sp.getBoolean("cluster_debug", false)

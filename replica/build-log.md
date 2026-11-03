@@ -7,3 +7,6 @@
 | 2026-11-03 | M1 S05/S08 Navi on cluster | partial | car test: does the system allow display 2, does the route survive, density | theme must be hidden while Navi is there; presets must not pull Navi back; reset on boot |
 
 No clone screenshots yet: the APK only builds on GitHub Actions and the screens must be photographed on the head unit.
+| 2026-11-04 | M1 key probe | done | — | H9 answers gear_status, current_gear, tpms_status (pairs), journey/trip, avg consumption, battery %, baro; no cruise, no drive mode |
+| 2026-11-04 | M1 S08 Navi on cluster | partial | theme stayed on top in the car test | fix: hide the theme directly before launching Navi, not only via the service intent |
+| 2026-11-04 | M2 data layer | partial | tyres/gear not drawn by any theme yet | gear letters differ per model, so the driver teaches them once instead of a hard-coded table |

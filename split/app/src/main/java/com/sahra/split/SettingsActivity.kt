@@ -118,6 +118,30 @@ class SettingsActivity : Activity() {
         note("الحالة: ${ClusterService.status.ifEmpty { if (prefs.clusterOn) "جارٍ التشغيل…" else "متوقف" }}", Palette.white)
         note("الشاشات المتصلة: ${ClusterService.displaysInfo(this)}", Palette.muted)
 
+        // ---------------- ناقل الحركة والإطارات ----------------
+        section("ناقل الحركة والإطارات")
+        val cur = VehicleRepository.state
+        note(if (cur.gearRaw >= 0) "قراءة الغيار الآن: ${cur.gearRaw} ← يُعرض «${Gears.label(this, cur)}»"
+            else "لا تصل قراءة الغيار من السيارة", Palette.white)
+        note("تعليم الغيار: ضع الغيار على وضع، انتظر ثانيتين، ثم اضغط زره. كرّر لكل وضع.", Palette.muted)
+        val gearRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+        Gears.LABELS.forEach { g ->
+            gearRow.addView(signButton(null, g, Palette.green) {
+                val raw = VehicleRepository.state.gearRaw
+                if (raw < 0) { toast("لا تصل قراءة الغيار"); return@signButton }
+                val before = Gears.learn(this, raw, g)
+                toast(if (before != null) "القيمة $raw كانت «$before» وأصبحت «$g»" else "القيمة $raw = «$g»")
+                render()
+            }, LinearLayout.LayoutParams(0, dp(64), 1f).apply { marginEnd = dp(8) })
+        }
+        add(gearRow)
+        val learned = Gears.map(this).entries.sortedBy { it.key }.joinToString("، ") { "${it.key} = ${it.value}" }
+        note("المسجّل: $learned", Palette.muted)
+        row("مسح ما تعلّمته من الغيار", "") { Gears.reset(this); render() }
+        val tp = cur.tirePsi
+        if (tp.size == 4) note("الإطارات الآن (psi): أمامي ${num(tp[0], 1)} · ${num(tp[1], 1)} — خلفي ${num(tp[2], 1)} · ${num(tp[3], 1)}", Palette.white)
+        seek("تنبيه ضغط الإطار تحت", 20, 40, prefs.tireWarnPsi, { "$it psi" }) { prefs.tireWarnPsi = it }
+
         // ---------------- خصائص إضافية ----------------
         section("خصائص إضافية")
         toggle("لوحة المعلومات بجانب الشاشة الرئيسية (الساعة، الوقود، الطقس…)", prefs.showPanel) { prefs.showPanel = it }

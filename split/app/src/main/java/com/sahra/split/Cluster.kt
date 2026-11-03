@@ -60,14 +60,9 @@ object ClusterPayload {
 
     private fun JSONObject.num(name: String, v: Float) = put(name, if (v.isNaN()) JSONObject.NULL else v.toDouble())
 
-    /** الخدمة لا تعطي ناقل الحركة بشكل موثوق، فنستنتجه من السرعة والدوران. */
-    private fun gear(s: VehicleState) = when {
-        s.rpm < 100f && s.speed < 1f -> "P"
-        s.speed < 1f -> "N"
-        else -> "D"
-    }
+    private fun nums(v: List<Float>) = JSONArray().apply { v.forEach { put(if (it.isNaN()) JSONObject.NULL else it.toDouble()) } }
 
-    private fun alerts(s: VehicleState): JSONArray {
+    private fun alerts(s: VehicleState, tireWarnPsi: Int): JSONArray {
         val out = JSONArray()
         fun add(id: String, text: String, level: String) = out.put(JSONObject().put("id", id).put("text", text).put("level", level))
         if (!s.fuelPercent.isNaN()) when {
@@ -82,6 +77,8 @@ object ClusterPayload {
             if (s.rpm > 600f && s.batteryVoltage < 12.6f) add("battery", "البطارية لا تشحن", "warn")
             else if (s.batteryVoltage < 11.8f) add("battery", "جهد البطارية منخفض", "warn")
         }
+        val low = s.tirePsi.filter { !it.isNaN() && it < tireWarnPsi }
+        if (low.isNotEmpty()) add("tire", "ضغط إطار منخفض", if (low.any { it < tireWarnPsi * 0.85f }) "danger" else "warn")
         if (!s.pitch.isNaN() && kotlin.math.abs(s.pitch) >= 30f) add("pitch", "ميلان أمامي خطر", "danger")
         if (!s.roll.isNaN() && kotlin.math.abs(s.roll) >= 30f) add("roll", "ميلان جانبي خطر", "danger")
         return out
@@ -90,10 +87,16 @@ object ClusterPayload {
     fun build(context: Context, s: VehicleState = VehicleRepository.state): JSONObject {
         val p = Prefs(context)
         val d = JSONObject()
-        d.put("speed", s.speed.toDouble()); d.put("rpm", s.rpm.toDouble()); d.put("gear", gear(s))
+        d.put("speed", s.speed.toDouble()); d.put("rpm", s.rpm.toDouble())
+        d.put("gear", Gears.letter(context, s)); d.put("gearLabel", Gears.label(context, s))
+        d.put("gearNo", if (s.gearNo >= 0) s.gearNo else JSONObject.NULL)
+        // الإطارات: أمامي يسار، أمامي يمين، خلفي يسار، خلفي يمين
+        d.put("tires", nums(s.tirePsi)); d.put("tireTemps", nums(s.tireTemp)); d.put("tireWarnPsi", p.tireWarnPsi)
+        d.num("journey", s.journeyKm); d.num("trip", s.tripKm); d.num("avgConsumption", s.avgConsumption)
+        d.num("baro", s.baroHpa)
         d.num("fuel", s.fuelPercent); d.num("range", s.rangeKm); d.num("odometer", s.odometerKm)
         d.num("coolant", s.coolantTemp); d.num("outsideTemp", s.outsideTemp); d.num("insideTemp", s.insideTemp)
-        d.num("batteryVoltage", s.batteryVoltage); d.put("batteryLevel", JSONObject.NULL)
+        d.num("batteryVoltage", s.batteryVoltage); d.num("batteryLevel", s.batteryLevel)
         d.num("steering", s.steeringAngle); d.num("pitch", s.pitch); d.num("roll", s.roll)
         d.num("compass", s.compass); d.num("altitude", s.altitude)
         d.put("vin", ""); d.put("live", s.live); d.put("demo", s.demo)
@@ -104,7 +107,7 @@ object ClusterPayload {
             put("units", "kmh"); put("wallpaper", JSONObject.NULL); put("wallpaperDim", 0.55)
             put("design", JSONObject().put("needleStyle", "classic").put("scale", 100).put("shift", 0).put("swap", false))
         })
-        d.put("alerts", alerts(s))
+        d.put("alerts", alerts(s, p.tireWarnPsi))
         d.put("layout", "cluster")
         if (p.clusterDebug) d.put("debug", debugInfo)
         d.put("theme", p.clusterTheme)
@@ -198,6 +201,10 @@ class ClusterService : Service() {
         @Volatile var running = false
             private set
 
+        /** الخدمة الحالية، لإخفاء الثيم فورًا قبل نقل الملاحة (على الخيط الرئيسي). */
+        @Volatile var instance: ClusterService? = null
+            private set
+
         /** شاشة العدادات: الشاشة رقم 2 إن وُجدت، وإلا أول شاشة غير الرئيسية. */
         fun findDisplay(context: Context): Display? {
             val dm = context.getSystemService(DisplayManager::class.java) ?: return null
@@ -254,8 +261,15 @@ class ClusterService : Service() {
 
     override fun onBind(intent: Intent?): IBinder? = null
 
+    /** يزيل الثيم من العدادات الآن، قبل أن يُفتح تطبيق الملاحة هناك. */
+    fun hideForNav() {
+        remove()
+        status = "الملاحة معروضة على شاشة العدادات"
+    }
+
     override fun onCreate() {
         super.onCreate()
+        instance = this
         running = true
         goForeground()
         VehicleRepository.start(this)
@@ -287,6 +301,7 @@ class ClusterService : Service() {
 
     override fun onDestroy() {
         remove()
+        instance = null
         running = false
         status = ""
         super.onDestroy()

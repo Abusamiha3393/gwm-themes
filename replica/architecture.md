@@ -89,10 +89,15 @@ Hard rules the recon found:
 | `car.basic.remain_fuel_percentage`, `remain_odometer`, `total_odometer`, `odometer` | fuel, range, odo | read |
 | `car.basic.coolant_temp`, `outside_temp`, `inside_temp`, `battery_voltage`, `steering_wheel_angle` | temps, volts, steering | read |
 | `car.off_road_info.pitch_angle`, `roll_angle`, `compass_direction`, `altitude` | off-road | read |
-| gear, gear number | gear | **find** |
-| four tyre pressures | tires | **find** |
-| cruise on / set speed | cruise | **find** |
-| drive mode | driveMode | **find** |
+| `car.basic.gear_status` | gear letter (raw; H9: 2 = D, 3 seen when stopped) | **found 2026-11-04**, mapped by the driver's one-time learning (Gears.kt) |
+| `car.basic.current_gear` | gear number (0 when stopped) | **found** |
+| `car.basic.tpms_status` | 8 numbers: psi, °C for FL, FR, RL, RR | **found**; order to confirm against the stock display |
+| `cur_journey_odometer`, `accumulated_odometer`, `avg_fuel_consumption`, `battery_power_level`, `baropressure` | journey, trip, L/100 km, battery %, hPa | **found** |
+| cruise on / set speed | cruise | **not found** on the H9 (cruise_*, acc_* silent) |
+| drive mode | driveMode | **not found** (`tod.systemoper_mode = 4` unexplained) |
+| pitch, roll, compass, altitude | off-road | silent on the H9 |
+
+Displays on the H9: 0 = 1920×1080 head unit, 1 and 2 = 1920×720 (2 is the cluster: Yandex opened there), 3 = 480×240.
 
 "Find" means: build the key probe (M1) and read candidate keys on the user's own H9. Never take
 key names from the original's binary.

@@ -29,9 +29,11 @@ object NavCluster {
         val intent = context.packageManager.getLaunchIntentForPackage(pkg) ?: return "تطبيق الملاحة غير مثبت"
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
 
-        // أخفِ الثيم أولًا حتى لا يغطي الملاحة
+        // أخفِ الثيم أولًا حتى لا يغطي الملاحة: مباشرة إن كانت الخدمة حيّة، ثم عبر الخدمة احتياطًا
         p.navOnCluster = true
+        ClusterService.instance?.hideForNav()
         ClusterService.reload(context)
+        ClusterActivity.finishAll()
 
         val opts = ActivityOptions.makeBasic().setLaunchDisplayId(display.displayId)
         opts.setLaunchBounds(bounds(context, display, p.navClusterFull))

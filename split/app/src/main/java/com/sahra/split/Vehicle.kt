@@ -24,6 +24,21 @@ data class VehicleState(
     val roll: Float = Float.NaN,
     val compass: Float = Float.NaN,
     val altitude: Float = Float.NaN,
+    /** قيمة gear_status الخام كما ترسلها السيارة (-1 = غير معروفة)، ويُترجم إلى حرف عبر Gears. */
+    val gearRaw: Int = -1,
+    /** رقم الغيار الحالي من current_gear (0 عند التوقف، -1 = غير معروف). */
+    val gearNo: Int = -1,
+    /** ضغط الإطارات بالـ psi وحرارتها بالدرجة المئوية: أمامي يسار، أمامي يمين، خلفي يسار، خلفي يمين. */
+    val tirePsi: List<Float> = emptyList(),
+    val tireTemp: List<Float> = emptyList(),
+    /** مسافة الرحلة الحالية كما تحسبها السيارة، وعداد الرحلة القابل للتصفير. */
+    val journeyKm: Float = Float.NaN,
+    val tripKm: Float = Float.NaN,
+    /** متوسط الاستهلاك لتر/100 كم كما تعرضه السيارة. */
+    val avgConsumption: Float = Float.NaN,
+    /** نسبة شحن البطارية، والضغط الجوي بالهكتوباسكال. */
+    val batteryLevel: Float = Float.NaN,
+    val baroHpa: Float = Float.NaN,
     val live: Boolean = false,
     val demo: Boolean = false,
 )
@@ -94,6 +109,15 @@ object VehicleRepository {
         "car.off_road_info.roll_angle",
         "car.off_road_info.compass_direction",
         "car.off_road_info.altitude",
+        // اكتُشفت في هافال H9 بمستكشف المفاتيح (2026-11-04)
+        "car.basic.gear_status",
+        "car.basic.current_gear",
+        "car.basic.tpms_status",
+        "car.basic.cur_journey_odometer",
+        "car.basic.accumulated_odometer",
+        "car.basic.avg_fuel_consumption",
+        "car.basic.battery_power_level",
+        "car.basic.baropressure",
     )
 
     fun addListener(l: Listener) { listeners.add(l); l.onState(state) }
@@ -158,6 +182,15 @@ object VehicleRepository {
     private fun clean(raw: String) = raw.trim().removePrefix("[").removeSuffix("]").trim()
 
     private fun apply(s: VehicleState, key: String, v: String): VehicleState {
+        // ثمانية أرقام: ضغط ثم حرارة لكل إطار بالترتيب
+        if (key == "car.basic.tpms_status") {
+            val n = v.split(',').mapNotNull { it.trim().toFloatOrNull() }
+            if (n.size < 8) return s
+            return s.copy(
+                tirePsi = listOf(n[0], n[2], n[4], n[6]).map { if (it > 0f) it else Float.NaN },
+                tireTemp = listOf(n[1], n[3], n[5], n[7]).map { if (it > -40f) it else Float.NaN },
+            )
+        }
         val f = v.toFloatOrNull() ?: return s
         return when (key) {
             "car.basic.ivivehiclespeed" -> s.copy(speed = max(0f, f))
@@ -175,6 +208,13 @@ object VehicleRepository {
             "car.off_road_info.roll_angle" -> s.copy(roll = f)
             "car.off_road_info.compass_direction" -> s.copy(compass = f)
             "car.off_road_info.altitude" -> s.copy(altitude = f)
+            "car.basic.gear_status" -> s.copy(gearRaw = f.toInt())
+            "car.basic.current_gear" -> s.copy(gearNo = f.toInt())
+            "car.basic.cur_journey_odometer" -> s.copy(journeyKm = f)
+            "car.basic.accumulated_odometer" -> s.copy(tripKm = f)
+            "car.basic.avg_fuel_consumption" -> if (f > 0f) s.copy(avgConsumption = f) else s
+            "car.basic.battery_power_level" -> if (f in 0f..100f) s.copy(batteryLevel = f) else s
+            "car.basic.baropressure" -> if (f > 300f) s.copy(baroHpa = f) else s
             else -> s
         }
     }
@@ -198,6 +238,15 @@ object VehicleRepository {
             roll = (8 * sin(t / 2.3)).toFloat(),
             compass = ((t * 6.0) % 360.0).toFloat(),
             altitude = (612 + 40 * sin(t / 9.0)).toFloat(),
+            gearRaw = 2,
+            gearNo = (1 + cycle * 7).toInt(),
+            tirePsi = listOf(33f, 33f, 31f, 32.5f),
+            tireTemp = listOf(31f, 30f, 29f, 30f),
+            journeyKm = (t / 10).toFloat(),
+            tripKm = (248 + t / 10).toFloat(),
+            avgConsumption = 12.4f,
+            batteryLevel = 86f,
+            baroHpa = 950f,
             demo = true,
         )
     }
