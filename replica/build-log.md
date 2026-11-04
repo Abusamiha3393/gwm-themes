@@ -10,3 +10,6 @@ No clone screenshots yet: the APK only builds on GitHub Actions and the screens 
 | 2026-11-04 | M1 key probe | done | — | H9 answers gear_status, current_gear, tpms_status (pairs), journey/trip, avg consumption, battery %, baro; no cruise, no drive mode |
 | 2026-11-04 | M1 S08 Navi on cluster | partial | theme stayed on top in the car test | fix: hide the theme directly before launching Navi, not only via the service intent |
 | 2026-11-04 | M2 data layer | partial | tyres/gear not drawn by any theme yet | gear letters differ per model, so the driver teaches them once instead of a hard-coded table |
+| 2026-11-04 | S08 Navi inside the theme | partial | car test of the hole | the theme painted over the map; now the page goes transparent and the nav rect is clipped out (outer/inner polygon on html), checked with Playwright alpha = 0 in the hole |
+| 2026-11-04 | S06 settings sections | done | — | 11 sections regrouped into 5 tabs: عام، الإعدادات المسبقة، العدادات، السيارة، متقدم |
+| 2026-11-04 | S11/S13 theme editor | partial | export/import, CSS themes' elements | element list comes from the theme itself (image themes report their layout ids); the selected element is outlined on the real cluster |

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- رمز «move» (تحريك) من مجموعة رموز صحراء سبليت، مرسوم على شبكة 48 بأسلوب لوحات الطرق -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp" android:height="48dp"
+    android:viewportWidth="48" android:viewportHeight="48">
+    <path android:pathData="M24 8 V40 M8 24 H40" android:strokeColor="#FFFFFFFF" android:strokeWidth="5" android:strokeLineCap="round" />
+    <path android:pathData="M17 11 L24 3 L31 11 Z M17 37 L24 45 L31 37 Z M11 17 L3 24 L11 31 Z M37 17 L45 24 L37 31 Z" android:fillColor="#FFFFFFFF" />
+</vector>

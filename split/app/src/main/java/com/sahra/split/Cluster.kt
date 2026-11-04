@@ -58,6 +58,12 @@ object ClusterPayload {
     /** نص القياسات الذي يظهر وسط الثيم عند تفعيل «قياسات الشاشة». */
     @Volatile var debugInfo = ""
 
+    /** العنصر المحدد في محرر الثيم، فارغ خارج المحرر. */
+    @Volatile var editSel = ""
+
+    /** هل يحتاج الثيم ثقبًا شفافًا للملاحة الآن. */
+    fun navHole(p: Prefs) = p.navOnCluster && !p.navClusterFull
+
     private fun JSONObject.num(name: String, v: Float) = put(name, if (v.isNaN()) JSONObject.NULL else v.toDouble())
 
     private fun nums(v: List<Float>) = JSONArray().apply { v.forEach { put(if (it.isNaN()) JSONObject.NULL else it.toDouble()) } }
@@ -108,6 +114,13 @@ object ClusterPayload {
             put("design", JSONObject().put("needleStyle", "classic").put("scale", 100).put("shift", 0).put("swap", false))
         })
         d.put("alerts", alerts(s, p.tireWarnPsi))
+        // نافذة الملاحة: الثيم يفتح ثقبًا شفافًا فيها حين تكون الملاحة على العدادات داخل الثيم
+        d.put("nav", JSONObject().put("on", p.navOnCluster).put("full", p.navClusterFull)
+            .put("x", p.navX.toDouble()).put("y", p.navY.toDouble()).put("w", p.navW.toDouble()).put("h", p.navH.toDouble()))
+        // تعديلات محرر الثيم، والعنصر المحدد في المحرر (يُحاط بإطار)
+        val edit = runCatching { JSONObject(p.themeEdit(p.clusterTheme)) }.getOrDefault(JSONObject())
+        if (editSel.isNotEmpty()) edit.put("sel", editSel)
+        d.put("edit", edit)
         d.put("layout", "cluster")
         if (p.clusterDebug) d.put("debug", debugInfo)
         d.put("theme", p.clusterTheme)
@@ -129,6 +142,13 @@ class ThemeView(context: Context, private val interactive: Boolean) : WebView(co
     private var ready = false
     private var lastPush = 0L
     private var themeId = ""
+    private var transparent = false
+
+    /** على شاشة العدادات فقط: يُسمح بالخلفية الشفافة لتظهر الملاحة من الثقب. */
+    var allowHole = false
+
+    /** يستقبل قائمة عناصر الثيم القابلة للتحرير (JSON) حين يبلّغ بها الثيم. */
+    var onElements: ((String) -> Unit)? = null
 
     init {
         setBackgroundColor(Color.BLACK)
@@ -145,6 +165,9 @@ class ThemeView(context: Context, private val interactive: Boolean) : WebView(co
         }
     }
 
+    /** إعادة تحميل الثيم الحالي حتى إن لم يتغير (بعد تعديل يمس بناءه). */
+    fun reloadTheme() { val id = themeId; themeId = ""; load(id) }
+
     fun load(id: String) {
         if (id == themeId) return
         themeId = id
@@ -157,6 +180,9 @@ class ThemeView(context: Context, private val interactive: Boolean) : WebView(co
         val now = System.currentTimeMillis()
         if (!force && now - lastPush < 80) return
         lastPush = now
+        // خلفية شفافة فقط حين تظهر الملاحة من خلال الثيم
+        val hole = allowHole && ClusterPayload.navHole(Prefs(context))
+        if (hole != transparent) { transparent = hole; setBackgroundColor(if (hole) Color.TRANSPARENT else Color.BLACK) }
         evaluateJavascript(ClusterPayload.script(context, width, height), null)
     }
 
@@ -181,6 +207,9 @@ class ThemeView(context: Context, private val interactive: Boolean) : WebView(co
         @JavascriptInterface fun openApp(pkg: String) {}
         @JavascriptInterface fun floatApp() {}
         @JavascriptInterface fun openSettings() {}
+        @JavascriptInterface fun elements(json: String) {
+            Handler(Looper.getMainLooper()).post { onElements?.invoke(json) }
+        }
         @JavascriptInterface fun themes(): String =
             JSONArray(ClusterThemes.all.map { JSONObject().put("id", it.id).put("name", it.name) }).toString()
     }
@@ -261,6 +290,16 @@ class ClusterService : Service() {
 
     override fun onBind(intent: Intent?): IBinder? = null
 
+    /** يدفع البيانات للثيم الآن (بعد تعديل في المحرر) بدل انتظار القراءة التالية. */
+    fun pushNow() {
+        view?.push(force = true)
+    }
+
+    /** يعيد تحميل صفحة الثيم (تغيّر بناؤه، مثل الخلفية). */
+    fun reloadPage() {
+        view?.reloadTheme()
+    }
+
     /** يزيل الثيم من العدادات الآن، قبل أن يُفتح تطبيق الملاحة هناك. */
     fun hideForNav() {
         remove()
@@ -277,8 +316,9 @@ class ClusterService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         goForeground()
-        // الملاحة على العدادات: نُخفي الثيم حتى تعود
-        if (Prefs(this).navOnCluster) {
+        // الملاحة على العدادات بملء الشاشة: نُخفي الثيم حتى تعود. داخل الثيم: يبقى الثيم ويُفتح فيه ثقب
+        val pr = Prefs(this)
+        if (pr.navOnCluster && pr.navClusterFull) {
             remove()
             status = "الملاحة معروضة على شاشة العدادات"
             return START_STICKY
@@ -317,13 +357,13 @@ class ClusterService : Service() {
         try {
             val dctx = createDisplayContext(display)
             val w = dctx.getSystemService(WindowManager::class.java)
-            val v = ThemeView(dctx, interactive = false)
+            val v = ThemeView(dctx, interactive = false).apply { allowHole = true }
             val lp = WindowManager.LayoutParams(
                 WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT,
                 WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or
                     WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS or WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED,
-                PixelFormat.OPAQUE,
+                PixelFormat.TRANSLUCENT,
             )
             frame(display, lp)
             val m = android.util.DisplayMetrics().also { @Suppress("DEPRECATION") display.getRealMetrics(it) }

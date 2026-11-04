@@ -15,6 +15,10 @@
   .txt{position:absolute;white-space:nowrap;transform:translate(-50%,-80%);text-align:center;direction:ltr;line-height:1}
   .txt .u{font-family:Kufi;margin-inline-start:.25em;opacity:.7}
   .txt img.ic{position:static!important;height:.8em;vertical-align:-.05em;margin-inline-end:.3em;opacity:.85}
+  /* غلاف كل عنصر قابل للتحرير: نقطة عند (0,0) تُحرَّك وتُكبَّر حول مركز العنصر */
+  .el{position:absolute;left:0;top:0;width:0;height:0;overflow:visible}
+  .el.off{display:none}
+  .el.sel>.box{outline:4px dashed #F3B300;outline-offset:6px}
 </style>
 <script src="common.js"></script>
 </head><body>
@@ -27,7 +31,7 @@
   s.onload = build;
   document.head.appendChild(s);
 
-  var L, stage = document.getElementById('stage'), gauges = [], texts = [];
+  var L, stage = document.getElementById('stage'), gauges = [], texts = [], els = {}, bgImg = null, lastEdit = '';
 
   function fit() {
     if (!L) return;
@@ -36,32 +40,49 @@
     stage.style.transform = 'translate(' + (innerWidth - L.canvas.w * k) / 2 + 'px,' + (innerHeight - L.canvas.h * k) / 2 + 'px) scale(' + k + ')';
   }
 
-  function img(file, x, y, w, h) {
+  function img(file, x, y, w, h, parent) {
     var i = new Image(); i.src = dir + file;
     i.style.left = x + 'px'; i.style.top = y + 'px';
     if (w) i.style.width = w + 'px'; if (h) i.style.height = h + 'px';
-    stage.appendChild(i); return i;
+    (parent || stage).appendChild(i); return i;
+  }
+
+  /* يغلّف عنصرًا ليُحرَّك ويُكبَّر ويُخفى من المحرر. cx,cy مركز العنصر على اللوحة. */
+  function wrap(id, name, cx, cy, hidden) {
+    var base = id, n = 2;
+    while (els[id]) id = base + '-' + (n++);
+    var w = document.createElement('div');
+    w.className = 'el';
+    w.style.transformOrigin = cx + 'px ' + cy + 'px';
+    stage.appendChild(w);
+    els[id] = { id: id, name: name || id, w: w, hidden: !!hidden };
+    return w;
   }
 
   function build() {
     L = window.SAHRA_LAYOUT;
     var v = q.get('v'), bg = (v && L.variants && L.variants[v]) || L.background;
-    if (bg) img(bg, 0, 0, L.canvas.w, L.canvas.h);
-    (L.images || []).forEach(function (m) {
-      var i = img(m.file, m.x, m.y, m.w, m.h);
-      if (m.anchor === 'center') i.style.transform = 'translate(-50%,-50%)';
-      if (m.opacity != null) i.style.opacity = m.opacity;
+    if (bg) { bgImg = img(bg, 0, 0, L.canvas.w, L.canvas.h); bgImg.dataset.def = bg; }
+    (L.images || []).forEach(function (m, i) {
+      var cx = m.anchor === 'center' ? m.x : m.x + (m.w || 0) / 2, cy = m.anchor === 'center' ? m.y : m.y + (m.h || 0) / 2;
+      var w = wrap(m.id || 'img' + i, m.name, cx, cy, m.hidden);
+      var e = img(m.file, m.x, m.y, m.w, m.h, w);
+      e.className = 'box';
+      if (m.anchor === 'center') e.style.transform = 'translate(-50%,-50%)';
+      if (m.opacity != null) e.style.opacity = m.opacity;
     });
-    (L.gauges || []).forEach(function (g) {
+    (L.gauges || []).forEach(function (g, i) {
       var x = g.cx - g.size / 2, y = g.cy - g.size / 2;
-      img(g.dial, x, y, g.size, g.size);
-      var n = img(g.needle, x, y, g.size, g.size);
+      var w = wrap(g.id || 'gauge' + i, g.name, g.cx, g.cy, g.hidden);
+      img(g.dial, x, y, g.size, g.size, w).className = 'box';
+      var n = img(g.needle, x, y, g.size, g.size, w);
       n.className = 'needle';
       gauges.push({ g: g, n: n });
     });
-    (L.texts || []).forEach(function (t) {
+    (L.texts || []).forEach(function (t, i) {
+      var w = wrap(t.id || t.value || 'text' + i, t.name, t.x, t.y, t.hidden);
       var e = document.createElement('div');
-      e.className = 'txt';
+      e.className = 'txt box';
       e.style.left = t.x + 'px'; e.style.top = t.y + 'px';
       e.style.fontSize = t.size + 'px';
       e.style.fontFamily = t.font === 'digits' ? 'Digits' : 'Kufi';
@@ -70,45 +91,83 @@
         (t.unit ? '<span class="u" style="font-size:' + (t.unitSize || Math.round(t.size * 0.5)) + 'px">' + t.unit + '</span>' : '') +
         // الاسم بعد الرقم، فيُقرأ بالعربية: «الخارج 34°»
         (t.label ? '<span class="u" style="font-size:' + Math.round(t.size * 0.5) + 'px">' + t.label + '</span>' : '');
-      stage.appendChild(e);
+      w.appendChild(e);
       texts.push({ t: t, e: e, v: e.querySelector('.v') });
     });
     fit();
+    // أبلغ المحرر بالعناصر والخلفيات المتاحة
+    var list = Object.keys(els).map(function (k) { return { id: k, name: els[k].name, hidden: els[k].hidden }; });
+    var vars = Object.keys(L.variants || {}).map(function (k) { return { id: k, name: (L.variantNames || {})[k] || k }; });
+    Sahra.host('elements', JSON.stringify({ canvas: L.canvas, elements: list, backgrounds: vars }));
     if (window.SahraData) window.onSahraData(window.SahraData);
   }
   addEventListener('resize', fit);
 
+  /* تعديلات المحرر: إزاحة وتكبير وإخفاء لكل عنصر، والخلفية، والعنصر المحدد */
+  function applyEdit(ed) {
+    ed = ed || {};
+    var key = JSON.stringify(ed);
+    if (key === lastEdit) return;
+    lastEdit = key;
+    var o = ed.els || {};
+    Object.keys(els).forEach(function (k) {
+      var e = els[k], c = o[k] || {};
+      var hide = c.h != null ? !!c.h : e.hidden;
+      e.w.className = 'el' + (hide ? ' off' : '') + (ed.sel === k ? ' sel' : '');
+      var dx = +c.dx || 0, dy = +c.dy || 0, sc = c.s > 0 ? +c.s : 1;
+      e.w.style.transform = (dx || dy || sc !== 1) ? 'translate(' + dx + 'px,' + dy + 'px) scale(' + sc + ')' : '';
+    });
+    if (bgImg) {
+      if (ed.bg === 'none') bgImg.style.display = 'none';
+      else {
+        bgImg.style.display = '';
+        var f = (ed.bg && L.variants && L.variants[ed.bg]) || bgImg.dataset.def;
+        if (bgImg.getAttribute('src') !== dir + f) bgImg.src = dir + f;
+      }
+    }
+  }
+
   function value(id, d) {
+    var m = /^tire(\d)$/.exec(id);
+    if (m) return (d.tires || [])[+m[1]];
+    m = /^tireTemp(\d)$/.exec(id);
+    if (m) return (d.tireTemps || [])[+m[1]];
     switch (id) {
       case 'speed': return Sahra.speed(d);
       case 'rpm1000': return (d.rpm || 0) / 1000;
       case 'clock': return Sahra.clock();
+      case 'gearLabel': return d.gearLabel || d.gear;
       default: return d[id];
     }
   }
 
-  function show(id, v) {
+  function show(t, v) {
     if (v === null || v === undefined || (typeof v === 'number' && !isFinite(v))) return '—';
     if (typeof v !== 'number') return v;
-    if (id === 'odometer' || id === 'range' || id === 'speed') return Math.round(v).toLocaleString('en-US');
+    if (t.digits) return v.toFixed(t.digits);
+    if (t.value === 'odometer' || t.value === 'range' || t.value === 'speed' || t.value === 'trip') return Math.round(v).toLocaleString('en-US');
     return Math.round(v).toString();
   }
 
   window.onSahraData = function (d) {
     if (!L) return;
+    applyEdit(d.edit);
     gauges.forEach(function (o) {
       var g = o.g, v = value(g.value, d) || 0;
       var f = Math.max(0, Math.min(1, (v - g.min) / (g.max - g.min)));
       o.n.style.transform = 'rotate(' + (g.a0 + (g.a1 - g.a0) * f) + 'deg)';
     });
-    var accent = Sahra.accent(d);
+    var accent = Sahra.accent(d), tw = d.tireWarnPsi || 28;
     texts.forEach(function (o) {
       var t = o.t, v = value(t.value, d);
-      o.v.textContent = show(t.value, v);
+      o.v.textContent = show(t, v);
       var c = t.accent && accent ? accent : (t.color || '#fff');
+      var wb = t.warnBelow, ab = t.alarmBelow;
+      // الإطارات: حدّ التنبيه من الإعدادات
+      if (/^tire\d$/.test(t.value)) { wb = tw; ab = tw * 0.85; }
       if (typeof v === 'number') {
-        if ((t.alarmBelow != null && v <= t.alarmBelow) || (t.alarmAbove != null && v >= t.alarmAbove)) c = '#FF3B30';
-        else if ((t.warnBelow != null && v <= t.warnBelow) || (t.warnAbove != null && v >= t.warnAbove)) c = '#FFC400';
+        if ((ab != null && v <= ab) || (t.alarmAbove != null && v >= t.alarmAbove)) c = '#FF3B30';
+        else if ((wb != null && v <= wb) || (t.warnAbove != null && v >= t.warnAbove)) c = '#FFC400';
       }
       o.e.style.color = c;
     });

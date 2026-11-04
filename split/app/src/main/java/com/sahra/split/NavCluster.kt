@@ -29,11 +29,17 @@ object NavCluster {
         val intent = context.packageManager.getLaunchIntentForPackage(pkg) ?: return "تطبيق الملاحة غير مثبت"
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
 
-        // أخفِ الثيم أولًا حتى لا يغطي الملاحة: مباشرة إن كانت الخدمة حيّة، ثم عبر الخدمة احتياطًا
         p.navOnCluster = true
-        ClusterService.instance?.hideForNav()
-        ClusterService.reload(context)
-        ClusterActivity.finishAll()
+        if (p.navClusterFull) {
+            // بملء الشاشة: أخفِ الثيم أولًا حتى لا يغطي الملاحة
+            ClusterService.instance?.hideForNav()
+            ClusterService.reload(context)
+            ClusterActivity.finishAll()
+        } else {
+            // داخل الثيم: يبقى الثيم ويفتح ثقبًا شفافًا في مكان النافذة
+            ClusterService.instance?.pushNow()
+            ClusterService.reload(context)
+        }
 
         val opts = ActivityOptions.makeBasic().setLaunchDisplayId(display.displayId)
         opts.setLaunchBounds(bounds(context, display, p.navClusterFull))
@@ -64,14 +70,31 @@ object NavCluster {
         return "أُعيدت الملاحة إلى الشاشة الرئيسية"
     }
 
-    /** مستطيل الملاحة على شاشة العدادات: كامل، أو داخل هوامش الثيم نفسها. */
-    private fun bounds(context: Context, display: Display, full: Boolean): Rect {
+    /** مستطيل الملاحة على شاشة العدادات: كامل، أو نافذة الملاحة داخل إطار الثيم. */
+    fun bounds(context: Context, display: Display, full: Boolean): Rect {
         val m = android.util.DisplayMetrics().also { @Suppress("DEPRECATION") display.getRealMetrics(it) }
         if (full) return Rect(0, 0, m.widthPixels, m.heightPixels)
         val p = Prefs(context)
-        val x = m.widthPixels * p.clusterSide / 100
-        val top = m.heightPixels * p.clusterTop / 100
-        val bottom = m.heightPixels * p.clusterBottom / 100
-        return Rect(x, top, m.widthPixels - x, m.heightPixels - bottom)
+        // إطار الثيم (بعد الهوامش)، ثم نافذة الملاحة كنسبة منه
+        val fx = m.widthPixels * p.clusterSide / 100
+        val fy = m.heightPixels * p.clusterTop / 100
+        val fw = m.widthPixels - 2 * fx
+        val fh = m.heightPixels - fy - m.heightPixels * p.clusterBottom / 100
+        val left = fx + (fw * p.navX).toInt()
+        val top = fy + (fh * p.navY).toInt()
+        val right = (left + fw * p.navW).toInt().coerceAtMost(fx + fw)
+        val bottom = (top + fh * p.navH).toInt().coerceAtMost(fy + fh)
+        return Rect(left, top, right, bottom)
+    }
+
+    /** يعيد فتح الملاحة على العدادات بالمقاس الجديد إن كانت هناك (بعد تعديلها في المحرر). */
+    fun relayout(context: Context) {
+        val p = Prefs(context)
+        if (!p.navOnCluster) return
+        val display = ClusterService.findDisplay(context) ?: return
+        val pkg = p.preset.navApp
+        if (pkg.isEmpty()) return
+        AppLauncher.launch(context, pkg, bounds(context, display, p.navClusterFull),
+            if (p.navClusterFull) AppLauncher.MODE_FULLSCREEN else AppLauncher.MODE_FREEFORM, display.displayId)
     }
 }

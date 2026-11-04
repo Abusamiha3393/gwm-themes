@@ -70,6 +70,10 @@
             android:name=".KeyProbeActivity"
             android:exported="false" />
 
+        <activity
+            android:name=".ThemeEditorActivity"
+            android:exported="false" />
+
         <service
             android:name=".OverlayService"
             android:exported="false"

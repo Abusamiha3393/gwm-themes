@@ -17,18 +17,64 @@
     '@keyframes sahraIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1}}' +
     '@keyframes sahraPulse{50%{filter:brightness(1.35)}}' +
     // على شاشة العدادات لا لمس، فتختفي الأزرار
-    'html.cluster button,html.cluster .btns{display:none!important}';
+    'html.cluster button,html.cluster .btns{display:none!important}' +
+    // ثقب الملاحة: الصفحة شفافة، وخلفيتها الأصلية تنتقل إلى طبقة تُقص مع باقي الصفحة
+    'html.nav-hole,html.nav-hole body{background:transparent!important}' +
+    '#sahra-back{position:fixed;inset:0;z-index:-2;display:none}html.nav-hole #sahra-back{display:block}' +
+    '#sahra-nav{position:fixed;z-index:60;border:3px dashed #F3B300;border-radius:8px;display:none;pointer-events:none;' +
+    'color:#F3B300;font:700 18px Kufi,sans-serif;align-items:flex-start;justify-content:center;padding-top:8px;box-sizing:border-box}';
   var st = document.createElement('style');
   st.textContent = css;
   document.head.appendChild(st);
 
-  var wp, alertsBox, lastWp = null, lastAlerts = '';
+  var wp, alertsBox, back, navBox, lastWp = null, lastAlerts = '', lastHole = '';
   function ensure() {
     if (wp) return;
     wp = document.createElement('div'); wp.id = 'sahra-wp';
     alertsBox = document.createElement('div'); alertsBox.id = 'sahra-alerts';
+    back = document.createElement('div'); back.id = 'sahra-back';
+    navBox = document.createElement('div'); navBox.id = 'sahra-nav'; navBox.textContent = 'الملاحة';
     document.body.insertBefore(wp, document.body.firstChild);
+    document.body.insertBefore(back, document.body.firstChild);
     document.body.appendChild(alertsBox);
+    document.body.appendChild(navBox);
+  }
+
+  function pct(v) { return (Math.max(0, Math.min(1, +v || 0)) * 100).toFixed(3) + '%'; }
+
+  /*
+   * نافذة الملاحة. حين تكون الملاحة على العدادات داخل الثيم: تصير الصفحة شفافة ويُقص مستطيل النافذة
+   * من الصفحة كلها (مضلع خارجي مع عقارب الساعة وداخلي عكسها)، فتظهر الخريطة من خلفه.
+   * وفي المحرر حين تُحدَّد النافذة: إطار متقطع يبيّن مكانها.
+   */
+  function applyNav(n, sel) {
+    n = n || {};
+    var root = document.documentElement;
+    var hole = !!(n.on && !n.full);
+    var x1 = pct(n.x), y1 = pct(n.y), x2 = pct((+n.x || 0) + (+n.w || 0)), y2 = pct((+n.y || 0) + (+n.h || 0));
+    var key = hole ? [x1, y1, x2, y2].join() : '';
+    if (key !== lastHole) {
+      lastHole = key;
+      if (hole) {
+        // انقل الخلفية الأصلية إلى طبقة خلف المحتوى قبل جعل الصفحة شفافة
+        if (!root.classList.contains('nav-hole')) {
+          var hs = getComputedStyle(root), bs = getComputedStyle(document.body);
+          back.style.backgroundColor = bs.backgroundColor !== 'rgba(0, 0, 0, 0)' ? bs.backgroundColor : hs.backgroundColor;
+          back.style.backgroundImage = bs.backgroundImage !== 'none' ? bs.backgroundImage : hs.backgroundImage;
+        }
+        root.classList.add('nav-hole');
+        root.style.clipPath = 'polygon(0 0,100% 0,100% 100%,0 100%,0 ' + y1 + ',' + x1 + ' ' + y1 + ',' + x1 + ' ' + y2 + ',' +
+          x2 + ' ' + y2 + ',' + x2 + ' ' + y1 + ',' + x1 + ' ' + y1 + ',0 ' + y1 + ')';
+      } else {
+        root.classList.remove('nav-hole');
+        root.style.clipPath = '';
+      }
+    }
+    if (sel === 'nav') {
+      navBox.style.left = x1; navBox.style.top = y1;
+      navBox.style.width = pct(n.w); navBox.style.height = pct(n.h);
+      navBox.style.display = 'flex';
+    } else navBox.style.display = 'none';
   }
 
   var Sahra = window.Sahra = {
@@ -113,6 +159,7 @@
         var el = document.createElement('div'); el.className = a.level; el.textContent = a.text; alertsBox.appendChild(el);
       });
     }
+    applyNav(d.nav, d.edit && d.edit.sel);
     if (window.onSahraData) window.onSahraData(d);
   };
 
@@ -134,7 +181,12 @@
             needleColor: q.get('nc') ? '#' + q.get('nc') : '', tickColor: q.get('tc') ? '#' + q.get('tc') : '',
             numberColor: q.get('num') ? '#' + q.get('num') : '', panelColor: q.get('pc') ? '#' + q.get('pc') : '' } },
         alerts: q.has('lowfuel') ? [{ id: 'fuel', text: 'الوقود منخفض', level: 'warn' }] : [],
-        layout: 'full'
+        gearLabel: c < 0.01 ? 'N' : 'D' + (1 + Math.floor(c * 7)), gearNo: 1 + Math.floor(c * 7),
+        tires: [33, 32.6, q.has('lowtire') ? 26 : 31.1, 32.8], tireTemps: [31, 30, 29, 30], tireWarnPsi: 28,
+        journey: 36.4, trip: 2538.3, avgConsumption: 15.7, baro: 950,
+        nav: { on: q.has('nav'), full: false, x: 0.3125, y: 0.15, w: 0.375, h: 0.64 },
+        edit: { sel: q.get('sel') || '' },
+        layout: q.get('layout') || 'full'
       });
     }, 100);
   });

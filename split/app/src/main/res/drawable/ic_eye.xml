@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- رمز «eye» (ظاهر) من مجموعة رموز صحراء سبليت، مرسوم على شبكة 48 بأسلوب لوحات الطرق -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp" android:height="48dp"
+    android:viewportWidth="48" android:viewportHeight="48">
+    <path android:pathData="M4 24 Q24 4 44 24 Q24 44 4 24 Z" android:strokeColor="#FFFFFFFF" android:strokeWidth="4.5" android:strokeLineJoin="round" />
+    <path android:pathData="M24 17 A7 7 0 1 1 23.99 17 Z" android:fillColor="#FFFFFFFF" />
+</vector>

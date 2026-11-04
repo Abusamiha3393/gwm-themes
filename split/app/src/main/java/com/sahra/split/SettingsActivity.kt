@@ -28,6 +28,15 @@ class SettingsActivity : Activity() {
     private lateinit var prefs: Prefs
     private lateinit var body: LinearLayout
     private var scrollY = 0
+    /** القسم المعروض: عام، الإعدادات المسبقة، العدادات، السيارة، متقدم. */
+    private var tab = 0
+    private val tabs = listOf(
+        R.drawable.ic_settings to "عام",
+        R.drawable.ic_split to "الإعدادات المسبقة",
+        R.drawable.ic_speed to "العدادات",
+        R.drawable.ic_road to "السيارة",
+        R.drawable.ic_stats to "متقدم",
+    )
     private var pending: Updater.Release? = null
     private var updateStatus = ""
 
@@ -35,6 +44,7 @@ class SettingsActivity : Activity() {
         super.onCreate(savedInstanceState)
         prefs = Prefs(this)
         Type.init(this)
+        tab = savedInstanceState?.getInt("tab") ?: intent.getIntExtra("tab", 0)
         window.statusBarColor = Palette.gantry
         window.decorView.layoutDirection = View.LAYOUT_DIRECTION_RTL
     }
@@ -45,21 +55,60 @@ class SettingsActivity : Activity() {
         if (prefs.autoUpdateCheck && Updater.due(this)) checkUpdate()
     }
 
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putInt("tab", tab)
+    }
+
     private fun render() {
-        val scroll = ScrollView(this).apply { background = AsphaltDrawable(this@SettingsActivity); isVerticalScrollBarEnabled = false }
+        val root = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            background = AsphaltDrawable(this@SettingsActivity)
+        }
+        val scroll = ScrollView(this).apply { isVerticalScrollBarEnabled = false }
         body = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(24), dp(16), dp(24), dp(40))
         }
         scroll.addView(body)
         build()
-        setContentView(scroll)
+        root.addView(scroll, LinearLayout.LayoutParams(MATCH_PARENT, 0, 1f))
+        root.addView(tabBar(), LinearLayout.LayoutParams(MATCH_PARENT, dp(84)))
+        setContentView(root)
         scroll.post { scroll.scrollTo(0, scrollY) }
         scroll.viewTreeObserver.addOnScrollChangedListener { scrollY = scroll.scrollY }
     }
 
+    /** شريط الأقسام أسفل الشاشة: القسم المختار لوحة خضراء، والباقي نص على الإسفلت. */
+    private fun tabBar(): View {
+        val bar = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setBackgroundColor(Palette.gantry)
+            setPadding(dp(16), dp(8), dp(16), dp(8))
+        }
+        tabs.forEachIndexed { i, (res, title) ->
+            val on = i == tab
+            val item = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER
+                minimumHeight = dp(64)
+                if (on) background = smallSign(Palette.green)
+                contentDescription = title
+                setOnClickListener {
+                    if (tab != i) { tab = i; scrollY = 0; render() }
+                }
+            }.also { it.pressable(dp(10f)) }
+            item.addView(icon(res, 26, if (on) Palette.white else Palette.muted),
+                LinearLayout.LayoutParams(dp(26), dp(26)).apply { marginEnd = dp(8) })
+            item.addView(label(title, 16f, if (on) Palette.white else Palette.muted, bold = on).apply { maxLines = 1 })
+            bar.addView(item, LinearLayout.LayoutParams(0, dp(64), 1f).apply { marginEnd = if (i < tabs.size - 1) dp(8) else 0 })
+        }
+        return bar
+    }
+
     private fun build() {
-        body.addView(header(R.drawable.ic_settings, "الإعدادات", Palette.blue) { finish() })
+        body.addView(header(tabs[tab].first, "الإعدادات · ${tabs[tab].second}", Palette.blue) { finish() })
         val st = VehicleRepository.state
         note(when {
             st.live -> "متصل ببيانات السيارة"
@@ -67,185 +116,196 @@ class SettingsActivity : Activity() {
             else -> "بانتظار بيانات السيارة…"
         }, if (st.live) Palette.white else Palette.muted)
 
-        // ---------------- الصلاحيات ----------------
-        section("الصلاحيات")
-        permission("العرض فوق التطبيقات", "للكرة العائمة واللوحة العائمة", Settings.canDrawOverlays(this)) {
-            startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName")))
-        }
-        permission("قراءة الإشعارات", "لمعرفة الأغنية الحالية والتحكم بها", MediaTracker.hasAccess(this)) {
-            startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
-        }
-        permission("إمكانية الوصول", "لزر «رجوع» في الكرة العائمة", BackService.enabled()) {
-            startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
-        }
-        val hasLoc = checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
-        permission("الموقع", "للطقس وأوقات الشروق والغروب", hasLoc) {
-            requestPermissions(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION), 5)
-        }
-        if (android.os.Build.VERSION.SDK_INT >= 33) {
-            val ok = checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
-            permission("الإشعارات", "لتنبيهات التذكيرات", ok) {
-                requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 6)
+        when (tab) {
+            0 -> {
+                // ---------------- الصلاحيات ----------------
+                section("الصلاحيات")
+                permission("العرض فوق التطبيقات", "للكرة العائمة واللوحة العائمة", Settings.canDrawOverlays(this)) {
+                    startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName")))
+                }
+                permission("قراءة الإشعارات", "لمعرفة الأغنية الحالية والتحكم بها", MediaTracker.hasAccess(this)) {
+                    startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+                }
+                permission("إمكانية الوصول", "لزر «رجوع» في الكرة العائمة", BackService.enabled()) {
+                    startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+                }
+                val hasLoc = checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+                permission("الموقع", "للطقس وأوقات الشروق والغروب", hasLoc) {
+                    requestPermissions(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION), 5)
+                }
+                if (android.os.Build.VERSION.SDK_INT >= 33) {
+                    val ok = checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+                    permission("الإشعارات", "لتنبيهات التذكيرات", ok) {
+                        requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 6)
+                    }
+                }
+                permission("الشاشة الرئيسية الافتراضية", "اختر «صحراء سبليت» ليكون اللانشر", isDefaultHome()) {
+                    runCatching { startActivity(Intent(Settings.ACTION_HOME_SETTINGS)) }
+                        .onFailure { startActivity(Intent(Settings.ACTION_SETTINGS)) }
+                }
+
+                // ---------------- النوافذ ----------------
+                section("النوافذ")
+                val modes = listOf(AppLauncher.MODE_FREEFORM, AppLauncher.MODE_SPLIT_PRIMARY, AppLauncher.MODE_FULLSCREEN)
+                choice("طريقة فتح التطبيقين", listOf("نوافذ بحدود", "تقسيم أندرويد", "كاملة"), modes.indexOf(prefs.windowMode).coerceAtLeast(0)) {
+                    prefs.windowMode = modes[it]; render()
+                }
+                note("إن لم تحترم الشاشة حدود النوافذ، جرّب «تقسيم أندرويد»، أو اجعل لوحة المعلومات عائمة.", Palette.muted)
+                toggle("فتح التقسيم تلقائيًا عند تشغيل السيارة", prefs.autoSplit) { prefs.autoSplit = it }
+                toggle("لوحة المعلومات عائمة فوق التطبيقات", prefs.floatingPanel) { prefs.floatingPanel = it; OverlayService.sync(this) }
+                toggle("التشغيل التلقائي مع السيارة", prefs.autostart) { prefs.autostart = it }
+
+                // ---------------- خصائص إضافية ----------------
+                section("خصائص إضافية")
+                toggle("لوحة المعلومات بجانب الشاشة الرئيسية (الساعة، الوقود، الطقس…)", prefs.showPanel) { prefs.showPanel = it }
+                toggle("الكرة العائمة (السرعة وقائمة سريعة)", prefs.ball) { prefs.ball = it; OverlayService.sync(this) }
+                row("السجل: الرحلات والتعبئات والتذكيرات", "") { startActivity(Intent(this, LogActivity::class.java)) }
+            }
+            1 -> {
+                // ---------------- الإعداد المسبق ----------------
+                val idx = prefs.presetIndex
+                val p = prefs.preset
+                section("الإعداد المسبق الحالي: ${p.name}")
+                choice("اختر الإعداد", prefs.presets().map { it.name }, idx) { prefs.presetIndex = it; render() }
+                row("الاسم", p.name) {
+                    val input = EditText(this).apply { setText(p.name); setTextColor(Palette.white) }
+                    AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
+                        .setTitle("اسم الإعداد").setView(input)
+                        .setPositiveButton("حفظ") { _, _ ->
+                            val name = input.text.toString().trim()
+                            if (name.isNotEmpty()) { prefs.updatePreset { it.copy(name = name) }; render() }
+                        }
+                        .setNegativeButton("إلغاء", null).show()
+                }
+                row("تطبيق الملاحة", AppLauncher.label(this, p.navApp)) {
+                    AppPicker.show(this, "تطبيق الملاحة", true) { pkg -> prefs.updatePreset { it.copy(navApp = pkg) }; render() }
+                }
+                row("تطبيق الموسيقى", AppLauncher.label(this, p.musicApp)) {
+                    AppPicker.show(this, "تطبيق الموسيقى", true) { pkg -> prefs.updatePreset { it.copy(musicApp = pkg) }; render() }
+                }
+                seek("نسبة الملاحة من المساحة", 30, 70, (p.ratio * 100).toInt(), { "$it%" }) { v ->
+                    prefs.updatePreset { it.copy(ratio = v / 100f) }
+                }
+                choice("مكان لوحة المعلومات", PanelSide.entries.map { it.label }, p.side.ordinal) { i ->
+                    prefs.updatePreset { it.copy(side = PanelSide.entries[i]) }; render()
+                }
+                seek("عرض لوحة المعلومات", 20, 45, (p.panelWidth * 100).toInt(), { "$it%" }) { v ->
+                    prefs.updatePreset { it.copy(panelWidth = v / 100f) }
+                }
+                row("نسخ هذا الإعداد إلى…", "") {
+                    AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
+                        .setTitle("انسخ «${p.name}» إلى")
+                        .setItems(prefs.presets().map { it.name }.toTypedArray()) { _, i ->
+                            if (i != idx) { prefs.savePreset(i, p.copy(name = prefs.presets()[i].name)); toast("تم النسخ") }
+                        }.show()
+                }
+
+                // ---------------- نهار وليل ----------------
+                section("التبديل التلقائي بين النهار والليل")
+                toggle("تفعيل", prefs.autoDayNight) { prefs.autoDayNight = it; Sun.applyDayNight(this); render() }
+                val names = prefs.presets().map { it.name }
+                choice("إعداد النهار", names, prefs.dayPreset) { prefs.dayPreset = it; Sun.applyDayNight(this); render() }
+                choice("إعداد الليل", names, prefs.nightPreset) { prefs.nightPreset = it; Sun.applyDayNight(this); render() }
+                val now = Calendar.getInstance()
+                note("الشروق اليوم ${Sun.format(Sun.minutes(now, prefs.lat.toDouble(), prefs.lon.toDouble(), true))} · " +
+                    "الغروب ${Sun.format(Sun.minutes(now, prefs.lat.toDouble(), prefs.lon.toDouble(), false))}", Palette.muted)
+            }
+            2 -> {
+                // ---------------- شاشة العدادات ----------------
+                section("شاشة العدادات")
+                toggle("عرض الثيم على شاشة العدادات", prefs.clusterOn) { prefs.clusterOn = it; ClusterService.sync(this) }
+                row("محرر الثيم: العناصر ونافذة الملاحة والخلفية", ClusterThemes.byId(prefs.clusterTheme).name) {
+                    startActivity(Intent(this, ThemeEditorActivity::class.java))
+                }
+                choice("الثيم", ClusterThemes.all.map { it.name }, ClusterThemes.all.indexOfFirst { it.id == prefs.clusterTheme }.coerceAtLeast(0)) {
+                    prefs.clusterTheme = ClusterThemes.all[it].id; ClusterService.reload(this); render()
+                }
+                val accents = listOf("") + ClusterThemes.ACCENTS
+                val accentNames = listOf("لون الثيم", "رملي", "أحمر", "أخضر", "أزرق", "أبيض", "بنفسجي")
+                choice("لون الإبرة", accentNames, accents.indexOf(prefs.clusterAccent).coerceAtLeast(0)) {
+                    prefs.clusterAccent = accents[it]; render()
+                }
+                seek("أقصى سرعة في العداد", 140, 260, prefs.speedMax, { "$it" }) { prefs.speedMax = it }
+                seek("أقصى دوران في العداد", 5000, 9000, prefs.rpmMax, { "$it" }) { prefs.rpmMax = (it / 500) * 500 }
+                toggle("إظهار قياسات الشاشة وسط الثيم (للضبط)", prefs.clusterDebug) { prefs.clusterDebug = it }
+                seek("هامش أعلى الثيم", 0, 30, prefs.clusterTop, { "$it%" }) { prefs.clusterTop = it; ClusterService.reload(this) }
+                seek("هامش أسفل الثيم", 0, 30, prefs.clusterBottom, { "$it%" }) { prefs.clusterBottom = it; ClusterService.reload(this) }
+                seek("هامش الجانبين", 0, 25, prefs.clusterSide, { "$it%" }) { prefs.clusterSide = it; ClusterService.reload(this) }
+                note("الهوامش تبعد الثيم عن مؤشرات السيارة الثابتة (P، الأضواء، السرعة أسفل الشاشة). التغيير يظهر على العدادات فورًا.", Palette.muted)
+                toggle("الملاحة على العدادات بملء الشاشة (وإلا داخل نافذة في الثيم)", prefs.navClusterFull) { prefs.navClusterFull = it }
+                row(if (prefs.navOnCluster) "أرجع الملاحة إلى الشاشة الرئيسية" else "أرسل الملاحة إلى العدادات الآن", "") {
+                    toast(NavCluster.toggle(this)); render()
+                }
+                note("الحالة: ${ClusterService.status.ifEmpty { if (prefs.clusterOn) "جارٍ التشغيل…" else "متوقف" }}", Palette.white)
+                note("الشاشات المتصلة: ${ClusterService.displaysInfo(this)}", Palette.muted)
+            }
+            3 -> {
+                // ---------------- ناقل الحركة والإطارات ----------------
+                section("ناقل الحركة والإطارات")
+                val cur = VehicleRepository.state
+                note(if (cur.gearRaw >= 0) "قراءة الغيار الآن: ${cur.gearRaw} ← يُعرض «${Gears.label(this, cur)}»"
+                    else "لا تصل قراءة الغيار من السيارة", Palette.white)
+                note("تعليم الغيار: ضع الغيار على وضع، انتظر ثانيتين، ثم اضغط زره. كرّر لكل وضع.", Palette.muted)
+                val gearRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+                Gears.LABELS.forEach { g ->
+                    gearRow.addView(signButton(null, g, Palette.green) {
+                        val raw = VehicleRepository.state.gearRaw
+                        if (raw < 0) { toast("لا تصل قراءة الغيار"); return@signButton }
+                        val before = Gears.learn(this, raw, g)
+                        toast(if (before != null) "القيمة $raw كانت «$before» وأصبحت «$g»" else "القيمة $raw = «$g»")
+                        render()
+                    }, LinearLayout.LayoutParams(0, dp(64), 1f).apply { marginEnd = dp(8) })
+                }
+                add(gearRow)
+                val learned = Gears.map(this).entries.sortedBy { it.key }.joinToString("، ") { "${it.key} = ${it.value}" }
+                note("المسجّل: $learned", Palette.muted)
+                row("مسح ما تعلّمته من الغيار", "") { Gears.reset(this); render() }
+                val tp = cur.tirePsi
+                if (tp.size == 4) note("الإطارات الآن (psi): أمامي ${num(tp[0], 1)} · ${num(tp[1], 1)} — خلفي ${num(tp[2], 1)} · ${num(tp[3], 1)}", Palette.white)
+                seek("تنبيه ضغط الإطار تحت", 20, 40, prefs.tireWarnPsi, { "$it psi" }) { prefs.tireWarnPsi = it }
+
+                // ---------------- الساعة والوقود ----------------
+                section("الساعة والوقود")
+                choice("شكل الساعة", listOf("أرقام", "عقارب"), prefs.clockStyle) { prefs.clockStyle = it; render() }
+                seek("سعة الخزان", 40, 140, prefs.tankLiters.toInt(), { "$it لتر" }) { prefs.tankLiters = it.toFloat() }
+                val refuel = if (prefs.refuelAt > 0) android.text.format.DateFormat.format("yyyy/MM/dd HH:mm", prefs.refuelAt).toString() else "لم تُرصد بعد"
+                row("آخر تعبئة", refuel) {
+                    AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
+                        .setMessage("اعتبار الآن نقطة تعبئة جديدة؟ يبدأ حساب الاستهلاك من جديد.")
+                        .setPositiveButton("نعم") { _, _ ->
+                            val s = VehicleRepository.state
+                            if (!s.odometerKm.isNaN() && !s.fuelPercent.isNaN()) {
+                                prefs.refuelOdo = s.odometerKm; prefs.refuelFuel = s.fuelPercent; prefs.refuelAt = System.currentTimeMillis()
+                                render()
+                            } else toast("لا توجد قراءة وقود حالية")
+                        }
+                        .setNegativeButton("لا", null).show()
+                }
+
+                // ---------------- الموقع ----------------
+                section("الموقع")
+                note("المستخدم للطقس والشروق: ${num(prefs.lat, 3)}, ${num(prefs.lon, 3)}", Palette.white)
+                row("تحديث من موقع السيارة الآن", "") {
+                    Sun.refreshLocation(this)
+                    Weather.ensure(this, force = true)
+                    render()
+                }
+            }
+            else -> {
+                // ---------------- متقدم ----------------
+                section("متقدم")
+                toggle("الوضع التجريبي (بيانات وهمية)", prefs.demo) { prefs.demo = it; VehicleRepository.forceDemo = it }
+                row("مستكشف مفاتيح السيارة", "") { startActivity(Intent(this, KeyProbeActivity::class.java)) }
+
+                // ---------------- التحديثات ----------------
+                section("التحديثات")
+                note("الإصدار الحالي ${Updater.currentName(this)}${if (updateStatus.isNotEmpty()) " · $updateStatus" else ""}", Palette.white)
+                toggle("التحقق تلقائيًا كل 6 ساعات", prefs.autoUpdateCheck) { prefs.autoUpdateCheck = it }
+                val rel = pending
+                if (rel != null) row("ثبّت الإصدار 0.1.${rel.number}", "") { install(rel) }
+                else row("تحقق الآن", "") { checkUpdate() }
             }
         }
-        permission("الشاشة الرئيسية الافتراضية", "اختر «صحراء سبليت» ليكون اللانشر", isDefaultHome()) {
-            runCatching { startActivity(Intent(Settings.ACTION_HOME_SETTINGS)) }
-                .onFailure { startActivity(Intent(Settings.ACTION_SETTINGS)) }
-        }
-
-        // ---------------- شاشة العدادات ----------------
-        section("شاشة العدادات")
-        toggle("عرض الثيم على شاشة العدادات", prefs.clusterOn) { prefs.clusterOn = it; ClusterService.sync(this) }
-        choice("الثيم", ClusterThemes.all.map { it.name }, ClusterThemes.all.indexOfFirst { it.id == prefs.clusterTheme }.coerceAtLeast(0)) {
-            prefs.clusterTheme = ClusterThemes.all[it].id; ClusterService.reload(this); render()
-        }
-        val accents = listOf("") + ClusterThemes.ACCENTS
-        val accentNames = listOf("لون الثيم", "رملي", "أحمر", "أخضر", "أزرق", "أبيض", "بنفسجي")
-        choice("لون الإبرة", accentNames, accents.indexOf(prefs.clusterAccent).coerceAtLeast(0)) {
-            prefs.clusterAccent = accents[it]; render()
-        }
-        seek("أقصى سرعة في العداد", 140, 260, prefs.speedMax, { "$it" }) { prefs.speedMax = it }
-        seek("أقصى دوران في العداد", 5000, 9000, prefs.rpmMax, { "$it" }) { prefs.rpmMax = (it / 500) * 500 }
-        toggle("إظهار قياسات الشاشة وسط الثيم (للضبط)", prefs.clusterDebug) { prefs.clusterDebug = it }
-        seek("هامش أعلى الثيم", 0, 30, prefs.clusterTop, { "$it%" }) { prefs.clusterTop = it; ClusterService.reload(this) }
-        seek("هامش أسفل الثيم", 0, 30, prefs.clusterBottom, { "$it%" }) { prefs.clusterBottom = it; ClusterService.reload(this) }
-        seek("هامش الجانبين", 0, 25, prefs.clusterSide, { "$it%" }) { prefs.clusterSide = it; ClusterService.reload(this) }
-        note("الهوامش تبعد الثيم عن مؤشرات السيارة الثابتة (P، الأضواء، السرعة أسفل الشاشة). التغيير يظهر على العدادات فورًا.", Palette.muted)
-        toggle("الملاحة على العدادات بملء الشاشة (وإلا داخل الهوامش)", prefs.navClusterFull) { prefs.navClusterFull = it }
-        row(if (prefs.navOnCluster) "أرجع الملاحة إلى الشاشة الرئيسية" else "أرسل الملاحة إلى العدادات الآن", "") {
-            toast(NavCluster.toggle(this)); render()
-        }
-        note("الحالة: ${ClusterService.status.ifEmpty { if (prefs.clusterOn) "جارٍ التشغيل…" else "متوقف" }}", Palette.white)
-        note("الشاشات المتصلة: ${ClusterService.displaysInfo(this)}", Palette.muted)
-
-        // ---------------- ناقل الحركة والإطارات ----------------
-        section("ناقل الحركة والإطارات")
-        val cur = VehicleRepository.state
-        note(if (cur.gearRaw >= 0) "قراءة الغيار الآن: ${cur.gearRaw} ← يُعرض «${Gears.label(this, cur)}»"
-            else "لا تصل قراءة الغيار من السيارة", Palette.white)
-        note("تعليم الغيار: ضع الغيار على وضع، انتظر ثانيتين، ثم اضغط زره. كرّر لكل وضع.", Palette.muted)
-        val gearRow = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
-        Gears.LABELS.forEach { g ->
-            gearRow.addView(signButton(null, g, Palette.green) {
-                val raw = VehicleRepository.state.gearRaw
-                if (raw < 0) { toast("لا تصل قراءة الغيار"); return@signButton }
-                val before = Gears.learn(this, raw, g)
-                toast(if (before != null) "القيمة $raw كانت «$before» وأصبحت «$g»" else "القيمة $raw = «$g»")
-                render()
-            }, LinearLayout.LayoutParams(0, dp(64), 1f).apply { marginEnd = dp(8) })
-        }
-        add(gearRow)
-        val learned = Gears.map(this).entries.sortedBy { it.key }.joinToString("، ") { "${it.key} = ${it.value}" }
-        note("المسجّل: $learned", Palette.muted)
-        row("مسح ما تعلّمته من الغيار", "") { Gears.reset(this); render() }
-        val tp = cur.tirePsi
-        if (tp.size == 4) note("الإطارات الآن (psi): أمامي ${num(tp[0], 1)} · ${num(tp[1], 1)} — خلفي ${num(tp[2], 1)} · ${num(tp[3], 1)}", Palette.white)
-        seek("تنبيه ضغط الإطار تحت", 20, 40, prefs.tireWarnPsi, { "$it psi" }) { prefs.tireWarnPsi = it }
-
-        // ---------------- خصائص إضافية ----------------
-        section("خصائص إضافية")
-        toggle("لوحة المعلومات بجانب الشاشة الرئيسية (الساعة، الوقود، الطقس…)", prefs.showPanel) { prefs.showPanel = it }
-        toggle("الكرة العائمة (السرعة وقائمة سريعة)", prefs.ball) { prefs.ball = it; OverlayService.sync(this) }
-        row("السجل: الرحلات والتعبئات والتذكيرات", "") { startActivity(Intent(this, LogActivity::class.java)) }
-
-        // ---------------- الإعداد المسبق ----------------
-        val idx = prefs.presetIndex
-        val p = prefs.preset
-        section("الإعداد المسبق الحالي: ${p.name}")
-        choice("اختر الإعداد", prefs.presets().map { it.name }, idx) { prefs.presetIndex = it; render() }
-        row("الاسم", p.name) {
-            val input = EditText(this).apply { setText(p.name); setTextColor(Palette.white) }
-            AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
-                .setTitle("اسم الإعداد").setView(input)
-                .setPositiveButton("حفظ") { _, _ ->
-                    val name = input.text.toString().trim()
-                    if (name.isNotEmpty()) { prefs.updatePreset { it.copy(name = name) }; render() }
-                }
-                .setNegativeButton("إلغاء", null).show()
-        }
-        row("تطبيق الملاحة", AppLauncher.label(this, p.navApp)) {
-            AppPicker.show(this, "تطبيق الملاحة", true) { pkg -> prefs.updatePreset { it.copy(navApp = pkg) }; render() }
-        }
-        row("تطبيق الموسيقى", AppLauncher.label(this, p.musicApp)) {
-            AppPicker.show(this, "تطبيق الموسيقى", true) { pkg -> prefs.updatePreset { it.copy(musicApp = pkg) }; render() }
-        }
-        seek("نسبة الملاحة من المساحة", 30, 70, (p.ratio * 100).toInt(), { "$it%" }) { v ->
-            prefs.updatePreset { it.copy(ratio = v / 100f) }
-        }
-        choice("مكان لوحة المعلومات", PanelSide.entries.map { it.label }, p.side.ordinal) { i ->
-            prefs.updatePreset { it.copy(side = PanelSide.entries[i]) }; render()
-        }
-        seek("عرض لوحة المعلومات", 20, 45, (p.panelWidth * 100).toInt(), { "$it%" }) { v ->
-            prefs.updatePreset { it.copy(panelWidth = v / 100f) }
-        }
-        row("نسخ هذا الإعداد إلى…", "") {
-            AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
-                .setTitle("انسخ «${p.name}» إلى")
-                .setItems(prefs.presets().map { it.name }.toTypedArray()) { _, i ->
-                    if (i != idx) { prefs.savePreset(i, p.copy(name = prefs.presets()[i].name)); toast("تم النسخ") }
-                }.show()
-        }
-
-        // ---------------- نهار وليل ----------------
-        section("التبديل التلقائي بين النهار والليل")
-        toggle("تفعيل", prefs.autoDayNight) { prefs.autoDayNight = it; Sun.applyDayNight(this); render() }
-        val names = prefs.presets().map { it.name }
-        choice("إعداد النهار", names, prefs.dayPreset) { prefs.dayPreset = it; Sun.applyDayNight(this); render() }
-        choice("إعداد الليل", names, prefs.nightPreset) { prefs.nightPreset = it; Sun.applyDayNight(this); render() }
-        val now = Calendar.getInstance()
-        note("الشروق اليوم ${Sun.format(Sun.minutes(now, prefs.lat.toDouble(), prefs.lon.toDouble(), true))} · " +
-            "الغروب ${Sun.format(Sun.minutes(now, prefs.lat.toDouble(), prefs.lon.toDouble(), false))}", Palette.muted)
-
-        // ---------------- النوافذ ----------------
-        section("النوافذ")
-        val modes = listOf(AppLauncher.MODE_FREEFORM, AppLauncher.MODE_SPLIT_PRIMARY, AppLauncher.MODE_FULLSCREEN)
-        choice("طريقة فتح التطبيقين", listOf("نوافذ بحدود", "تقسيم أندرويد", "كاملة"), modes.indexOf(prefs.windowMode).coerceAtLeast(0)) {
-            prefs.windowMode = modes[it]; render()
-        }
-        note("إن لم تحترم الشاشة حدود النوافذ، جرّب «تقسيم أندرويد»، أو اجعل لوحة المعلومات عائمة.", Palette.muted)
-        toggle("فتح التقسيم تلقائيًا عند تشغيل السيارة", prefs.autoSplit) { prefs.autoSplit = it }
-        toggle("لوحة المعلومات عائمة فوق التطبيقات", prefs.floatingPanel) { prefs.floatingPanel = it; OverlayService.sync(this) }
-        toggle("التشغيل التلقائي مع السيارة", prefs.autostart) { prefs.autostart = it }
-
-        // ---------------- الساعة والوقود ----------------
-        section("الساعة والوقود")
-        choice("شكل الساعة", listOf("أرقام", "عقارب"), prefs.clockStyle) { prefs.clockStyle = it; render() }
-        seek("سعة الخزان", 40, 140, prefs.tankLiters.toInt(), { "$it لتر" }) { prefs.tankLiters = it.toFloat() }
-        val refuel = if (prefs.refuelAt > 0) android.text.format.DateFormat.format("yyyy/MM/dd HH:mm", prefs.refuelAt).toString() else "لم تُرصد بعد"
-        row("آخر تعبئة", refuel) {
-            AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
-                .setMessage("اعتبار الآن نقطة تعبئة جديدة؟ يبدأ حساب الاستهلاك من جديد.")
-                .setPositiveButton("نعم") { _, _ ->
-                    val s = VehicleRepository.state
-                    if (!s.odometerKm.isNaN() && !s.fuelPercent.isNaN()) {
-                        prefs.refuelOdo = s.odometerKm; prefs.refuelFuel = s.fuelPercent; prefs.refuelAt = System.currentTimeMillis()
-                        render()
-                    } else toast("لا توجد قراءة وقود حالية")
-                }
-                .setNegativeButton("لا", null).show()
-        }
-
-        // ---------------- الموقع ----------------
-        section("الموقع")
-        note("المستخدم للطقس والشروق: ${num(prefs.lat, 3)}, ${num(prefs.lon, 3)}", Palette.white)
-        row("تحديث من موقع السيارة الآن", "") {
-            Sun.refreshLocation(this)
-            Weather.ensure(this, force = true)
-            render()
-        }
-
-        // ---------------- متقدم ----------------
-        section("متقدم")
-        toggle("الوضع التجريبي (بيانات وهمية)", prefs.demo) { prefs.demo = it; VehicleRepository.forceDemo = it }
-        row("مستكشف مفاتيح السيارة", "") { startActivity(Intent(this, KeyProbeActivity::class.java)) }
-
-        // ---------------- التحديثات ----------------
-        section("التحديثات")
-        note("الإصدار الحالي ${Updater.currentName(this)}${if (updateStatus.isNotEmpty()) " · $updateStatus" else ""}", Palette.white)
-        toggle("التحقق تلقائيًا كل 6 ساعات", prefs.autoUpdateCheck) { prefs.autoUpdateCheck = it }
-        val rel = pending
-        if (rel != null) row("ثبّت الإصدار 0.1.${rel.number}", "") { install(rel) }
-        else row("تحقق الآن", "") { checkUpdate() }
     }
 
     // ---------------- أدوات البناء ----------------

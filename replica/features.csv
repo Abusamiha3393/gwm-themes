@@ -4,16 +4,17 @@ Presets switched in one press,split,must,yes,yes,7 presets; existed
 Swap left and right windows,split,must,yes,yes,ball menu; existed
 Bottom menu with presets and app list,split,must,yes,partial,presets on home + ball menu; no persistent bottom bar
 Launch any installed app into a window,split,must,yes,yes,AppsActivity; existed
-Navigation on the instrument cluster (windowed and fullscreen),cluster,must,yes,partial,M1 NavCluster; needs a test on the H9
+Navigation on the instrument cluster (windowed and fullscreen),cluster,must,yes,partial,Yandex opened on display 2 (car test 2026-11-04); windowed now shows through a hole in the theme
 Keep the route when moving Navi to the cluster,cluster,must,yes,partial,task kept (no reset); needs a test with Google Maps and Waze
 Cluster theme with live speed RPM fuel temp,cluster,must,yes,yes,ClusterService + HTML themes; existed
 Floating Back button,overlays,must,yes,partial,"in the ball menu, not a separate floating button"
 Floating Navi-to-cluster button,overlays,must,yes,partial,"M1: ball menu item, not a separate floating button"
-Settings screen with per-preset editor,settings,must,yes,yes,existed
+Settings screen with per-preset editor,settings,must,yes,yes,five sections with a bottom bar
 Steering wheel buttons control presets and settings,input,must,yes,no,F09
 Guided permission onboarding,onboarding,must,yes,partial,permission rows in settings; no first-run flow
 Theme picker with immediate preview,cluster,should,yes,no,S11
-Tire pressure with yellow/red thresholds,cluster,should,yes,no,
+"Separate theme editor: move, scale, hide elements, background",themes,should,yes,yes,ThemeEditorActivity; image themes; outline shown on the real cluster
+Tire pressure with yellow/red thresholds,cluster,should,yes,yes,"tpms_status pairs, order confirmed by the owner; warn limit in settings"
 Fuel level and range warnings,cluster,should,yes,no,
 Cruise state and speed on the cluster,cluster,should,yes,no,
 Drive mode tint (Normal Sport Eco),cluster,should,yes,no,
@@ -31,11 +32,11 @@ Arabic and English UI,localization,should,yes,no,their Arabic was added late; na
 Trial then paid activation,licensing,should,yes,no,S27
 Split info dashboard pages (clocks fuel music off-road),split info,should,yes,yes,Pages.kt; existed
 Trip log with average consumption,stats,should,yes,yes,Logbook; existed
-Gear and gear number on the cluster,cluster,should,yes,no,S09 (D 6)
+Gear and gear number on the cluster,cluster,should,yes,yes,gear_status learned per car + current_gear; haval theme shows D5
 Fuel range km and litres/percent bar,cluster,should,yes,no,S09
-ODO and trip inside the speed well,cluster,should,yes,no,S09
-Battery voltage on the cluster,cluster,could,yes,no,S09 13.8 V
-Coolant temperature in the RPM well,cluster,should,yes,no,S09
+ODO and trip inside the speed well,cluster,should,yes,partial,trip and journey available as theme elements (hidden by default)
+Battery voltage on the cluster,cluster,could,yes,yes,"theme element, hidden by default"
+Coolant temperature in the RPM well,cluster,should,yes,yes,haval theme
 Keep the stock ADAS road view visible,cluster,must,yes,no,S09 wells only at the sides
 One tyre-pressure unit everywhere (bar or psi),cluster,should,no,no,original mixes psi display with bar limit
 Left rail with climate mini-widget,head unit,should,yes,no,S30
@@ -43,7 +44,7 @@ Floating live speed badge,overlays,should,yes,yes,SpeedRoundel; existed
 Warning thresholds for speed RPM tire pressure,cluster,should,yes,no,S06d
 Speed multiplier calibration,vehicles,should,yes,no,S06c
 Tank capacity and non-standard tank,vehicles,should,yes,partial,tank capacity yes; correction no
-Navi window margin correction per display,cluster,should,yes,no,S06d
+Navi window margin correction per display,cluster,should,yes,yes,nav window x/y/w/h in the theme editor
 Save and load settings backup,settings,should,yes,no,S06e
 Native Arabic RTL with no mixed-language labels,localization,must,partial,partial,Arabic-first UI; full audit in M2
 Gulf app defaults (Google Maps Waze Anghami Qibla),media,should,no,no,M2

@@ -127,6 +127,30 @@ class Prefs(context: Context) {
         get() = sp.getBoolean("nav_cluster_full", false)
         set(v) = put("nav_cluster_full", v)
 
+    /**
+     * نافذة الملاحة داخل الثيم، كنسب من نافذة الثيم على العدادات (0..1).
+     * الافتراضي: الوسط بين العدادين، حيث يُفتح ثقب في الثيم تظهر منه الخريطة.
+     */
+    var navX: Float
+        get() = sp.getFloat("nav_x", 0.3125f)
+        set(v) = put("nav_x", v.coerceIn(0f, 0.95f))
+    var navY: Float
+        get() = sp.getFloat("nav_y", 0.15f)
+        set(v) = put("nav_y", v.coerceIn(0f, 0.95f))
+    var navW: Float
+        get() = sp.getFloat("nav_w", 0.375f)
+        set(v) = put("nav_w", v.coerceIn(0.05f, 1f))
+    var navH: Float
+        get() = sp.getFloat("nav_h", 0.64f)
+        set(v) = put("nav_h", v.coerceIn(0.05f, 1f))
+
+    /** يعيد نافذة الملاحة إلى مقاسها الافتراضي. */
+    fun resetNavRect() = sp.edit().remove("nav_x").remove("nav_y").remove("nav_w").remove("nav_h").apply()
+
+    /** تعديلات محرر الثيم لكل ثيم: {"els":{"id":{"dx":0,"dy":0,"s":1,"h":false}},"bg":"blue"} */
+    fun themeEdit(themeId: String): String = sp.getString("edit_$themeId", "") ?: ""
+    fun setThemeEdit(themeId: String, json: String) = put("edit_$themeId", json)
+
     /** ما تعلّمه السائق من قيم الغيار: JSON من القيمة الخام إلى الحرف، مثل {"3":"P"}. */
     var gearMap: String
         get() = sp.getString("gear_map", "") ?: ""

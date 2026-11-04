@@ -6,11 +6,11 @@ import org.json.JSONObject
 /**
  * يترجم gear_status الخام إلى حرف (P, R, N, D, M).
  * القيم تختلف بين الطرازات، فيتعلّمها السائق مرة واحدة: يضع الغيار على وضع ويضغط زره.
- * المعروف من هافال H9: 2 = D. ما لم يُتعلَّم يُستنتج من السرعة والدوران.
+ * المعروف من هافال H9 (تجربة 2026-11-04): 0 = N، 2 = D، 3 = P، 5 = M. ما لم يُتعلَّم يُستنتج من السرعة والدوران.
  */
 object Gears {
     val LABELS = listOf("P", "R", "N", "D", "M")
-    private val DEFAULTS = mapOf(2 to "D")
+    private val DEFAULTS = mapOf(0 to "N", 2 to "D", 3 to "P", 5 to "M")
 
     fun map(context: Context): Map<Int, String> {
         val o = runCatching { JSONObject(Prefs(context).gearMap) }.getOrNull() ?: return DEFAULTS
