@@ -310,6 +310,10 @@ input[type=range]::-moz-range-thumb{width:calc(var(--u)*4);height:calc(var(--u)*
 <div class="veil" id="setVeil">
   <div class="sheet">
     <h3>ربط Home Assistant</h3>
+    <div class="hint" id="appRow" style="display:none;align-items:center;justify-content:space-between;gap:calc(var(--u)*1.4)">
+      <span id="appVer"></span>
+      <button class="sbtn" onclick="try{HavalApp.checkUpdate()}catch(e){}">التحقق من التحديث</button>
+    </div>
     <label class="field"><span>عنوان الخادم</span><input id="fUrl" placeholder="https://abusamiha.fun" autocomplete="off" spellcheck="false"></label>
     <div class="actions" style="margin-bottom:calc(var(--u)*2)">
       <button class="pbtn" id="loginBtn" onclick="AUTH.login()">تسجيل الدخول بحساب Home Assistant</button>
@@ -374,12 +378,23 @@ const $=(s)=>document.querySelector(s);
 const esc=(s)=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
 /* ========= Storage ========= */
-const LS={
-  get(k,d){try{const v=localStorage.getItem('hv_'+k);return v==null?d:JSON.parse(v)}catch(e){return d}},
-  set(k,v){try{localStorage.setItem('hv_'+k,JSON.stringify(v))}catch(e){}}
-};
 /* Native car app bridge (present only inside the Android app) */
 const APP=window.HavalApp||null;
+/* Settings and sign-in are mirrored into the app's own storage, so they survive the car powering off */
+const LS={
+  get(k,d){
+    let v=null;
+    try{v=localStorage.getItem('hv_'+k)}catch(e){}
+    if(v==null&&APP){try{v=APP.load(k)||null}catch(e){}}
+    if(v==null)return d;
+    try{return JSON.parse(v)}catch(e){return d}
+  },
+  set(k,v){
+    const s=JSON.stringify(v);
+    try{localStorage.setItem('hv_'+k,s)}catch(e){}
+    if(APP){try{APP.save(k,s)}catch(e){}}
+  }
+};
 function defaultUrl(){
   if(APP){try{return APP.server()}catch(e){}}
   return /^https?:/.test(location.protocol)&&location.host?location.origin:'https://abusamiha.fun';
@@ -660,6 +675,7 @@ $('#dimToggle').addEventListener('click',()=>{
 
 /* settings */
 function openSettings(){
+  if(APP){let v='';try{v=APP.version()}catch(e){}$('#appRow').style.display='flex';$('#appVer').textContent='منزلي — الإصدار '+v}
   const signed=!!(AUTH.get()||cfg.token);
   $('#logoutBtn').style.display=signed?'':'none';
   $('#loginBtn').textContent=signed?'إعادة تسجيل الدخول':'تسجيل الدخول بحساب Home Assistant';
@@ -734,7 +750,11 @@ async function browserToken(force){
   try{
     const r=await fetch(HA.base+'/auth/token',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},
       body:new URLSearchParams({grant_type:'refresh_token',refresh_token:t.refresh_token,client_id:t.clientId||(HA.base+'/')})});
-    if(!r.ok){if(own&&r.status>=400&&r.status<500)AUTH.set(null);return null}
+    if(!r.ok){
+      // sign out only when HA says the session was revoked; anything else (network, Cloudflare) is temporary
+      if(own&&r.status===400){let j={};try{j=await r.json()}catch(e){}if(j.error==='invalid_grant')AUTH.set(null)}
+      return null;
+    }
     const j=await r.json();
     t.access_token=j.access_token;t.expires_in=j.expires_in;t.expires=Date.now()+j.expires_in*1000;
     if(own)AUTH.set(t);else try{localStorage.setItem('hassTokens',JSON.stringify(t))}catch(e){}
@@ -759,7 +779,13 @@ const HA={
     if(window.parent!==window&&(this.tries=(this.tries||0)+1)<6){this.timer=setTimeout(()=>this.connect(),700);return}
     let token=cfg.token;this.viaBrowser=false;
     if(!token){token=await browserToken();this.viaBrowser=!!token}
-    if(!token){startDemo();return}
+    if(!token){
+      if(AUTH.get()){ // signed in but the server isn't reachable yet (car just started): keep retrying
+        setConn('off','تعذّر الوصول للبيت — إعادة المحاولة');
+        this.timer=setTimeout(()=>this.connect(),Math.min(30000,2000*2**this.retry++));return;
+      }
+      startDemo();return;
+    }
     this.token=token;
     S.demo=false;setConn('connecting');
     let ws;
@@ -780,6 +806,7 @@ const HA={
     else if(m.type==='auth_invalid'){
       const w=this.ws;this.ws=null;try{w.close()}catch(e){}
       if(this.viaBrowser){browserToken(true).then(t=>{if(t){cfg.token='';this.connect()}else{setConn('error','سجّل الدخول إلى Home Assistant مجدداً')}});return}
+      if(cfg.token&&AUTH.get()){cfg.token='';LS.set('token','');this.connect();return}
       setConn('error','رمز الدخول غير صالح');openSettings();
     }
     else if(m.type==='result'){const p=this.p[m.id];if(p){delete this.p[m.id];m.success?p.res(m.result):p.rej(m.error||{})}}
@@ -817,8 +844,21 @@ const HA={
     if(subscribe)await subscribe();
     S.demo=false;
     setConn('on',this.embedded?'متصل عبر التطبيق':this.viaBrowser?'متصل بحسابك':undefined);render();
+    if(this.viaBrowser&&AUTH.get()&&!cfg.token)keepSignedIn();
   }
 };
+/* After a normal sign-in, create a long-lived token for this car so it never needs to sign in again */
+async function keepSignedIn(){
+  try{
+    const stamp=new Date().toISOString().slice(0,16).replace('T',' ');
+    const tok=await HA.send({type:'auth/long_lived_access_token',client_name:'منزلي — الهافال '+stamp,lifespan:3650});
+    if(typeof tok==='string'&&tok){
+      cfg.token=tok;LS.set('token',tok);
+      cfg.url=(HA.base||location.origin).replace(/\/+$/,'');LS.set('url',cfg.url);
+      HA.viaBrowser=false;
+    }
+  }catch(e){}
+}
 
 /* ========= Demo mode (shown until a token is added) ========= */
 function startDemo(){

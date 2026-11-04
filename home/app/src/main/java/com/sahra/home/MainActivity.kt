@@ -2,6 +2,11 @@ package com.sahra.home
 
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.app.AlertDialog
+import android.content.Intent
+import android.provider.Settings
+import android.widget.TextView
+import android.widget.Toast
 import android.content.Context
 import android.graphics.Color
 import android.net.Uri
@@ -32,6 +37,9 @@ import android.webkit.WebViewClient
 class MainActivity : Activity() {
 
     private lateinit var web: WebView
+    private var dialog: AlertDialog? = null
+    private var checking = false
+    private var pendingUpdate: Updater.Release? = null
     private val prefs by lazy { getSharedPreferences("home", Context.MODE_PRIVATE) }
 
     private fun serverUrl(): String =
@@ -131,6 +139,95 @@ class MainActivity : Activity() {
         super.onResume()
         web.onResume()
         hideBars()
+        val waiting = pendingUpdate
+        if (waiting != null && Updater.canInstall(this)) {
+            pendingUpdate = null
+            startUpdate(waiting)
+        } else {
+            maybeAutoCheck()
+        }
+    }
+
+    // ---------- التحديث ----------
+
+    private fun toast(msg: String) = Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
+
+    private fun maybeAutoCheck() {
+        if (System.currentTimeMillis() - prefs.getLong(KEY_LAST_CHECK, 0L) < CHECK_EVERY_MS) return
+        checkUpdate(false)
+    }
+
+    private fun checkUpdate(userAsked: Boolean) {
+        if (checking) return
+        checking = true
+        Thread {
+            val result = Updater.check(this)
+            if (result !is Updater.Result.Failed) {
+                prefs.edit().putLong(KEY_LAST_CHECK, System.currentTimeMillis()).apply()
+            }
+            runOnUiThread {
+                checking = false
+                if (!isFinishing) {
+                    when (result) {
+                        is Updater.Result.Available -> offerUpdate(result.release)
+                        is Updater.Result.UpToDate -> if (userAsked) toast("لديك أحدث نسخة ✓")
+                        is Updater.Result.Failed -> if (userAsked) toast(result.message)
+                    }
+                }
+            }
+        }.start()
+    }
+
+    private fun offerUpdate(r: Updater.Release) {
+        dialog?.dismiss()
+        dialog = AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
+            .setTitle("يتوفر تحديث لمنزلي")
+            .setMessage("الإصدار الجديد 1.0.${r.number}\nالإصدار الحالي ${Updater.currentName(this)}")
+            .setPositiveButton("تحديث الآن") { _, _ -> startUpdate(r) }
+            .setNegativeButton("لاحقًا", null)
+            .show()
+    }
+
+    private fun startUpdate(r: Updater.Release) {
+        if (!Updater.canInstall(this)) {
+            pendingUpdate = r
+            toast("فعّل السماح لمنزلي بتثبيت التحديثات ثم ارجع للتطبيق")
+            try {
+                startActivity(Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:$packageName")))
+            } catch (e: Exception) {
+                pendingUpdate = null
+                toast("لم أستطع فتح إعدادات التثبيت")
+            }
+            return
+        }
+        val pad = (24 * resources.displayMetrics.density).toInt()
+        val status = TextView(this)
+        status.setPadding(pad, pad, pad, pad)
+        status.textSize = 18f
+        status.text = "جارٍ التنزيل…"
+        val progress = AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
+            .setTitle("تحديث منزلي")
+            .setView(status)
+            .setCancelable(false)
+            .show()
+        Thread {
+            try {
+                val apk = Updater.download(this, r) { p -> runOnUiThread { status.text = "جارٍ التنزيل $p%" } }
+                runOnUiThread {
+                    progress.dismiss()
+                    try {
+                        Updater.install(this, apk)
+                    } catch (e: Exception) {
+                        toast("فشل التثبيت")
+                    }
+                }
+            } catch (e: Exception) {
+                runOnUiThread {
+                    progress.dismiss()
+                    toast("تعذّر تنزيل التحديث")
+                }
+            }
+        }.start()
     }
 
     override fun onPause() {
@@ -156,6 +253,7 @@ class MainActivity : Activity() {
     }
 
     override fun onDestroy() {
+        dialog?.dismiss()
         web.destroy()
         super.onDestroy()
     }
@@ -196,10 +294,20 @@ class MainActivity : Activity() {
         }
 
         @JavascriptInterface
-        fun version(): String = try {
-            packageManager.getPackageInfo(packageName, 0).versionName ?: ""
-        } catch (e: Exception) {
-            ""
+        fun version(): String = Updater.currentName(this@MainActivity)
+
+        /** حفظ دائم لإعدادات الصفحة وتسجيل الدخول، يبقى حتى بعد إطفاء السيارة */
+        @JavascriptInterface
+        fun save(key: String, value: String) {
+            prefs.edit().putString("js_$key", value).commit()
+        }
+
+        @JavascriptInterface
+        fun load(key: String): String? = prefs.getString("js_$key", null)
+
+        @JavascriptInterface
+        fun checkUpdate() {
+            runOnUiThread { this@MainActivity.checkUpdate(true) }
         }
     }
 
@@ -208,6 +316,8 @@ class MainActivity : Activity() {
         const val PAGE_PATH = "/local/haval-home.html"
         const val ASSET_PAGE = "haval-home.html"
         const val KEY_SERVER = "server"
+        const val KEY_LAST_CHECK = "last_update_check"
+        const val CHECK_EVERY_MS = 3 * 60 * 60 * 1000L
         val BG: Int = Color.parseColor("#0A0C0F")
     }
 }
