@@ -12,6 +12,7 @@ import android.view.View
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import android.widget.FrameLayout
+import android.widget.HorizontalScrollView
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
@@ -27,11 +28,23 @@ import kotlin.math.roundToInt
  */
 class ThemeEditorActivity : Activity() {
 
-    private data class Item(val id: String, val name: String, val hiddenByDefault: Boolean)
+    /** kind: bg (الخلفية)، gauge (عداد)، text (بيانات)، image (صورة). */
+    private data class Item(val id: String, val name: String, val kind: String, val hiddenByDefault: Boolean)
 
     companion object {
         private const val NAV = "nav"
         private val STEPS = listOf(1, 10, 50)
+
+        /** المجموعات بترتيب القائمة. */
+        private val GROUPS = listOf("bg" to "الخلفية", "gauge" to "العدادات", NAV to "نافذة الملاحة", "text" to "البيانات", "image" to "الصور")
+
+        /** ألوان البيانات: افتراضي الثيم، ثم ألوان صحراء. */
+        private val TEXT_COLOURS = listOf("", "#FFFFFF", "#C9D1D9", "#9AA3AD", "#F3B300", "#E8A24A", "#3DBE7A", "#4FA3E8", "#FF5A6E")
+
+        /** ألوان الخلفية الصلبة والتدرج. */
+        private val BG_COLOURS = listOf("#000000", "#111214", "#18191B", "#26282B", "#0A1A2A", "#1A3C6B", "#0A5236", "#5A321C", "#3A1A1A")
+
+        private val BG_TYPES = listOf("image" to "صورة", "color" to "لون واحد", "gradient" to "تدرج")
     }
 
     private lateinit var prefs: Prefs
@@ -135,14 +148,22 @@ class ThemeEditorActivity : Activity() {
         return box
     }
 
+    /** القائمة مجمّعة: الخلفية، العدادات، نافذة الملاحة، البيانات، الصور. */
     private fun renderList() {
         list.removeAllViews()
-        list.addView(itemRow(NAV, "نافذة الملاحة", null))
+        GROUPS.forEach { (kind, title) ->
+            val group = if (kind == NAV) emptyList() else items.filter { it.kind == kind }
+            if (kind != NAV && group.isEmpty()) return@forEach
+            val shown = if (kind == NAV) 1 else group.count { !isHidden(it.id) }
+            val count = if (kind == NAV) "" else " · ${ltr("$shown/${group.size}")}"
+            list.addView(label(title + count, 15f, Palette.muted, bold = true).apply { setPadding(dp(6), dp(12), dp(6), dp(6)) })
+            if (kind == NAV) list.addView(itemRow(NAV, "نافذة الملاحة", null))
+            else group.forEach { list.addView(itemRow(it.id, it.name, isHidden(it.id))) }
+        }
         if (items.isEmpty()) {
-            list.addView(label("هذا الثيم لا يدعم تحريك عناصره بعد. ثيمات الصور (هافال) تدعمه. نافذة الملاحة تعمل مع كل الثيمات.",
+            list.addView(label("هذا الثيم لا يدعم تحرير عناصره بعد. ثيمات الصور (هافال) تدعمه. نافذة الملاحة تعمل مع كل الثيمات.",
                 14f, Palette.muted).apply { setPadding(dp(6), dp(10), dp(6), dp(10)); setLineSpacing(dp(3f), 1f) })
         }
-        items.forEach { list.addView(itemRow(it.id, it.name, isHidden(it.id))) }
     }
 
     /** سطر عنصر: اسمه (يحدده عند اللمس)، وعين للإظهار والإخفاء. */
@@ -222,11 +243,22 @@ class ThemeEditorActivity : Activity() {
         r2.addView(sizeCol, LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f).apply { marginStart = dp(20) })
         controls.addView(r2)
 
+        // ما يخص نوع العنصر: الخلفية (نوعها وصورتها وألوانها)، أو لون البيانات
+        when (kindOf(sel)) {
+            "bg" -> backgroundControls()
+            "text" -> {
+                controls.addView(label("اللون", 14f, Palette.muted).apply { setPadding(0, 0, 0, dp(6)) })
+                controls.addView(swatches(TEXT_COLOURS, el(sel).optString("c", "")) { c ->
+                    if (c.isEmpty()) el(sel).remove("c") else el(sel).put("c", c)
+                    saveEdit(); renderControls()
+                })
+            }
+        }
+
         // الإرجاع والخلفية
         val r3 = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
         r3.addView(signButton(R.drawable.ic_back, if (isNav) "المقاس الافتراضي" else "إرجاع العنصر", Palette.blue) { resetSelected() },
             LinearLayout.LayoutParams(WRAP_CONTENT, dp(64)).apply { marginEnd = dp(10) })
-        if (backgrounds.isNotEmpty()) r3.addView(backgroundStepper(), LinearLayout.LayoutParams(WRAP_CONTENT, dp(64)).apply { marginEnd = dp(10) })
         r3.addView(View(this), LinearLayout.LayoutParams(0, 1, 1f))
         r3.addView(signButton(R.drawable.ic_trash, "إرجاع الثيم كله", Palette.red) { confirmResetAll() },
             LinearLayout.LayoutParams(WRAP_CONTENT, dp(64)))
@@ -273,9 +305,52 @@ class ThemeEditorActivity : Activity() {
         return row
     }
 
+    /** نوع الخلفية، ثم صورتها أو ألوانها. */
+    private fun backgroundControls() {
+        val type = edit.optString("bgType", "image")
+        val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; setPadding(0, 0, 0, dp(10)) }
+        BG_TYPES.forEach { (id, name) ->
+            row.addView(signButton(null, name, if (id == type) Palette.green else Palette.blue) {
+                if (id == "image") edit.remove("bgType") else edit.put("bgType", id)
+                saveEdit(); renderControls()
+            }, LinearLayout.LayoutParams(WRAP_CONTENT, dp(64)).apply { marginEnd = dp(8) })
+        }
+        controls.addView(row)
+        when (type) {
+            "image" -> if (backgrounds.isNotEmpty()) controls.addView(backgroundStepper(),
+                LinearLayout.LayoutParams(WRAP_CONTENT, dp(64)).apply { bottomMargin = dp(10) })
+            else -> {
+                controls.addView(label(if (type == "gradient") "اللون العلوي" else "اللون", 14f, Palette.muted).apply { setPadding(0, 0, 0, dp(6)) })
+                controls.addView(swatches(BG_COLOURS, edit.optString("bgColor", "#111214")) { c -> edit.put("bgColor", c); saveEdit(); renderControls() })
+                if (type == "gradient") {
+                    controls.addView(label("اللون السفلي", 14f, Palette.muted).apply { setPadding(0, dp(10), 0, dp(6)) })
+                    controls.addView(swatches(BG_COLOURS, edit.optString("bgColor2", "#1A3C6B")) { c -> edit.put("bgColor2", c); saveEdit(); renderControls() })
+                }
+            }
+        }
+    }
+
+    /** صف دوائر ألوان، المختار بإطار كهرماني. "" = لون الثيم. */
+    private fun swatches(colours: List<String>, current: String, onPick: (String) -> Unit): View {
+        val row = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; setPadding(0, 0, 0, dp(10)) }
+        colours.forEach { hex ->
+            val on = hex.equals(current, ignoreCase = true)
+            val fill = if (hex.isEmpty()) Palette.shoulder else Color.parseColor(hex)
+            val dot = FrameLayout(this).apply {
+                background = rounded(fill, dp(28f), dp(if (on) 4 else 2), if (on) Palette.amber else Palette.laneDash)
+                contentDescription = if (hex.isEmpty()) "لون الثيم" else hex
+                setOnClickListener { onPick(hex) }
+            }.also { it.pressable(dp(28f)) }
+            if (hex.isEmpty()) dot.addView(label("تلقائي", 12f, Palette.white).apply { gravity = Gravity.CENTER },
+                FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT))
+            row.addView(dot, LinearLayout.LayoutParams(dp(56), dp(56)).apply { marginEnd = dp(8) })
+        }
+        return HorizontalScrollView(this).apply { isHorizontalScrollBarEnabled = false; addView(row) }
+    }
+
     /** ‹ اسم الخلفية ›: الافتراضية، خلفيات الثيم، بدون خلفية. */
     private fun backgroundStepper(): View {
-        val options = listOf("" to "الخلفية الافتراضية") + backgrounds + listOf("none" to "بدون خلفية")
+        val options = listOf("" to "الخلفية الافتراضية") + backgrounds + listOf("none" to "بدون صورة")
         val cur = options.indexOfFirst { it.first == edit.optString("bg", "") }.coerceAtLeast(0)
         val box = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
         fun go(d: Int) {
@@ -389,13 +464,16 @@ class ThemeEditorActivity : Activity() {
         }
         val els = o.optJSONArray("elements") ?: JSONArray()
         items = (0 until els.length()).mapNotNull { i ->
-            els.optJSONObject(i)?.let { Item(it.optString("id"), it.optString("name", it.optString("id")), it.optBoolean("hidden", false)) }
+            els.optJSONObject(i)?.let {
+                Item(it.optString("id"), it.optString("name", it.optString("id")), it.optString("kind", "text"), it.optBoolean("hidden", false))
+            }
         }.filter { it.id.isNotEmpty() }
         val bgs = o.optJSONArray("backgrounds") ?: JSONArray()
         backgrounds = (0 until bgs.length()).mapNotNull { i ->
             bgs.optJSONObject(i)?.let { it.optString("id") to it.optString("name", it.optString("id")) }
         }.filter { it.first.isNotEmpty() }
-        if (sel != NAV && items.none { it.id == sel }) sel = NAV
+        if (sel != NAV && items.none { it.id == sel }) sel = items.firstOrNull()?.id ?: NAV
+        ClusterPayload.editSel = sel
         renderList()
         renderControls()
     }
@@ -413,6 +491,8 @@ class ThemeEditorActivity : Activity() {
         val o = edit.optJSONObject("els")?.optJSONObject(id)
         return if (o != null && o.has("h")) o.optBoolean("h") else items.firstOrNull { it.id == id }?.hiddenByDefault ?: false
     }
+
+    private fun kindOf(id: String): String = if (id == NAV) NAV else items.firstOrNull { it.id == id }?.kind ?: "text"
 
     private fun scale(id: String): Float = edit.optJSONObject("els")?.optJSONObject(id)?.optDouble("s", 1.0)?.toFloat() ?: 1f
 

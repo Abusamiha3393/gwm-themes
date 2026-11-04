@@ -19,6 +19,9 @@
   .el{position:absolute;left:0;top:0;width:0;height:0;overflow:visible}
   .el.off{display:none}
   .el.sel>.box{outline:4px dashed #F3B300;outline-offset:6px}
+  /* الخلفية تملأ اللوحة، فإطار تحديدها في الداخل */
+  #stage>.el:first-child.sel>.box{outline-offset:-10px}
+  .fill{position:absolute;left:0;top:0;display:none}
 </style>
 <script src="common.js"></script>
 </head><body>
@@ -31,7 +34,7 @@
   s.onload = build;
   document.head.appendChild(s);
 
-  var L, stage = document.getElementById('stage'), gauges = [], texts = [], els = {}, bgImg = null, lastEdit = '';
+  var L, stage = document.getElementById('stage'), gauges = [], texts = [], els = {}, bg = null, lastEdit = '', colours = {};
 
   function fit() {
     if (!L) return;
@@ -47,40 +50,52 @@
     (parent || stage).appendChild(i); return i;
   }
 
-  /* يغلّف عنصرًا ليُحرَّك ويُكبَّر ويُخفى من المحرر. cx,cy مركز العنصر على اللوحة. */
-  function wrap(id, name, cx, cy, hidden) {
+  /*
+   * يغلّف عنصرًا ليُحرَّك ويُكبَّر ويُخفى من المحرر. cx,cy مركز العنصر على اللوحة.
+   * kind: bg (الخلفية) أو gauge (عداد) أو text (بيانات) أو image (صورة)، وبه يجمّع المحرر العناصر.
+   */
+  function wrap(id, name, kind, cx, cy, hidden) {
     var base = id, n = 2;
     while (els[id]) id = base + '-' + (n++);
     var w = document.createElement('div');
     w.className = 'el';
     w.style.transformOrigin = cx + 'px ' + cy + 'px';
     stage.appendChild(w);
-    els[id] = { id: id, name: name || id, w: w, hidden: !!hidden };
-    return w;
+    els[id] = { id: id, name: name || id, kind: kind, w: w, hidden: !!hidden };
+    return els[id];
   }
 
   function build() {
     L = window.SAHRA_LAYOUT;
-    var v = q.get('v'), bg = (v && L.variants && L.variants[v]) || L.background;
-    if (bg) { bgImg = img(bg, 0, 0, L.canvas.w, L.canvas.h); bgImg.dataset.def = bg; }
-    (L.images || []).forEach(function (m, i) {
-      var cx = m.anchor === 'center' ? m.x : m.x + (m.w || 0) / 2, cy = m.anchor === 'center' ? m.y : m.y + (m.h || 0) / 2;
-      var w = wrap(m.id || 'img' + i, m.name, cx, cy, m.hidden);
-      var e = img(m.file, m.x, m.y, m.w, m.h, w);
-      e.className = 'box';
-      if (m.anchor === 'center') e.style.transform = 'translate(-50%,-50%)';
-      if (m.opacity != null) e.style.opacity = m.opacity;
-    });
+    var W = L.canvas.w, H = L.canvas.h;
+    // الخلفية عنصر مستقل: صورة، أو لون واحد، أو تدرج
+    var v = q.get('v'), file = (v && L.variants && L.variants[v]) || L.background;
+    var b = wrap('bg', 'الخلفية', 'bg', W / 2, H / 2, false);
+    var fill = document.createElement('div');
+    fill.className = 'fill box'; fill.style.width = W + 'px'; fill.style.height = H + 'px';
+    b.w.appendChild(fill);
+    var bi = file ? img(file, 0, 0, W, H, b.w) : null;
+    if (bi) bi.className = 'box';
+    bg = { el: b, img: bi, fill: fill, def: file };
+
     (L.gauges || []).forEach(function (g, i) {
       var x = g.cx - g.size / 2, y = g.cy - g.size / 2;
-      var w = wrap(g.id || 'gauge' + i, g.name, g.cx, g.cy, g.hidden);
-      img(g.dial, x, y, g.size, g.size, w).className = 'box';
-      var n = img(g.needle, x, y, g.size, g.size, w);
+      var e = wrap(g.id || 'gauge' + i, g.name, 'gauge', g.cx, g.cy, g.hidden);
+      img(g.dial, x, y, g.size, g.size, e.w).className = 'box';
+      var n = img(g.needle, x, y, g.size, g.size, e.w);
       n.className = 'needle';
       gauges.push({ g: g, n: n });
     });
+    (L.images || []).forEach(function (m, i) {
+      var cx = m.anchor === 'center' ? m.x : m.x + (m.w || 0) / 2, cy = m.anchor === 'center' ? m.y : m.y + (m.h || 0) / 2;
+      var e = wrap(m.id || 'img' + i, m.name, 'image', cx, cy, m.hidden);
+      var im = img(m.file, m.x, m.y, m.w, m.h, e.w);
+      im.className = 'box';
+      if (m.anchor === 'center') im.style.transform = 'translate(-50%,-50%)';
+      if (m.opacity != null) im.style.opacity = m.opacity;
+    });
     (L.texts || []).forEach(function (t, i) {
-      var w = wrap(t.id || t.value || 'text' + i, t.name, t.x, t.y, t.hidden);
+      var w = wrap(t.id || t.value || 'text' + i, t.name, 'text', t.x, t.y, t.hidden);
       var e = document.createElement('div');
       e.className = 'txt box';
       e.style.left = t.x + 'px'; e.style.top = t.y + 'px';
@@ -91,41 +106,48 @@
         (t.unit ? '<span class="u" style="font-size:' + (t.unitSize || Math.round(t.size * 0.5)) + 'px">' + t.unit + '</span>' : '') +
         // الاسم بعد الرقم، فيُقرأ بالعربية: «الخارج 34°»
         (t.label ? '<span class="u" style="font-size:' + Math.round(t.size * 0.5) + 'px">' + t.label + '</span>' : '');
-      w.appendChild(e);
-      texts.push({ t: t, e: e, v: e.querySelector('.v') });
+      w.w.appendChild(e);
+      texts.push({ id: w.id, t: t, e: e, v: e.querySelector('.v') });
     });
     fit();
-    // أبلغ المحرر بالعناصر والخلفيات المتاحة
-    var list = Object.keys(els).map(function (k) { return { id: k, name: els[k].name, hidden: els[k].hidden }; });
+    // أبلغ المحرر بالعناصر (مع نوع كل عنصر) والخلفيات المتاحة
+    var list = Object.keys(els).map(function (k) { return { id: k, name: els[k].name, kind: els[k].kind, hidden: els[k].hidden }; });
     var vars = Object.keys(L.variants || {}).map(function (k) { return { id: k, name: (L.variantNames || {})[k] || k }; });
     Sahra.host('elements', JSON.stringify({ canvas: L.canvas, elements: list, backgrounds: vars }));
     if (window.SahraData) window.onSahraData(window.SahraData);
   }
   addEventListener('resize', fit);
 
-  /* تعديلات المحرر: إزاحة وتكبير وإخفاء لكل عنصر، والخلفية، والعنصر المحدد */
+  /* تعديلات المحرر: إزاحة وتكبير وإخفاء ولون لكل عنصر، ونوع الخلفية، والعنصر المحدد */
   function applyEdit(ed) {
     ed = ed || {};
     var key = JSON.stringify(ed);
     if (key === lastEdit) return;
     lastEdit = key;
     var o = ed.els || {};
+    colours = {};
     Object.keys(els).forEach(function (k) {
       var e = els[k], c = o[k] || {};
       var hide = c.h != null ? !!c.h : e.hidden;
       e.w.className = 'el' + (hide ? ' off' : '') + (ed.sel === k ? ' sel' : '');
       var dx = +c.dx || 0, dy = +c.dy || 0, sc = c.s > 0 ? +c.s : 1;
       e.w.style.transform = (dx || dy || sc !== 1) ? 'translate(' + dx + 'px,' + dy + 'px) scale(' + sc + ')' : '';
+      if (c.c) colours[k] = c.c;
     });
-    if (bgImg) {
-      if (ed.bg === 'none') bgImg.style.display = 'none';
-      else {
-        bgImg.style.display = '';
-        var f = (ed.bg && L.variants && L.variants[ed.bg]) || bgImg.dataset.def;
-        if (bgImg.getAttribute('src') !== dir + f) bgImg.src = dir + f;
+    if (bg) {
+      var type = ed.bgType || 'image';
+      if (bg.img) {
+        bg.img.style.display = type === 'image' && ed.bg !== 'none' ? '' : 'none';
+        var f = (ed.bg && L.variants && L.variants[ed.bg]) || bg.def;
+        if (bg.img.getAttribute('src') !== dir + f) bg.img.src = dir + f;
       }
+      var c1 = ed.bgColor || '#111214', c2 = ed.bgColor2 || '#1A3C6B';
+      bg.fill.style.display = type === 'image' ? 'none' : 'block';
+      bg.fill.style.background = type === 'gradient' ? 'linear-gradient(180deg,' + c1 + ',' + c2 + ')' : c1;
     }
   }
+
+  function two(n) { return ('0' + n).slice(-2); }
 
   function value(id, d) {
     var m = /^tire(\d)$/.exec(id);
@@ -134,9 +156,13 @@
     if (m) return (d.tireTemps || [])[+m[1]];
     switch (id) {
       case 'speed': return Sahra.speed(d);
+      case 'rpm': return d.rpm;
       case 'rpm1000': return (d.rpm || 0) / 1000;
       case 'clock': return Sahra.clock();
+      case 'date': var t = new Date(); return two(t.getDate()) + '/' + two(t.getMonth() + 1);
       case 'gearLabel': return d.gearLabel || d.gear;
+      case 'mediaTitle': return (d.media && d.media.title) || null;
+      case 'mediaArtist': return (d.media && d.media.artist) || null;
       default: return d[id];
     }
   }
@@ -145,7 +171,7 @@
     if (v === null || v === undefined || (typeof v === 'number' && !isFinite(v))) return '—';
     if (typeof v !== 'number') return v;
     if (t.digits) return v.toFixed(t.digits);
-    if (t.value === 'odometer' || t.value === 'range' || t.value === 'speed' || t.value === 'trip') return Math.round(v).toLocaleString('en-US');
+    if (t.value === 'odometer' || t.value === 'range' || t.value === 'speed' || t.value === 'trip' || t.value === 'rpm') return Math.round(v).toLocaleString('en-US');
     return Math.round(v).toString();
   }
 
@@ -161,7 +187,8 @@
     texts.forEach(function (o) {
       var t = o.t, v = value(t.value, d);
       o.v.textContent = show(t, v);
-      var c = t.accent && accent ? accent : (t.color || '#fff');
+      // لون السائق من المحرر، ثم لون الثيم المميز، ثم لون العنصر الأصلي
+      var c = colours[o.id] || (t.accent && accent ? accent : (t.color || '#fff'));
       var wb = t.warnBelow, ab = t.alarmBelow;
       // الإطارات: حدّ التنبيه من الإعدادات
       if (/^tire\d$/.test(t.value)) { wb = tw; ab = tw * 0.85; }

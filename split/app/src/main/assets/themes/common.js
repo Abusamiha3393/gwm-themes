@@ -183,9 +183,9 @@
         alerts: q.has('lowfuel') ? [{ id: 'fuel', text: 'الوقود منخفض', level: 'warn' }] : [],
         gearLabel: c < 0.01 ? 'N' : 'D' + (1 + Math.floor(c * 7)), gearNo: 1 + Math.floor(c * 7),
         tires: [33, 32.6, q.has('lowtire') ? 26 : 31.1, 32.8], tireTemps: [31, 30, 29, 30], tireWarnPsi: 28,
-        journey: 36.4, trip: 2538.3, avgConsumption: 15.7, baro: 950,
+        journey: 36.4, trip: 2538.3, avgConsumption: 15.7, baro: 950, fuelLiters: 49.6,
         nav: { on: q.has('nav'), full: false, x: 0.3125, y: 0.15, w: 0.375, h: 0.64 },
-        edit: { sel: q.get('sel') || '' },
+        edit: { sel: q.get('sel') || '', bgType: q.get('bg') || undefined, bgColor: q.get('c1') ? '#' + q.get('c1') : undefined, bgColor2: q.get('c2') ? '#' + q.get('c2') : undefined },
         layout: q.get('layout') || 'full'
       });
     }, 100);

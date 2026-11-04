@@ -100,6 +100,7 @@ object ClusterPayload {
         d.put("tires", nums(s.tirePsi)); d.put("tireTemps", nums(s.tireTemp)); d.put("tireWarnPsi", p.tireWarnPsi)
         d.num("journey", s.journeyKm); d.num("trip", s.tripKm); d.num("avgConsumption", s.avgConsumption)
         d.num("baro", s.baroHpa)
+        d.num("fuelLiters", if (s.fuelPercent.isNaN()) Float.NaN else s.fuelPercent / 100f * p.tankLiters)
         d.num("fuel", s.fuelPercent); d.num("range", s.rangeKm); d.num("odometer", s.odometerKm)
         d.num("coolant", s.coolantTemp); d.num("outsideTemp", s.outsideTemp); d.num("insideTemp", s.insideTemp)
         d.num("batteryVoltage", s.batteryVoltage); d.num("batteryLevel", s.batteryLevel)

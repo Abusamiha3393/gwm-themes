@@ -39,6 +39,13 @@ window.SAHRA_LAYOUT = {
     { id: 'avg', name: 'متوسط الاستهلاك', value: 'avgConsumption', x: 1160, y: 655, size: 22, font: 'digits', color: '#9AA3AD', unit: 'ل/100', digits: 1, hidden: true },
     { id: 'volts', name: 'جهد البطارية', value: 'batteryVoltage', x: 1760, y: 650, size: 24, font: 'digits', color: '#C9D1D9', unit: 'V', digits: 1, hidden: true },
     { id: 'battery', name: 'شحن البطارية', value: 'batteryLevel', x: 1620, y: 650, size: 24, font: 'digits', color: '#C9D1D9', unit: '%', hidden: true },
-    { id: 'clock', name: 'الساعة', value: 'clock', x: 1700, y: 690, size: 26, font: 'digits', color: '#C9D1D9' }
+    { id: 'clock', name: 'الساعة', value: 'clock', x: 1700, y: 690, size: 26, font: 'digits', color: '#C9D1D9' },
+    { id: 'date', name: 'التاريخ', value: 'date', x: 220, y: 690, size: 24, font: 'digits', color: '#C9D1D9', hidden: true },
+    { id: 'rpm', name: 'الدوران بالأرقام', value: 'rpm', x: 1585, y: 560, size: 30, font: 'digits', color: '#FFFFFF', unit: 'د/د', hidden: true },
+    { id: 'speedDial', name: 'السرعة داخل العداد', value: 'speed', x: 335, y: 560, size: 36, font: 'digits', color: '#FFFFFF', hidden: true },
+    { id: 'fuelL', name: 'الوقود باللتر', value: 'fuelLiters', x: 745, y: 645, size: 24, font: 'digits', color: '#C9D1D9', unit: 'لتر', hidden: true },
+    { id: 'baro', name: 'الضغط الجوي', value: 'baro', x: 1760, y: 610, size: 22, font: 'digits', color: '#9AA3AD', unit: 'hPa', hidden: true },
+    { id: 'media', name: 'الأغنية الحالية', value: 'mediaTitle', x: 960, y: 150, size: 26, font: 'kufi', color: '#C9D1D9', hidden: true },
+    { id: 'artist', name: 'الفنان', value: 'mediaArtist', x: 960, y: 180, size: 20, font: 'kufi', color: '#9AA3AD', hidden: true }
   ]
 };
