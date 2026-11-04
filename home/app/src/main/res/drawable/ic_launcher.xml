@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- أيقونة منزلي: بيت كهرماني وباب فيروزي على خلفية داكنة -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <path android:fillColor="#12161B" android:pathData="M24,0h60a24,24 0 0,1 24,24v60a24,24 0 0,1 -24,24h-60a24,24 0 0,1 -24,-24v-60a24,24 0 0,1 24,-24z" />
+    <path android:strokeColor="#F2A33A" android:strokeWidth="7" android:strokeLineCap="round" android:strokeLineJoin="round"
+        android:fillColor="#00000000" android:pathData="M28,76V48L54,28l26,20v28" />
+    <path android:strokeColor="#3FD0C9" android:strokeWidth="7" android:strokeLineCap="round"
+        android:fillColor="#00000000" android:pathData="M43,76V64a11,11 0 0,1 22,0v12" />
+</vector>

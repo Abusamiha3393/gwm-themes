@@ -10,6 +10,8 @@ on:
       - ".github/workflows/build-split.yml"
       - "bridge/**"
       - ".github/workflows/build-bridge.yml"
+      - "home/**"
+      - ".github/workflows/build-home.yml"
   workflow_dispatch:
 
 permissions:

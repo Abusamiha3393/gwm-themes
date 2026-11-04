@@ -1,0 +1,906 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#0a0c0f">
+<meta name="mobile-web-app-capable" content="yes">
+<title>منزلي</title>
+<style>
+:root{
+  --bg:#0a0c0f; --panel:#12161b; --panel2:#1b2129; --line:#232a33;
+  --text:#eef1f4; --mute:#8b97a4; --dim:#56616d;
+  --accent:#f2a33a; --accent-rgb:242,163,58;
+  --cool:#3fd0c9; --cool-rgb:63,208,201;
+  --ok:#46d28a; --bad:#ff6363;
+  --u:min(1vh,.55vw);
+  --r:calc(var(--u)*2.6);
+  --gap:calc(var(--u)*1.6);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{background:var(--bg);height:100%}
+body{
+  height:100vh;overflow:hidden;color:var(--text);
+  font-family:"Noto Kufi Arabic","Noto Sans Arabic","Segoe UI",Tahoma,system-ui,sans-serif;
+  background:
+    radial-gradient(90% 70% at 100% 0%, rgba(var(--accent-rgb),.10), transparent 60%),
+    radial-gradient(70% 60% at 0% 100%, rgba(var(--cool-rgb),.07), transparent 60%),
+    var(--bg);
+  display:grid;grid-template-columns:calc(var(--u)*30) calc(var(--u)*58) 1fr;
+  gap:var(--gap);padding:var(--gap);
+  user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;touch-action:manipulation;
+}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+svg{display:block}
+.ic svg,.ri svg,.btn svg{width:58%;height:58%}
+
+/* ---------- Rail ---------- */
+.rail{display:flex;flex-direction:column;gap:calc(var(--u)*.8);min-height:0}
+.brand{display:flex;align-items:center;gap:calc(var(--u)*1.4);padding:calc(var(--u)*1) calc(var(--u)*1.2) calc(var(--u)*2)}
+.brand .mark{width:calc(var(--u)*6);height:calc(var(--u)*6);flex:none}
+.brand b{font-size:calc(var(--u)*3.4);font-weight:800;letter-spacing:-.01em}
+.brand small{display:block;font-size:calc(var(--u)*1.6);color:var(--mute);font-weight:500}
+.rooms{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:calc(var(--u)*.6);scrollbar-width:none}
+.rooms::-webkit-scrollbar{display:none}
+.room{display:flex;align-items:center;gap:calc(var(--u)*1.4);padding:calc(var(--u)*1.3) calc(var(--u)*1.4);border-radius:calc(var(--r)*.8);color:var(--mute);font-size:calc(var(--u)*2.3);font-weight:600;text-align:right;position:relative;transition:background .2s,color .2s}
+.room .ri{width:calc(var(--u)*4.6);height:calc(var(--u)*4.6);display:grid;place-items:center;border-radius:50%;background:var(--panel2);flex:none}
+.room span.t{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.room .cnt{min-width:calc(var(--u)*3.2);height:calc(var(--u)*3.2);padding:0 calc(var(--u)*.8);border-radius:99px;background:rgba(var(--accent-rgb),.18);color:var(--accent);font-size:calc(var(--u)*1.7);display:grid;place-items:center;font-weight:700}
+.room.sel{background:var(--panel);color:var(--text)}
+.room.sel::before{content:"";position:absolute;right:0;top:22%;bottom:22%;width:calc(var(--u)*.6);border-radius:9px;background:var(--accent)}
+.room.sel .ri{background:var(--accent);color:#1d1406}
+.railfoot{display:flex;align-items:center;gap:calc(var(--u)*1);padding-top:calc(var(--u)*1)}
+.conn{flex:1;display:flex;align-items:center;gap:calc(var(--u)*1);font-size:calc(var(--u)*1.8);color:var(--mute);padding:calc(var(--u)*1.2);border-radius:calc(var(--r)*.7);background:var(--panel);text-align:right;min-width:0}
+.conn i{width:calc(var(--u)*1.4);height:calc(var(--u)*1.4);border-radius:50%;background:var(--dim);flex:none}
+.conn span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.conn.on i{background:var(--ok);box-shadow:0 0 calc(var(--u)*1.2) var(--ok)}
+.conn.demo i{background:var(--accent)}
+.conn.connecting i{background:var(--accent);animation:blink 1s infinite}
+.conn.error i{background:var(--bad)}
+.btn{width:calc(var(--u)*6.4);height:calc(var(--u)*6.4);display:grid;place-items:center;border-radius:calc(var(--r)*.7);background:var(--panel);color:var(--mute);flex:none}
+.btn:active{background:var(--panel2)}
+
+/* ---------- Hero column ---------- */
+.hero{display:flex;flex-direction:column;gap:var(--gap);min-height:0}
+.clock{display:flex;align-items:flex-end;justify-content:space-between;padding:calc(var(--u)*.6) calc(var(--u)*.8) 0}
+.clock .time{font-size:calc(var(--u)*8.4);font-weight:300;line-height:.95;letter-spacing:-.03em;direction:ltr;font-variant-numeric:tabular-nums;font-family:"Segoe UI",Roboto,system-ui,sans-serif}
+.clock .date{font-size:calc(var(--u)*2);color:var(--mute);margin-top:calc(var(--u)*.6)}
+.out{text-align:left;font-size:calc(var(--u)*1.8);color:var(--mute)}
+.out b{display:block;font-size:calc(var(--u)*4.4);color:var(--text);font-weight:600;direction:ltr}
+
+.garage{flex:1;min-height:0;position:relative;overflow:hidden;border-radius:var(--r);background:linear-gradient(160deg,#171c23,#0f1317);border:1px solid var(--line);padding:calc(var(--u)*2.4);display:flex;flex-direction:column;gap:calc(var(--u)*1.2)}
+.g-top{display:flex;justify-content:space-between;align-items:flex-start;gap:calc(var(--u)*1)}
+.g-name{font-size:calc(var(--u)*2.8);font-weight:700}
+.g-st{font-size:calc(var(--u)*2.1);color:var(--mute);margin-top:calc(var(--u)*.4)}
+.g-pill{font-size:calc(var(--u)*1.7);padding:calc(var(--u)*.6) calc(var(--u)*1.4);border-radius:99px;background:rgba(70,210,138,.12);color:var(--ok);font-weight:700;white-space:nowrap}
+.garage.open .g-pill,.garage.moving .g-pill{background:rgba(var(--accent-rgb),.15);color:var(--accent)}
+.garage.na .g-pill{background:var(--panel2);color:var(--mute)}
+.g-art{flex:1;min-height:0;width:100%}
+.g-art .roof{stroke:var(--dim);stroke-width:2.4;fill:none;stroke-linejoin:round}
+.g-art .frame{fill:#06080a;stroke:var(--line);stroke-width:2}
+.g-art .door{transform-box:fill-box;transform-origin:50% 0;transition:transform 2.4s cubic-bezier(.6,0,.3,1)}
+.g-art .door rect{fill:#2a323c;stroke:#0b0e11;stroke-width:1.2}
+.garage.open .g-art .door{transform:scaleY(.1)}
+.garage.moving .g-art .door rect{fill:#3a3020}
+.g-art .glow{opacity:0;transition:opacity 1s}
+.garage.open .g-art .glow{opacity:1}
+.g-btn{position:relative;overflow:hidden;height:calc(var(--u)*8.4);border-radius:calc(var(--r)*.8);background:var(--accent);color:#1d1406;font-size:calc(var(--u)*2.5);font-weight:800;display:flex;align-items:center;justify-content:center;gap:calc(var(--u)*1.2);flex:none}
+.g-btn svg{width:calc(var(--u)*3.4);height:calc(var(--u)*3.4)}
+.garage.open .g-btn{background:var(--panel2);color:var(--text);border:1px solid var(--line)}
+.garage.na .g-btn{background:var(--panel2);color:var(--dim)}
+
+.scenes{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--gap);flex:none}
+.scene{position:relative;overflow:hidden;height:calc(var(--u)*11);border-radius:calc(var(--r)*.8);background:var(--panel);border:1px solid var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:calc(var(--u)*.8);font-size:calc(var(--u)*1.9);font-weight:600;color:var(--text);padding:0 calc(var(--u)*.6);text-align:center}
+.scene .ic{width:calc(var(--u)*4.6);height:calc(var(--u)*4.6);display:grid;place-items:center;border-radius:50%;background:rgba(var(--cool-rgb),.14);color:var(--cool)}
+.scene span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.scene.flash{animation:flash .9s}
+
+.media{flex:none;display:flex;align-items:center;gap:calc(var(--u)*1.4);padding:calc(var(--u)*1.4);border-radius:calc(var(--r)*.8);background:var(--panel);border:1px solid var(--line)}
+.media .art{width:calc(var(--u)*6.4);height:calc(var(--u)*6.4);border-radius:calc(var(--u)*1.4);background:linear-gradient(135deg,rgba(var(--accent-rgb),.5),rgba(var(--cool-rgb),.35));display:grid;place-items:center;color:#0a0c0f;flex:none}
+.media .art svg{width:50%;height:50%}
+.media .mt{flex:1;min-width:0}
+.media .mt b{display:block;font-size:calc(var(--u)*2.1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.media .mt small{font-size:calc(var(--u)*1.7);color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.media .btn{width:calc(var(--u)*6);height:calc(var(--u)*6);background:var(--panel2);color:var(--text)}
+.media .btn.pp{background:var(--accent);color:#1d1406;border-radius:50%}
+
+/* ---------- Main ---------- */
+.main{display:flex;flex-direction:column;min-height:0;min-width:0}
+.mhead{display:flex;align-items:center;gap:calc(var(--u)*1.4);padding:calc(var(--u)*1) calc(var(--u)*.4) calc(var(--u)*1.8)}
+.mhead h1{font-size:calc(var(--u)*4);font-weight:800;line-height:1.1}
+.mhead .sub{font-size:calc(var(--u)*1.9);color:var(--mute);margin-top:calc(var(--u)*.4)}
+.mhead .grow{flex:1;min-width:0}
+.mclock{display:none;font-size:calc(var(--u)*4);font-weight:300;direction:ltr;font-family:"Segoe UI",Roboto,system-ui,sans-serif}
+.chip{position:relative;overflow:hidden;display:flex;align-items:center;gap:calc(var(--u)*.8);height:calc(var(--u)*5.6);padding:0 calc(var(--u)*2);border-radius:99px;background:var(--panel);border:1px solid var(--line);font-size:calc(var(--u)*1.9);color:var(--mute);font-weight:600;white-space:nowrap}
+.chip svg{width:calc(var(--u)*2.6);height:calc(var(--u)*2.6)}
+.chip.act{color:var(--text);border-color:rgba(var(--accent-rgb),.5)}
+.chip.warn{background:rgba(var(--accent-rgb),.14);color:var(--accent);border-color:rgba(var(--accent-rgb),.35)}
+.chip.demo{background:rgba(var(--accent-rgb),.14);color:var(--accent);border-color:transparent}
+.scroll{flex:1;min-height:0;overflow-y:auto;scrollbar-width:none;padding-bottom:calc(var(--u)*2);mask-image:linear-gradient(to bottom,#000 92%,transparent)}
+.scroll::-webkit-scrollbar{display:none}
+.sec{margin-bottom:calc(var(--u)*2.6)}
+.sec h2{font-size:calc(var(--u)*2.3);font-weight:700;color:var(--mute);margin:0 calc(var(--u)*.4) calc(var(--u)*1.2);display:flex;align-items:center;gap:calc(var(--u)*1)}
+.sec h2::after{content:"";flex:1;height:1px;background:var(--line)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(calc(var(--u)*27),1fr));gap:var(--gap)}
+
+.tile{position:relative;overflow:hidden;height:calc(var(--u)*18);padding:calc(var(--u)*1.9);border-radius:var(--r);background:var(--panel);border:1px solid var(--line);display:flex;flex-direction:column;justify-content:space-between;text-align:right;transition:background .3s,border-color .3s,transform .12s,opacity .3s}
+.tile:active{transform:scale(.97)}
+.tile .top{display:flex;justify-content:space-between;align-items:flex-start}
+.tile .ic{width:calc(var(--u)*6.2);height:calc(var(--u)*6.2);border-radius:50%;display:grid;place-items:center;background:var(--panel2);color:var(--mute);transition:all .3s}
+.tile .badge{color:var(--dim);width:calc(var(--u)*2.8);height:calc(var(--u)*2.8)}
+.tile .nm{font-size:calc(var(--u)*2.3);font-weight:700;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.tile .st{font-size:calc(var(--u)*1.9);color:var(--mute);margin-top:calc(var(--u)*.3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tile .bar{position:absolute;bottom:0;right:0;height:calc(var(--u)*.6);background:var(--accent);border-radius:9px 0 0 0;transition:width .4s}
+.tile.on{background:linear-gradient(155deg,rgba(var(--accent-rgb),.22),rgba(var(--accent-rgb),.04) 65%),var(--panel);border-color:rgba(var(--accent-rgb),.45)}
+.tile.on .ic{background:var(--accent);color:#1d1406;box-shadow:0 0 calc(var(--u)*3) rgba(var(--accent-rgb),.5)}
+.tile.on .st{color:var(--accent)}
+.tile.cool.on{background:linear-gradient(155deg,rgba(var(--cool-rgb),.2),rgba(var(--cool-rgb),.04) 65%),var(--panel);border-color:rgba(var(--cool-rgb),.45)}
+.tile.cool.on .ic{background:var(--cool);color:#04201f;box-shadow:0 0 calc(var(--u)*3) rgba(var(--cool-rgb),.45)}
+.tile.cool.on .st{color:var(--cool)}
+.tile.cool.on .bar{background:var(--cool)}
+.tile.cool.on .fan-spin{animation:spin 1.6s linear infinite;transform-origin:12px 12px}
+.tile.sensor .ic{background:rgba(var(--cool-rgb),.12);color:var(--cool)}
+.tile.sensor .st{font-size:calc(var(--u)*3.2);color:var(--text);font-weight:600;direction:ltr;text-align:right}
+.tile.na{opacity:.4;border-style:dashed}
+.tile.busy .ic{animation:pulse .9s infinite}
+.tile.warn{border-color:rgba(var(--accent-rgb),.6)}
+
+[data-hold="act"]::after{content:"";position:absolute;inset:0;background:rgba(255,255,255,.18);transform:scaleX(0);transform-origin:right;pointer-events:none}
+[data-hold="act"].holding::after{transform:scaleX(1);transition:transform var(--hold,900ms) linear}
+
+.empty{display:grid;place-items:center;height:60%;color:var(--mute);font-size:calc(var(--u)*2.3);text-align:center;gap:calc(var(--u)*1)}
+.empty svg{width:calc(var(--u)*8);height:calc(var(--u)*8);color:var(--dim);margin:auto}
+
+/* ---------- Overlays ---------- */
+.toast{position:fixed;left:50%;bottom:calc(var(--u)*4);transform:translate(-50%,200%);background:#1f262f;border:1px solid var(--line);padding:calc(var(--u)*1.6) calc(var(--u)*3);border-radius:99px;font-size:calc(var(--u)*2.1);transition:transform .3s;z-index:20;white-space:nowrap;box-shadow:0 calc(var(--u)*2) calc(var(--u)*5) rgba(0,0,0,.5)}
+.toast.show{transform:translate(-50%,0)}
+.veil{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:10;padding:var(--gap)}
+.veil.show{display:flex}
+.sheet{width:min(92vw,calc(var(--u)*110));max-height:94vh;overflow-y:auto;background:#12161b;border:1px solid var(--line);border-radius:var(--r);padding:calc(var(--u)*3)}
+.sheet h3{font-size:calc(var(--u)*3);margin-bottom:calc(var(--u)*2)}
+.field{display:block;margin-bottom:calc(var(--u)*1.8)}
+.field span{display:block;font-size:calc(var(--u)*1.8);color:var(--mute);margin-bottom:calc(var(--u)*.6)}
+.field input,.field select{width:100%;height:calc(var(--u)*6.4);border-radius:calc(var(--u)*1.4);border:1px solid var(--line);background:#0b0e12;color:var(--text);font:inherit;font-size:calc(var(--u)*2.1);padding:0 calc(var(--u)*1.6);direction:ltr;text-align:left}
+.field select{direction:rtl;text-align:right}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:calc(var(--u)*1.6)}
+.check{display:flex;align-items:center;gap:calc(var(--u)*1.2);font-size:calc(var(--u)*2);margin:calc(var(--u)*.6) 0 calc(var(--u)*2)}
+.check input{width:calc(var(--u)*3);height:calc(var(--u)*3);accent-color:var(--accent)}
+.hint{font-size:calc(var(--u)*1.7);color:var(--mute);line-height:1.7;background:#0b0e12;border-radius:calc(var(--u)*1.4);padding:calc(var(--u)*1.4) calc(var(--u)*1.8);margin-bottom:calc(var(--u)*2)}
+.actions{display:flex;gap:calc(var(--u)*1.2);justify-content:flex-start}
+.pbtn{height:calc(var(--u)*6.4);padding:0 calc(var(--u)*3.4);border-radius:calc(var(--u)*1.6);background:var(--accent);color:#1d1406;font-weight:800;font-size:calc(var(--u)*2.1)}
+.sbtn{height:calc(var(--u)*6.4);padding:0 calc(var(--u)*3);border-radius:calc(var(--u)*1.6);background:var(--panel2);font-size:calc(var(--u)*2.1)}
+.dim-wrap{display:flex;align-items:center;gap:calc(var(--u)*2);margin:calc(var(--u)*2) 0 calc(var(--u)*3)}
+.dim-wrap b{font-size:calc(var(--u)*4.4);min-width:calc(var(--u)*12);direction:ltr;text-align:left}
+input[type=range]{flex:1;-webkit-appearance:none;appearance:none;height:calc(var(--u)*7);border-radius:calc(var(--u)*2);background:linear-gradient(to left,var(--accent) var(--p,50%),#232a33 var(--p,50%));direction:rtl}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:calc(var(--u)*4);height:calc(var(--u)*7);border-radius:calc(var(--u)*1.4);background:#fff}
+input[type=range]::-moz-range-thumb{width:calc(var(--u)*4);height:calc(var(--u)*7);border-radius:calc(var(--u)*1.4);background:#fff;border:0}
+
+@keyframes blink{50%{opacity:.25}}
+@keyframes pulse{50%{opacity:.4}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes flash{0%{background:rgba(var(--cool-rgb),.35)}100%{background:var(--panel)}}
+
+/* ---------- Half screen (≈960×720) ---------- */
+@media (max-aspect-ratio:16/9) and (min-aspect-ratio:1/1){
+  :root{--u:min(1vh,.75vw)}
+  body{grid-template-columns:calc(var(--u)*12) 1fr}
+  .hero{display:none}
+  .brand{justify-content:center;padding:calc(var(--u)*.6) 0 calc(var(--u)*1.6)}
+  .brand div{display:none}
+  .room{flex-direction:column;gap:calc(var(--u)*.4);padding:calc(var(--u)*1) calc(var(--u)*.4);font-size:calc(var(--u)*1.5);text-align:center}
+  .room span.t{white-space:normal;line-height:1.2;max-height:2.4em}
+  .room .cnt{position:absolute;top:calc(var(--u)*.4);left:calc(var(--u)*.6);min-width:calc(var(--u)*2.6);height:calc(var(--u)*2.6);font-size:calc(var(--u)*1.4)}
+  .railfoot{flex-direction:column}
+  .conn span{display:none}
+  .conn{flex:none;justify-content:center;width:calc(var(--u)*6.4);height:calc(var(--u)*4)}
+  .mclock{display:block}
+  .grid{grid-template-columns:repeat(auto-fill,minmax(calc(var(--u)*24),1fr))}
+}
+/* ---------- Third screen (≈640×720): essentials only ---------- */
+@media (max-aspect-ratio:1/1) and (min-aspect-ratio:7/10){
+  :root{--u:min(1vh,1.05vw)}
+  body{grid-template-columns:1fr}
+  .rail,.main{display:none}
+  .hero{display:flex}
+  .clock .time{font-size:calc(var(--u)*7)}
+  .media{display:none}
+  .scene{height:calc(var(--u)*9.5)}
+}
+/* ---------- Phone (portrait) ---------- */
+@media (max-aspect-ratio:7/10){
+  :root{--u:min(1.9vw,1.1vh);--gap:calc(var(--u)*1.4)}
+  body{display:flex;flex-direction:column;height:100vh;height:100dvh}
+  .hero{order:1;flex:none;display:flex}
+  .rail{order:2;flex-direction:row;align-items:center;flex:none;gap:calc(var(--u)*1)}
+  .main{order:3;flex:1}
+  .brand{display:none}
+  .rooms{flex-direction:row;overflow-x:auto;overflow-y:hidden;gap:calc(var(--u)*.8)}
+  .room{flex:none;padding:calc(var(--u)*.9) calc(var(--u)*1.6) calc(var(--u)*.9) calc(var(--u)*1.2);border-radius:99px;background:var(--panel);font-size:calc(var(--u)*2)}
+  .room .ri{width:calc(var(--u)*3.8);height:calc(var(--u)*3.8)}
+  .room.sel{background:rgba(var(--accent-rgb),.16);color:var(--text)}
+  .room.sel::before{display:none}
+  .railfoot{padding:0;flex:none}
+  .conn{display:none}
+  .btn{width:calc(var(--u)*5.6);height:calc(var(--u)*5.6);border-radius:50%}
+  .clock .time{font-size:calc(var(--u)*6.4)}
+  .out b{font-size:calc(var(--u)*3.6)}
+  .garage{flex:none;display:grid;grid-template-columns:1fr auto;align-items:center;gap:calc(var(--u)*1.4);padding:calc(var(--u)*1.8)}
+  .g-top{display:block}
+  .g-pill{display:inline-block;margin-top:calc(var(--u)*.8)}
+  .g-art{display:none}
+  .g-btn{height:calc(var(--u)*8);padding:0 calc(var(--u)*2.4);font-size:calc(var(--u)*2.2)}
+  .scenes .scene{height:calc(var(--u)*9)}
+  .media{display:none}
+  .mhead{flex-wrap:wrap;padding:calc(var(--u)*.4) calc(var(--u)*.2) calc(var(--u)*1.2)}
+  .mhead h1{font-size:calc(var(--u)*3.2)}
+  #chips{order:3;width:100%;overflow-x:auto}
+  .chip{height:calc(var(--u)*4.8);font-size:calc(var(--u)*1.8)}
+  .grid{grid-template-columns:repeat(auto-fill,minmax(calc(var(--u)*20),1fr))}
+  .tile{height:calc(var(--u)*17);padding:calc(var(--u)*1.6)}
+  .tile .ic{width:calc(var(--u)*5.4);height:calc(var(--u)*5.4)}
+  .tile .nm{font-size:calc(var(--u)*2.1)}
+  .tile .st{font-size:calc(var(--u)*1.8)}
+  .toast{white-space:normal;text-align:center;max-width:90vw}
+}
+</style>
+</head>
+<body>
+
+<aside class="rail">
+  <div class="brand">
+    <svg class="mark" viewBox="0 0 48 48" fill="none">
+      <rect x="2" y="2" width="44" height="44" rx="14" fill="#1b2129" stroke="var(--accent)" stroke-width="2.5"/>
+      <path d="M13 33V22.5L24 14l11 8.5V33" stroke="var(--accent)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M19.5 33v-5.5a4.5 4.5 0 0 1 9 0V33" stroke="var(--cool)" stroke-width="3" stroke-linecap="round"/>
+    </svg>
+    <div><b>منزلي</b><small>لوحة السيارة</small></div>
+  </div>
+  <nav class="rooms" id="rooms"></nav>
+  <div class="railfoot">
+    <button class="conn" id="conn" onclick="openSettings()"><i></i><span>غير متصل</span></button>
+    <button class="btn" onclick="openSettings()" aria-label="الإعدادات" id="gearBtn"></button>
+  </div>
+</aside>
+
+<section class="hero">
+  <div class="clock">
+    <div><div class="time" id="time">--:--</div><div class="date" id="date"></div></div>
+    <div class="out" id="out"></div>
+  </div>
+  <div class="garage" id="garage">
+    <div class="g-top">
+      <div><div class="g-name" id="gName">باب الكراج</div><div class="g-st" id="gSt">—</div></div>
+      <span class="g-pill" id="gPill">—</span>
+    </div>
+    <svg class="g-art" viewBox="0 0 240 130" preserveAspectRatio="xMidYMid meet">
+      <defs>
+        <radialGradient id="gl" cx="50%" cy="100%" r="70%">
+          <stop offset="0" stop-color="rgb(242,163,58)" stop-opacity=".55"/>
+          <stop offset="1" stop-color="rgb(242,163,58)" stop-opacity="0"/>
+        </radialGradient>
+      </defs>
+      <path class="roof" d="M14 126V48L120 8l106 40v78"/>
+      <rect class="frame" x="52" y="52" width="136" height="74" rx="3"/>
+      <rect class="glow" x="53" y="53" width="134" height="72" fill="url(#gl)"/>
+      <g class="door">
+        <rect x="53" y="53" width="134" height="14.4"/>
+        <rect x="53" y="67.4" width="134" height="14.4"/>
+        <rect x="53" y="81.8" width="134" height="14.4"/>
+        <rect x="53" y="96.2" width="134" height="14.4"/>
+        <rect x="53" y="110.6" width="134" height="14.4"/>
+      </g>
+    </svg>
+    <button class="g-btn" id="gBtn" data-press="garage" data-hold="act"></button>
+  </div>
+  <div class="scenes" id="scenes"></div>
+  <div class="media" id="media"></div>
+</section>
+
+<main class="main">
+  <div class="mhead">
+    <div class="grow"><h1 id="title">الكل</h1><div class="sub" id="sub"></div></div>
+    <div id="chips" style="display:flex;gap:calc(var(--u)*1)"></div>
+    <div class="mclock" id="mclock"></div>
+  </div>
+  <div class="scroll" id="scroll"></div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<div class="veil" id="setVeil">
+  <div class="sheet">
+    <h3>ربط Home Assistant</h3>
+    <label class="field"><span>عنوان الخادم</span><input id="fUrl" placeholder="https://abusamiha.fun" autocomplete="off" spellcheck="false"></label>
+    <div class="actions" style="margin-bottom:calc(var(--u)*2)">
+      <button class="pbtn" id="loginBtn" onclick="AUTH.login()">تسجيل الدخول بحساب Home Assistant</button>
+      <button class="sbtn" id="logoutBtn" onclick="AUTH.logout()">تسجيل الخروج</button>
+    </div>
+    <label class="field"><span>أو رمز دخول طويل الأمد (اختياري)</span><input id="fTok" type="password" placeholder="eyJ0eXAiOi..." autocomplete="off" spellcheck="false"></label>
+    <div class="hint">الأسهل: «تسجيل الدخول» بنفس اسم المستخدم وكلمة المرور. الرمز طويل الأمد بديل اختياري تجده في ملفك الشخصي ← الأمان. كل البيانات تُحفظ على هذا الجهاز فقط.</div>
+    <label class="field"><span>باب الكراج في البطاقة الرئيسية</span><select id="fGarage"></select></label>
+    <label class="check"><input type="checkbox" id="fHide"> إخفاء الأجهزة غير المتاحة</label>
+    <div class="actions">
+      <button class="pbtn" onclick="saveSettings()">حفظ واتصال</button>
+      <button class="sbtn" onclick="useDemo()">وضع العرض</button>
+      <button class="sbtn" onclick="closeVeils()">إغلاق</button>
+    </div>
+  </div>
+</div>
+
+<div class="veil" id="dimVeil" onclick="if(event.target===this)closeVeils()">
+  <div class="sheet">
+    <h3 id="dimTitle">الإضاءة</h3>
+    <div class="dim-wrap"><input type="range" id="dimRange" min="1" max="100" value="50"><b id="dimVal">50%</b></div>
+    <div class="actions">
+      <button class="pbtn" id="dimToggle">إطفاء</button>
+      <button class="sbtn" onclick="closeVeils()">تم</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ========= Icons (original line set) ========= */
+const ICON={
+  bulb:'<path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-4 10.5c.8.8 1 1.6 1 2.5h6c0-.9.2-1.7 1-2.5A6 6 0 0 0 12 3z"/>',
+  flood:'<path d="M4 9l9-4v12l-9-4z"/><path d="M13 7h2M17 5l3-1.5M17 11h4M17 17l3 1.5"/>',
+  strip:'<rect x="3" y="9" width="18" height="6" rx="3"/><path d="M7 12h.01M12 12h.01M17 12h.01"/>',
+  plug:'<path d="M9 3v5M15 3v5M6 8h12v3a6 6 0 0 1-12 0zM12 17v4"/>',
+  fan:'<g class="fan-spin"><circle cx="12" cy="12" r="1.8"/><path d="M12 10.2c-.3-3.6.8-6.7 3.3-6.7 2.4 0 2.4 3.6-1.5 6.9M13.8 12c3.6-.3 6.7.8 6.7 3.3 0 2.4-3.6 2.4-6.9-1.5M12 13.8c.3 3.6-.8 6.7-3.3 6.7-2.4 0-2.4-3.6 1.5-6.9M10.2 12c-3.6.3-6.7-.8-6.7-3.3 0-2.4 3.6-2.4 6.9 1.5"/></g>',
+  garage:'<path d="M3 21V9.5L12 4l9 5.5V21"/><path d="M7 21v-9h10v9M7 15h10M7 18h10"/>',
+  blind:'<path d="M4 4h16M5 4v10h14V4M5 8h14M5 11h14M12 14v4"/><circle cx="12" cy="19.5" r="1.5"/>',
+  lock:'<rect x="5" y="11" width="14" height="10" rx="2.5"/><path d="M8 11V7.5a4 4 0 0 1 8 0V11M12 15v2"/>',
+  music:'<path d="M9 18V5.5l11-2V16"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="17.5" cy="16" r="2.5"/>',
+  thermo:'<path d="M14 14.8V5a2 2 0 0 0-4 0v9.8a4 4 0 1 0 4 0z"/><path d="M12 9v7"/>',
+  drop:'<path d="M12 3.5s6 6.3 6 10.5a6 6 0 0 1-12 0c0-4.2 6-10.5 6-10.5z"/>',
+  snow:'<path d="M12 3v18M4.2 7.5l15.6 9M19.8 7.5l-15.6 9M9.5 4.5L12 7l2.5-2.5M9.5 19.5L12 17l2.5 2.5"/>',
+  spark:'<path d="M12 3l1.9 5.6L19.5 10.5l-5.6 1.9L12 18l-1.9-5.6-5.6-1.9 5.6-1.9z"/><path d="M19 17v4M17 19h4"/>',
+  door:'<path d="M6 21V3.5h12V21M3.5 21h17M14.5 12.5h.01"/>',
+  motion:'<circle cx="13" cy="4.5" r="2"/><path d="M8 21l3-6 3 2v4M7 12l3-4h4l2 4h3M11 8l-2 6"/>',
+  gear:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1a1.6 1.6 0 0 0-2.7-1.1l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.6 1.6 0 0 0 3.6 14H3a2 2 0 1 1 0-4h.1a1.6 1.6 0 0 0 1.1-2.7l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 2.7-1.1V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 2.7 1.1l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0 1.1 2.7H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"/>',
+  home:'<path d="M3.5 11L12 4l8.5 7"/><path d="M6 9.5V20h12V9.5"/>',
+  grid:'<rect x="3.5" y="3.5" width="7" height="7" rx="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2"/><rect x="13.5" y="13.5" width="7" height="7" rx="2"/>',
+  power:'<path d="M12 3v8"/><path d="M6.3 6.8a8 8 0 1 0 11.4 0"/>',
+  hold:'<circle cx="12" cy="12" r="8"/><path d="M12 8v4l2.5 2"/>',
+  up:'<path d="M12 19V5M6 11l6-6 6 6"/>',
+  down:'<path d="M12 5v14M6 13l6 6 6-6"/>',
+  play:'<path d="M8 5.5v13l11-6.5z" fill="currentColor"/>',
+  pause:'<path d="M8 5v14M16 5v14" stroke-width="3"/>',
+  next:'<path d="M17 6v12M6 6l9 6-9 6z" fill="currentColor"/>',
+  eyeoff:'<path d="M3 3l18 18M10.6 6.2A9.6 9.6 0 0 1 12 6c5 0 9 6 9 6a15 15 0 0 1-2.4 2.9M6.3 7.6A15 15 0 0 0 3 12s4 6 9 6a8.8 8.8 0 0 0 4-1"/>',
+  dot:'<circle cx="12" cy="12" r="4"/>'
+};
+const svg=(n)=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICON[n]||ICON.dot}</svg>`;
+const $=(s)=>document.querySelector(s);
+const esc=(s)=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+/* ========= Storage ========= */
+const LS={
+  get(k,d){try{const v=localStorage.getItem('hv_'+k);return v==null?d:JSON.parse(v)}catch(e){return d}},
+  set(k,v){try{localStorage.setItem('hv_'+k,JSON.stringify(v))}catch(e){}}
+};
+/* Native car app bridge (present only inside the Android app) */
+const APP=window.HavalApp||null;
+function defaultUrl(){
+  if(APP){try{return APP.server()}catch(e){}}
+  return /^https?:/.test(location.protocol)&&location.host?location.origin:'https://abusamiha.fun';
+}
+const cfg={url:APP?defaultUrl():LS.get('url',defaultUrl()),token:LS.get('token',''),garage:LS.get('garage',''),hideUnavail:LS.get('hideUnavail',false)};
+
+/* ========= State ========= */
+const S={states:{},areas:[],entArea:{},skip:new Set(),busy:new Set(),view:LS.get('view','all'),demo:false};
+const TILE_DOMAINS=['cover','lock','climate','light','fan','switch','input_boolean','media_player','sensor','binary_sensor','script','scene'];
+const TOGGLE=['light','switch','fan','input_boolean'];
+const dom=(id)=>id.split('.')[0];
+const nameOf=(e)=>(e.attributes&&e.attributes.friendly_name)||e.entity_id.split('.')[1].replace(/_/g,' ');
+const isNA=(e)=>e.state==='unavailable'||e.state==='unknown';
+
+function relevant(e){
+  const d=dom(e.entity_id),a=e.attributes||{};
+  if(!TILE_DOMAINS.includes(d)||S.skip.has(e.entity_id)||a.hidden)return false;
+  if(d==='sensor')return ['temperature','humidity'].includes(a.device_class);
+  if(d==='binary_sensor')return ['door','window','garage_door','opening','motion','occupancy'].includes(a.device_class);
+  return true;
+}
+function isOn(e){
+  const s=e.state,d=dom(e.entity_id);
+  if(d==='climate')return s!=='off'&&!isNA(e);
+  if(['sensor','binary_sensor','script','scene'].includes(d))return false;
+  return ['on','open','opening','closing','unlocked','playing'].includes(s);
+}
+const HVAC={cool:'تبريد',heat:'تدفئة',auto:'تلقائي',dry:'تجفيف',fan_only:'مروحة',heat_cool:'تلقائي'};
+function stateText(e){
+  const s=e.state,a=e.attributes||{},d=dom(e.entity_id);
+  if(s==='unavailable')return 'غير متاح';
+  if(s==='unknown')return 'غير معروف';
+  if(d==='cover')return ({open:'مفتوح',closed:'مغلق',opening:'يفتح…',closing:'يغلق…'})[s]||s;
+  if(d==='lock')return ({locked:'مقفل',unlocked:'مفتوح',locking:'يقفل…',unlocking:'يفتح…',jammed:'عالق'})[s]||s;
+  if(d==='climate')return s==='off'?'مطفأ':(HVAC[s]||s)+(a.temperature!=null?' · '+a.temperature+'°':'');
+  if(d==='media_player')return ({playing:'يشغّل',paused:'متوقف مؤقتاً',idle:'خامل',off:'مطفأ',on:'يعمل'})[s]||s;
+  if(d==='sensor'){const n=parseFloat(s);return (isNaN(n)?s:(Math.round(n*10)/10))+(a.unit_of_measurement?' '+a.unit_of_measurement:'')}
+  if(d==='binary_sensor'){
+    const m={door:['مغلق','مفتوح'],window:['مغلقة','مفتوحة'],garage_door:['مغلق','مفتوح'],opening:['مغلق','مفتوح'],motion:['لا حركة','حركة'],occupancy:['فارغ','مشغول']}[a.device_class];
+    return m?m[s==='on'?1:0]:s;
+  }
+  if(d==='script'||d==='scene')return 'اضغط للتشغيل';
+  if(d==='light'&&s==='on'&&a.brightness!=null)return 'يعمل · '+Math.round(a.brightness/2.55)+'%';
+  return s==='on'?'يعمل':s==='off'?'مطفأ':s;
+}
+function iconOf(e){
+  const d=dom(e.entity_id),a=e.attributes||{},n=nameOf(e);
+  if(d==='cover')return ['garage','gate'].includes(a.device_class)?'garage':'blind';
+  if(d==='light'){if(/كشاف|flood/i.test(n))return 'flood';if(/شريط|strip|led/i.test(n))return 'strip';return 'bulb'}
+  if(d==='fan')return 'fan';
+  if(d==='lock')return 'lock';
+  if(d==='climate')return 'snow';
+  if(d==='media_player')return 'music';
+  if(d==='sensor')return a.device_class==='humidity'?'drop':'thermo';
+  if(d==='binary_sensor')return ['motion','occupancy'].includes(a.device_class)?'motion':'door';
+  if(d==='script'||d==='scene')return 'spark';
+  return 'plug';
+}
+const ORDER=Object.fromEntries(TILE_DOMAINS.map((d,i)=>[d,i]));
+function sortEnts(arr){
+  return arr.sort((x,y)=>(isNA(x)-isNA(y))||(ORDER[dom(x.entity_id)]-ORDER[dom(y.entity_id)])||nameOf(x).localeCompare(nameOf(y),'ar'));
+}
+const narrow=()=>matchMedia('(max-aspect-ratio:16/9) and (min-aspect-ratio:1/1)').matches;
+function entities(view){
+  let arr=Object.values(S.states).filter(relevant);
+  if(!narrow())arr=arr.filter(e=>!['script','scene'].includes(dom(e.entity_id)));
+  if(view==='on')arr=arr.filter(isOn);
+  else if(view==='_none')arr=arr.filter(e=>!S.entArea[e.entity_id]);
+  else if(view!=='all')arr=arr.filter(e=>S.entArea[e.entity_id]===view);
+  if(cfg.hideUnavail&&view!=='on')arr=arr.filter(e=>!isNA(e));
+  return sortEnts(arr);
+}
+
+/* ========= Rendering ========= */
+let raf=0;
+function render(){if(!raf)raf=requestAnimationFrame(()=>{raf=0;renderRail();renderMain();renderHero()})}
+
+function renderRail(){
+  const all=Object.values(S.states).filter(relevant);
+  const onCount=(f)=>all.filter(e=>f(e)&&isOn(e)).length;
+  const items=[
+    {id:'all',name:'الكل',icon:'grid',n:0},
+    {id:'on',name:'يعمل الآن',icon:'power',n:onCount(()=>true)},
+    ...S.areas.filter(a=>all.some(e=>S.entArea[e.entity_id]===a.id)).map(a=>({id:a.id,name:a.name,icon:'home',n:onCount(e=>S.entArea[e.entity_id]===a.id)}))
+  ];
+  if(all.some(e=>!S.entArea[e.entity_id]&&!['script','scene'].includes(dom(e.entity_id))))items.push({id:'_none',name:'أخرى',icon:'dot',n:onCount(e=>!S.entArea[e.entity_id])});
+  if(!items.some(i=>i.id===S.view))S.view='all';
+  $('#rooms').innerHTML=items.map(i=>`<button class="room${i.id===S.view?' sel':''}" onclick="setView('${esc(i.id)}')"><span class="ri">${svg(i.icon)}</span><span class="t">${esc(i.name)}</span>${i.n?`<span class="cnt">${i.n}</span>`:''}</button>`).join('');
+}
+function setView(v){S.view=v;LS.set('view',v);render();$('#scroll').scrollTop=0}
+function areaName(id){if(id==='all')return 'الكل';if(id==='on')return 'يعمل الآن';if(id==='_none')return 'أخرى';const a=S.areas.find(a=>a.id===id);return a?a.name:''}
+
+function tileHTML(e){
+  const id=e.entity_id,d=dom(id),a=e.attributes||{},na=isNA(e),on=isOn(e);
+  const cls=['tile'];
+  if(on)cls.push('on');
+  if(d==='climate'||d==='fan')cls.push('cool');
+  if(d==='sensor'||d==='binary_sensor')cls.push('sensor');
+  if(na)cls.push('na');
+  if(S.busy.has(id))cls.push('busy');
+  if((d==='cover'||d==='lock')&&on)cls.push('warn');
+  let hold='';
+  if(!na&&(d==='cover'||d==='lock'))hold='act';
+  else if(!na&&d==='light'&&dimmable(e))hold='sheet';
+  const press=(d==='sensor'||d==='binary_sensor')?'':`data-press="tile" data-eid="${esc(id)}"${hold?` data-hold="${hold}"`:''}`;
+  const bar=(d==='light'&&on&&a.brightness!=null)?`<i class="bar" style="width:${Math.round(a.brightness/2.55)}%"></i>`:'';
+  const badge=hold==='act'?`<span class="badge">${svg('hold')}</span>`:'';
+  return `<div class="${cls.join(' ')}" ${press}><div class="top"><span class="ic">${svg(iconOf(e))}</span>${badge}</div><div><div class="nm">${esc(nameOf(e))}</div><div class="st">${esc(stateText(e))}</div></div>${bar}</div>`;
+}
+function dimmable(e){const m=(e.attributes||{}).supported_color_modes;return (m&&m.some(x=>x!=='onoff'))||(e.attributes||{}).brightness!=null}
+
+function renderMain(){
+  const v=S.view,list=entities(v);
+  $('#title').textContent=areaName(v);
+  const on=list.filter(isOn).length,na=list.filter(isNA).length;
+  $('#sub').textContent=list.length?`${list.length} جهاز · ${on} يعمل${na?` · ${na} غير متاح`:''}`:'';
+  let chips='';
+  if(S.demo)chips+=`<button class="chip demo" onclick="openSettings()">وضع العرض · سجّل الدخول</button>`;
+  if(v==='on'&&list.some(e=>TOGGLE.includes(dom(e.entity_id))))chips+=`<button class="chip warn" data-press="offall" data-hold="act">${svg('power')} اضغط مطولاً لإطفاء الكل</button>`;
+  if(v!=='on')chips+=`<button class="chip${cfg.hideUnavail?' act':''}" onclick="toggleHide()">${svg('eyeoff')} ${cfg.hideUnavail?'إظهار غير المتاح':'إخفاء غير المتاح'}</button>`;
+  $('#chips').innerHTML=chips;
+  let html='';
+  if(!list.length){
+    html=`<div class="empty"><div>${svg(v==='on'?'power':'home')}<p>${v==='on'?'كل شيء مطفأ في البيت':'لا توجد أجهزة هنا'}</p></div></div>`;
+  }else if(v==='all'){
+    const groups=[...S.areas.map(a=>({id:a.id,name:a.name})),{id:'_none',name:'أخرى'}];
+    groups.forEach(g=>{
+      const ents=list.filter(e=>(S.entArea[e.entity_id]||'_none')===g.id);
+      if(ents.length)html+=`<div class="sec"><h2>${esc(g.name)}</h2><div class="grid">${ents.map(tileHTML).join('')}</div></div>`;
+    });
+  }else html=`<div class="grid">${list.map(tileHTML).join('')}</div>`;
+  $('#scroll').innerHTML=html;
+}
+
+function garageEntity(){
+  if(cfg.garage&&S.states[cfg.garage])return S.states[cfg.garage];
+  const covers=Object.values(S.states).filter(e=>dom(e.entity_id)==='cover');
+  return covers.find(e=>['garage','gate'].includes((e.attributes||{}).device_class))||covers[0]||null;
+}
+function renderHero(){
+  const g=garageEntity(),box=$('#garage');
+  box.classList.remove('open','moving','na');
+  if(!g){
+    $('#gName').textContent='باب الكراج';$('#gSt').textContent='لم يُعثر على باب — اختره من الإعدادات';
+    $('#gPill').textContent='—';box.classList.add('na');$('#gBtn').innerHTML='الإعدادات';$('#gBtn').dataset.hold='';
+  }else{
+    const s=g.state,na=isNA(g);
+    $('#gName').textContent=nameOf(g);$('#gSt').textContent=stateText(g);
+    if(na)box.classList.add('na');
+    else if(s==='open')box.classList.add('open');
+    else if(s==='opening'){box.classList.add('open','moving')}
+    else if(s==='closing')box.classList.add('moving');
+    $('#gPill').textContent=na?'غير متاح':s==='closed'?'مُغلق وآمن':s==='open'?'مفتوح':'يتحرك';
+    const openNext=!(s==='open'||s==='opening');
+    $('#gBtn').dataset.hold=na?'':'act';
+    $('#gBtn').innerHTML=na?'الجهاز غير متاح':`${svg(openNext?'up':'down')} اضغط مطولاً ${openNext?'للفتح':'للإغلاق'}`;
+  }
+  // scenes & scripts
+  const sc=Object.values(S.states).filter(e=>['scene','script'].includes(dom(e.entity_id))&&!S.skip.has(e.entity_id)&&!isNA(e)).sort((x,y)=>nameOf(x).localeCompare(nameOf(y),'ar')).slice(0,3);
+  $('#scenes').style.display=sc.length?'':'none';
+  $('#scenes').innerHTML=sc.map(e=>`<button class="scene" data-press="tile" data-eid="${esc(e.entity_id)}"><span class="ic">${svg('spark')}</span><span>${esc(nameOf(e))}</span></button>`).join('');
+  // media
+  const mps=Object.values(S.states).filter(e=>dom(e.entity_id)==='media_player'&&!S.skip.has(e.entity_id));
+  const m=mps.find(e=>e.state==='playing')||mps.find(e=>!isNA(e)&&e.state!=='off')||mps[0];
+  if(!m){$('#media').style.display='none'}
+  else{
+    const a=m.attributes||{};
+    $('#media').style.display='';
+    $('#media').innerHTML=`<span class="art">${svg('music')}</span><div class="mt"><b>${esc(a.media_title||nameOf(m))}</b><small>${esc(a.media_artist||stateText(m))}</small></div>
+      <button class="btn pp" onclick="mediaCmd('${esc(m.entity_id)}','media_play_pause')">${svg(m.state==='playing'?'pause':'play')}</button>
+      <button class="btn" onclick="mediaCmd('${esc(m.entity_id)}','media_next_track')">${svg('next')}</button>`;
+  }
+  // outside temperature
+  const w=Object.values(S.states).find(e=>dom(e.entity_id)==='weather'&&!isNA(e));
+  let t=w&&w.attributes&&w.attributes.temperature;
+  if(t==null){const o=Object.values(S.states).find(e=>dom(e.entity_id)==='sensor'&&(e.attributes||{}).device_class==='temperature'&&/outdoor|outside|خارج/i.test(e.entity_id+nameOf(e)));if(o)t=o.state}
+  $('#out').innerHTML=t!=null&&t!==''?`<b>${esc(Math.round(parseFloat(t)))}°</b>خارج البيت`:'';
+}
+
+function tick(){
+  const d=new Date();
+  const t=d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+  $('#time').textContent=t;$('#mclock').textContent=t;
+  try{$('#date').textContent=d.toLocaleDateString('ar-u-nu-latn',{weekday:'long',day:'numeric',month:'long'})}catch(e){$('#date').textContent=''}
+}
+
+/* ========= Actions ========= */
+function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('show'),2200)}
+function buzz(){try{if(APP)APP.buzz();else if(navigator.vibrate)navigator.vibrate(35)}catch(e){}}
+function call(domain,service,data){
+  return (S.demo?Promise.resolve(demoCall(domain,service,data)):HA.send({type:'call_service',domain,service,service_data:data}))
+    .catch(err=>{toast('تعذّر التنفيذ'+(err&&err.message?': '+err.message:''));[].concat(data.entity_id||[]).forEach(i=>S.busy.delete(i));render()});
+}
+function act(id,domain,service,extra){
+  S.busy.add(id);render();
+  setTimeout(()=>{if(S.busy.delete(id))render()},6000);
+  return call(domain,service,Object.assign({entity_id:id},extra||{}));
+}
+function tapEntity(id,el){
+  const e=S.states[id];if(!e)return;const d=dom(id);
+  if(isNA(e)){toast('الجهاز غير متاح حالياً');return}
+  if(d==='cover'||d==='lock'){toast('اضغط مطولاً للتأكيد');return}
+  if(TOGGLE.includes(d))return act(id,d,'toggle');
+  if(d==='climate')return act(id,'climate',isOn(e)?'turn_off':'turn_on');
+  if(d==='media_player')return act(id,'media_player','media_play_pause');
+  if(d==='script'||d==='scene'){
+    if(el&&el.classList.contains('scene')){el.classList.remove('flash');void el.offsetWidth;el.classList.add('flash')}
+    toast('تم تشغيل «'+nameOf(e)+'»');return call(d,'turn_on',{entity_id:id});
+  }
+}
+function holdEntity(id){
+  const e=S.states[id];if(!e||isNA(e))return;const d=dom(id),s=e.state;
+  if(d==='cover')return act(id,'cover',(s==='open'||s==='opening')?'close_cover':'open_cover');
+  if(d==='lock')return act(id,'lock',s==='locked'?'unlock':'lock');
+  if(d==='light')return openDim(id);
+}
+function mediaCmd(id,svc){call('media_player',svc,{entity_id:id})}
+function offAll(){
+  const ids=entities('on').filter(e=>TOGGLE.includes(dom(e.entity_id))).map(e=>e.entity_id);
+  if(!ids.length)return;
+  ids.forEach(i=>S.busy.add(i));render();
+  call('homeassistant','turn_off',{entity_id:ids});toast('جارٍ إطفاء '+ids.length+' جهاز');
+}
+function toggleHide(){cfg.hideUnavail=!cfg.hideUnavail;LS.set('hideUnavail',cfg.hideUnavail);render()}
+
+/* press / long-press handling (delegated so it survives re-renders) */
+let P=null;
+document.addEventListener('contextmenu',e=>e.preventDefault());
+document.addEventListener('pointerdown',ev=>{
+  const t=ev.target.closest('[data-press]');if(!t)return;
+  const hold=t.dataset.hold||'';
+  P={t,x:ev.clientX,y:ev.clientY,fired:false,timer:null};
+  if(hold){
+    const ms=hold==='act'?900:550;
+    if(hold==='act'){t.style.setProperty('--hold',ms+'ms');t.classList.add('holding')}
+    P.timer=setTimeout(()=>{if(!P)return;P.fired=true;t.classList.remove('holding');buzz();doHold(t)},ms);
+  }
+});
+function cancelP(){if(!P)return;clearTimeout(P.timer);P.t.classList.remove('holding');P.fired=true}
+document.addEventListener('pointermove',ev=>{if(P&&!P.fired&&Math.hypot(ev.clientX-P.x,ev.clientY-P.y)>14)cancelP()});
+document.addEventListener('pointercancel',()=>{cancelP();P=null});
+document.addEventListener('pointerup',()=>{
+  if(!P)return;const p=P;P=null;clearTimeout(p.timer);p.t.classList.remove('holding');
+  if(!p.fired)doTap(p.t);
+});
+function doTap(t){
+  const k=t.dataset.press;
+  if(k==='tile')tapEntity(t.dataset.eid,t);
+  else if(k==='garage'){const g=garageEntity();if(!g)openSettings();else if(!isNA(g))toast('اضغط مطولاً للتأكيد')}
+  else if(k==='offall')toast('اضغط مطولاً للتأكيد');
+}
+function doHold(t){
+  const k=t.dataset.press;
+  if(k==='tile')holdEntity(t.dataset.eid);
+  else if(k==='garage'){const g=garageEntity();if(g)holdEntity(g.entity_id)}
+  else if(k==='offall')offAll();
+}
+
+/* brightness sheet */
+let dimId=null,dimT=null;
+function openDim(id){
+  const e=S.states[id];if(!e)return;dimId=id;
+  const b=e.state==='on'?Math.max(1,Math.round(((e.attributes||{}).brightness||255)/2.55)):50;
+  $('#dimTitle').textContent=nameOf(e);setDimUI(b);
+  $('#dimToggle').textContent=e.state==='on'?'إطفاء':'تشغيل';
+  $('#dimVeil').classList.add('show');
+}
+function setDimUI(v){const r=$('#dimRange');r.value=v;r.style.setProperty('--p',v+'%');$('#dimVal').textContent=v+'%'}
+$('#dimRange').addEventListener('input',e=>{
+  const v=+e.target.value;setDimUI(v);clearTimeout(dimT);
+  dimT=setTimeout(()=>{call('light','turn_on',{entity_id:dimId,brightness_pct:v});$('#dimToggle').textContent='إطفاء'},180);
+});
+$('#dimToggle').addEventListener('click',()=>{
+  const e=S.states[dimId];if(!e)return;
+  const on=e.state==='on';call('light',on?'turn_off':'turn_on',{entity_id:dimId});
+  $('#dimToggle').textContent=on?'تشغيل':'إطفاء';
+});
+
+/* settings */
+function openSettings(){
+  const signed=!!(AUTH.get()||cfg.token);
+  $('#logoutBtn').style.display=signed?'':'none';
+  $('#loginBtn').textContent=signed?'إعادة تسجيل الدخول':'تسجيل الدخول بحساب Home Assistant';
+  $('#fUrl').value=cfg.url;$('#fTok').value=cfg.token;$('#fHide').checked=cfg.hideUnavail;
+  const covers=Object.values(S.states).filter(e=>dom(e.entity_id)==='cover');
+  const cur=(garageEntity()||{}).entity_id||'';
+  $('#fGarage').innerHTML=`<option value="">تلقائي</option>`+covers.map(e=>`<option value="${esc(e.entity_id)}"${e.entity_id===cfg.garage?' selected':''}>${esc(nameOf(e))}</option>`).join('');
+  if(!cfg.garage)$('#fGarage').value='';
+  $('#setVeil').classList.add('show');
+}
+function closeVeils(){document.querySelectorAll('.veil').forEach(v=>v.classList.remove('show'))}
+function saveSettings(){
+  const url=$('#fUrl').value.trim().replace(/\/+$/,'')||defaultUrl();
+  if(APP&&url!==cfg.url){try{APP.setServer(url);return}catch(e){}}
+  cfg.url=url;cfg.token=$('#fTok').value.trim();
+  cfg.garage=$('#fGarage').value;cfg.hideUnavail=$('#fHide').checked;
+  ['url','token','garage','hideUnavail'].forEach(k=>LS.set(k,cfg[k]));
+  closeVeils();
+  HA.connect();
+}
+function useDemo(){closeVeils();HA.close();startDemo()}
+
+/* ========= Home Assistant WebSocket ========= */
+function setConn(kind,label){
+  const c=$('#conn');c.className='conn '+kind;
+  c.querySelector('span').textContent=label||({on:'متصل بالبيت',off:'غير متصل — إعادة المحاولة',connecting:'جارٍ الاتصال…',demo:'وضع العرض',error:'خطأ في الاتصال'})[kind];
+}
+/* Running inside the Home Assistant app/web UI (Webpage dashboard iframe): reuse its logged-in connection */
+function parentHass(){
+  try{
+    if(window.parent===window)return null;
+    const el=window.parent.document.querySelector('home-assistant');
+    return el&&el.hass&&el.hass.connection?el:null;
+  }catch(e){return null}
+}
+/* Sign in with the normal HA username/password (OAuth code flow, same as HA's own frontend).
+   Works when this page is served from the HA domain — in the car app it always is. */
+const AUTH={
+  get(){return LS.get('auth',null)},
+  set(v){LS.set('auth',v)},
+  canLogin(){return /^https?:/.test(location.protocol)&&!!location.host},
+  login(){
+    if(!this.canLogin()){toast('افتح الصفحة من خادم Home Assistant لتسجيل الدخول');return}
+    const base=location.origin;
+    const redirect=base+location.pathname+'?auth_callback=1';
+    location.href=base+'/auth/authorize?response_type=code&client_id='+encodeURIComponent(base+'/')+
+      '&redirect_uri='+encodeURIComponent(redirect)+'&state='+Math.random().toString(36).slice(2);
+  },
+  logout(){this.set(null);cfg.token='';LS.set('token','');closeVeils();HA.close();startDemo();toast('تم تسجيل الخروج')},
+  async callback(){
+    const q=new URLSearchParams(location.search),code=q.get('code');
+    if(!code)return;
+    try{history.replaceState(null,'',location.pathname)}catch(e){}
+    const base=location.origin;
+    try{
+      const r=await fetch(base+'/auth/token',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},
+        body:new URLSearchParams({grant_type:'authorization_code',code,client_id:base+'/'})});
+      if(!r.ok)throw new Error(r.status);
+      const j=await r.json();
+      this.set({access_token:j.access_token,refresh_token:j.refresh_token,expires:Date.now()+j.expires_in*1000,base,clientId:base+'/'});
+      toast('تم تسجيل الدخول');
+    }catch(e){toast('تعذّر تسجيل الدخول')}
+  }
+};
+/* Token from our own sign-in, or from an HA web session on the same domain */
+async function browserToken(force){
+  let t=AUTH.get(),own=true;
+  if(!t||!t.refresh_token){own=false;t=null;try{t=JSON.parse(localStorage.getItem('hassTokens')||'null')}catch(e){}}
+  if(!t||!t.refresh_token)return null;
+  HA.base=t.base||t.hassUrl||location.origin;
+  if(!force&&t.access_token&&t.expires>Date.now()+60000)return t.access_token;
+  try{
+    const r=await fetch(HA.base+'/auth/token',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},
+      body:new URLSearchParams({grant_type:'refresh_token',refresh_token:t.refresh_token,client_id:t.clientId||(HA.base+'/')})});
+    if(!r.ok){if(own&&r.status>=400&&r.status<500)AUTH.set(null);return null}
+    const j=await r.json();
+    t.access_token=j.access_token;t.expires_in=j.expires_in;t.expires=Date.now()+j.expires_in*1000;
+    if(own)AUTH.set(t);else try{localStorage.setItem('hassTokens',JSON.stringify(t))}catch(e){}
+    return t.access_token;
+  }catch(e){return null}
+}
+const HA={
+  ws:null,n:1,p:{},retry:0,timer:null,embedded:null,token:'',viaBrowser:false,base:'',
+  wsUrl(){let u=((this.viaBrowser&&this.base)||cfg.url).trim().replace(/\/+$/,'');if(!/^(https?|wss?):\/\//i.test(u))u='http://'+u;return u.replace(/^http/i,'ws')+'/api/websocket'},
+  embed(host){
+    this.embedded=host;S.demo=false;setConn('connecting');
+    const conn=host.hass.connection;
+    const fail=()=>setConn('error','تعذّر تحميل الأجهزة');
+    this.ready(()=>conn.subscribeEvents(ev=>this.onState(ev.data),'state_changed')).catch(fail);
+    try{conn.addEventListener('ready',()=>this.ready(null).catch(fail))}catch(e){}
+  },
+  async connect(){
+    this.close();
+    if(this.embedded)return;
+    const host=parentHass();
+    if(host)return this.embed(host);
+    if(window.parent!==window&&(this.tries=(this.tries||0)+1)<6){this.timer=setTimeout(()=>this.connect(),700);return}
+    let token=cfg.token;this.viaBrowser=false;
+    if(!token){token=await browserToken();this.viaBrowser=!!token}
+    if(!token){startDemo();return}
+    this.token=token;
+    S.demo=false;setConn('connecting');
+    let ws;
+    try{ws=new WebSocket(this.wsUrl())}catch(e){setConn('error','عنوان الخادم غير صالح');return}
+    this.ws=ws;
+    ws.onmessage=(ev)=>{let m;try{m=JSON.parse(ev.data)}catch(e){return}[].concat(m).forEach(x=>this.msg(x))};
+    ws.onclose=()=>{
+      if(this.ws!==ws)return;this.ws=null;this.failAll();
+      setConn('off');const t=Math.min(30000,1500*2**this.retry++);
+      this.timer=setTimeout(()=>this.connect(),t);
+    };
+  },
+  close(){clearTimeout(this.timer);const w=this.ws;this.ws=null;if(w)try{w.close()}catch(e){}this.failAll()},
+  failAll(){Object.values(this.p).forEach(p=>p.rej({message:'انقطع الاتصال'}));this.p={}},
+  msg(m){
+    if(m.type==='auth_required')this.ws.send(JSON.stringify({type:'auth',access_token:this.token}));
+    else if(m.type==='auth_ok'){this.retry=0;this.ready(()=>this.wsSend({type:'subscribe_events',event_type:'state_changed'})).catch(()=>setConn('error','تعذّر تحميل الأجهزة'))}
+    else if(m.type==='auth_invalid'){
+      const w=this.ws;this.ws=null;try{w.close()}catch(e){}
+      if(this.viaBrowser){browserToken(true).then(t=>{if(t){cfg.token='';this.connect()}else{setConn('error','سجّل الدخول إلى Home Assistant مجدداً')}});return}
+      setConn('error','رمز الدخول غير صالح');openSettings();
+    }
+    else if(m.type==='result'){const p=this.p[m.id];if(p){delete this.p[m.id];m.success?p.res(m.result):p.rej(m.error||{})}}
+    else if(m.type==='event'&&m.event&&m.event.event_type==='state_changed')this.onState(m.event.data);
+  },
+  onState(d){
+    if(!d)return;
+    if(d.new_state)S.states[d.entity_id]=d.new_state;else delete S.states[d.entity_id];
+    S.busy.delete(d.entity_id);render();
+  },
+  send(o){
+    if(this.embedded)return this.embedded.hass.connection.sendMessagePromise(o);
+    return this.wsSend(o);
+  },
+  wsSend(o){return new Promise((res,rej)=>{
+    if(!this.ws||this.ws.readyState!==1)return rej({message:'غير متصل'});
+    const id=this.n++;this.p[id]={res,rej};this.ws.send(JSON.stringify(Object.assign({id},o)));
+  })},
+  async ready(subscribe){
+    const safe=(p)=>p.catch(()=>[]);
+    const [states,areas,ents,devs]=await Promise.all([
+      this.send({type:'get_states'}),
+      safe(this.send({type:'config/area_registry/list'})),
+      safe(this.send({type:'config/entity_registry/list'})),
+      safe(this.send({type:'config/device_registry/list'}))
+    ]);
+    S.states={};states.forEach(s=>S.states[s.entity_id]=s);
+    S.areas=areas.map(a=>({id:a.area_id,name:a.name})).sort((x,y)=>x.name.localeCompare(y.name,'ar'));
+    const devArea={};devs.forEach(d=>devArea[d.id]=d.area_id);
+    S.entArea={};S.skip=new Set();
+    ents.forEach(r=>{
+      const a=r.area_id||devArea[r.device_id];if(a)S.entArea[r.entity_id]=a;
+      if(r.entity_category||r.hidden_by||r.disabled_by)S.skip.add(r.entity_id);
+    });
+    if(subscribe)await subscribe();
+    S.demo=false;
+    setConn('on',this.embedded?'متصل عبر التطبيق':this.viaBrowser?'متصل بحسابك':undefined);render();
+  }
+};
+
+/* ========= Demo mode (shown until a token is added) ========= */
+function startDemo(){
+  S.demo=true;setConn('demo');
+  const AREAS=[['front','الحوش الأمامي'],['outside','الحوش من الخارج'],['women','مدخل النساء'],['men','مدخل الرجال'],['majlis','المجلس'],['kitchen','المطبخ'],['study','المكتب']];
+  const BR={supported_color_modes:['brightness']};
+  const L=(id,name,area,state,attrs)=>({entity_id:id,state,attributes:Object.assign({friendly_name:name},attrs||{}),_a:area});
+  const D=[
+    L('cover.garage_door','باب الكراج','front','closed',{device_class:'garage'}),
+    L('light.front_yard','لمبات الحوش الأمامي','front','off',BR),
+    L('switch.front_poles','عمدان الحوش الأمامي','front','unavailable'),
+    L('light.outer_room','لمبات الغرفة الخارجية','front','off'),
+    L('light.outer_room_flood','كشاف الغرفة الخارجية','front','off'),
+    L('light.gate_flood_y','كشاف البوابة الإلكترونية صفراء','front','unavailable'),
+    L('light.gate_flood','كشاف البوابة الإلكترونية','front','unavailable'),
+    L('switch.ramadan','لمبات زينة رمضان','front','unavailable'),
+    L('light.back_roof','كشاف السطح الخلفي','outside','unavailable'),
+    L('light.front_roof','كشاف السطح الأمامي','outside','unavailable'),
+    L('light.gate','كشاف البوابة','outside','unavailable'),
+    L('light.outer_sconces','أباليك الحوش الخارجي','outside','on',Object.assign({brightness:204},BR)),
+    L('light.canopy','لمبات المظلة الخارجية','outside','off'),
+    L('light.women_sconces','أباليك مدخل النساء','women','on',Object.assign({brightness:255},BR)),
+    L('switch.women_main','اللمبة الرئيسية','women','off'),
+    L('light.women_spots','أسبوتات مدخل النساء','women','off',BR),
+    L('light.men_spots','أسبوتات مدخل الرجال','men','off',BR),
+    L('light.men_sconces','أباليك مدخل الرجال','men','off'),
+    L('switch.men_main','اللمبة الرئيسية','men','off'),
+    L('lock.men_door','قفل باب الرجال','men','locked'),
+    L('climate.majlis','مكيف المجلس','majlis','cool',{temperature:23,current_temperature:26}),
+    L('light.majlis','إضاءة المجلس','majlis','off',BR),
+    L('fan.kitchen','مروحة شفط المطبخ','kitchen','unavailable'),
+    L('light.kitchen_strip','شريط LED المطبخ','kitchen','unavailable'),
+    L('light.kitchen_spots','أسبوتات المطبخ','kitchen','on',Object.assign({brightness:255},BR)),
+    L('switch.kitchen_cooler','برادة المطبخ','kitchen','on'),
+    L('sensor.study_temp','حرارة المكتب','study','32.9',{device_class:'temperature',unit_of_measurement:'°C'}),
+    L('sensor.study_hum','رطوبة المكتب','study','48',{device_class:'humidity',unit_of_measurement:'%'}),
+    L('media_player.home','مشغّل المنزل','study','paused',{media_title:'قائمة الطريق',media_artist:'مشغّل المنزل'}),
+    L('weather.home','الطقس','','sunny',{temperature:35}),
+    L('scene.arrive','وصلت البيت','','2026-11-04'),
+    L('scene.night','وضع الليل','','2026-11-04'),
+    L('script.outside_off','إطفاء الخارج','','off')
+  ];
+  S.states={};S.entArea={};S.skip=new Set();S.busy.clear();
+  S.areas=AREAS.map(([id,name])=>({id,name}));
+  D.forEach(e=>{if(e._a)S.entArea[e.entity_id]=e._a;delete e._a;S.states[e.entity_id]=e});
+  render();
+}
+function demoSet(id,state,attrs){
+  const e=S.states[id];if(!e||isNA(e))return;
+  S.states[id]={...e,state,attributes:Object.assign({},e.attributes,attrs||{})};
+  setTimeout(()=>{S.busy.delete(id);render()},250);
+}
+function demoCall(domain,service,data){
+  const ids=[].concat(data.entity_id||[]);
+  const sceneOff=(f)=>Object.values(S.states).filter(f).forEach(e=>demoSet(e.entity_id,'off'));
+  ids.forEach(id=>{
+    const e=S.states[id];if(!e)return;const d=dom(id);
+    if(d==='scene'||d==='script'){
+      if(id==='scene.arrive')['light.front_yard','light.outer_room','light.outer_sconces','light.women_sconces'].forEach(i=>demoSet(i,'on',{brightness:255}));
+      if(id==='scene.night')sceneOff(x=>dom(x.entity_id)==='light'&&!/sconces/.test(x.entity_id)&&x.state==='on');
+      if(id==='script.outside_off')sceneOff(x=>['front','outside'].includes(S.entArea[x.entity_id])&&TOGGLE.includes(dom(x.entity_id))&&x.state==='on');
+      return;
+    }
+    if(service==='toggle')demoSet(id,isOn(e)?'off':'on',d==='light'&&!isOn(e)?{brightness:255}:null);
+    else if(service==='turn_on')demoSet(id,d==='climate'?'cool':'on',data.brightness_pct!=null?{brightness:Math.round(data.brightness_pct*2.55)}:(d==='light'?{brightness:e.attributes.brightness||255}:null));
+    else if(service==='turn_off')demoSet(id,'off');
+    else if(service==='open_cover'){demoSet(id,'opening');setTimeout(()=>demoSet(id,'open'),2600)}
+    else if(service==='close_cover'){demoSet(id,'closing');setTimeout(()=>demoSet(id,'closed'),2600)}
+    else if(service==='lock')demoSet(id,'locked');
+    else if(service==='unlock')demoSet(id,'unlocked');
+    else if(service==='media_play_pause')demoSet(id,e.state==='playing'?'paused':'playing');
+    else if(service==='media_next_track')toast('المقطع التالي');
+  });
+}
+
+/* ========= Boot ========= */
+$('#gearBtn').innerHTML=svg('gear');
+tick();setInterval(tick,10000);
+addEventListener('resize',render);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!S.demo&&!HA.embedded&&!HA.ws)HA.connect()});
+startDemo();
+AUTH.callback().then(()=>HA.connect());
+</script>
+</body>
+</html>
