@@ -27,7 +27,7 @@ body{
     radial-gradient(70% 60% at 0% 100%, rgba(var(--cool-rgb),.07), transparent 60%),
     var(--bg);
   display:grid;grid-template-columns:calc(var(--u)*30) calc(var(--u)*58) 1fr;
-  gap:var(--gap);padding:var(--gap);
+  grid-gap:var(--gap);gap:var(--gap);padding:var(--gap);
   user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;touch-action:manipulation;
 }
 button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
@@ -43,9 +43,9 @@ svg{display:block}
 .rooms{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:calc(var(--u)*.6);scrollbar-width:none}
 .rooms::-webkit-scrollbar{display:none}
 .room{display:flex;align-items:center;gap:calc(var(--u)*1.4);padding:calc(var(--u)*1.3) calc(var(--u)*1.4);border-radius:calc(var(--r)*.8);color:var(--mute);font-size:calc(var(--u)*2.3);font-weight:600;text-align:right;position:relative;transition:background .2s,color .2s}
-.room .ri{width:calc(var(--u)*4.6);height:calc(var(--u)*4.6);display:grid;place-items:center;border-radius:50%;background:var(--panel2);flex:none}
+.room .ri{width:calc(var(--u)*4.6);height:calc(var(--u)*4.6);display:flex;align-items:center;justify-content:center;border-radius:50%;background:var(--panel2);flex:none}
 .room span.t{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.room .cnt{min-width:calc(var(--u)*3.2);height:calc(var(--u)*3.2);padding:0 calc(var(--u)*.8);border-radius:99px;background:rgba(var(--accent-rgb),.18);color:var(--accent);font-size:calc(var(--u)*1.7);display:grid;place-items:center;font-weight:700}
+.room .cnt{min-width:calc(var(--u)*3.2);height:calc(var(--u)*3.2);padding:0 calc(var(--u)*.8);border-radius:99px;background:rgba(var(--accent-rgb),.18);color:var(--accent);font-size:calc(var(--u)*1.7);display:flex;align-items:center;justify-content:center;font-weight:700}
 .room.sel{background:var(--panel);color:var(--text)}
 .room.sel::before{content:"";position:absolute;right:0;top:22%;bottom:22%;width:calc(var(--u)*.6);border-radius:9px;background:var(--accent)}
 .room.sel .ri{background:var(--accent);color:#1d1406}
@@ -57,7 +57,7 @@ svg{display:block}
 .conn.demo i{background:var(--accent)}
 .conn.connecting i{background:var(--accent);animation:blink 1s infinite}
 .conn.error i{background:var(--bad)}
-.btn{width:calc(var(--u)*6.4);height:calc(var(--u)*6.4);display:grid;place-items:center;border-radius:calc(var(--r)*.7);background:var(--panel);color:var(--mute);flex:none}
+.btn{width:calc(var(--u)*6.4);height:calc(var(--u)*6.4);display:flex;align-items:center;justify-content:center;border-radius:calc(var(--r)*.7);background:var(--panel);color:var(--mute);flex:none}
 .btn:active{background:var(--panel2)}
 
 /* ---------- Hero column ---------- */
@@ -89,14 +89,14 @@ svg{display:block}
 .garage.open .g-btn{background:var(--panel2);color:var(--text);border:1px solid var(--line)}
 .garage.na .g-btn{background:var(--panel2);color:var(--dim)}
 
-.scenes{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--gap);flex:none}
+.scenes{display:grid;grid-template-columns:repeat(3,1fr);grid-gap:var(--gap);gap:var(--gap);flex:none}
 .scene{position:relative;overflow:hidden;height:calc(var(--u)*11);border-radius:calc(var(--r)*.8);background:var(--panel);border:1px solid var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:calc(var(--u)*.8);font-size:calc(var(--u)*1.9);font-weight:600;color:var(--text);padding:0 calc(var(--u)*.6);text-align:center}
-.scene .ic{width:calc(var(--u)*4.6);height:calc(var(--u)*4.6);display:grid;place-items:center;border-radius:50%;background:rgba(var(--cool-rgb),.14);color:var(--cool)}
+.scene .ic{width:calc(var(--u)*4.6);height:calc(var(--u)*4.6);display:flex;align-items:center;justify-content:center;border-radius:50%;background:rgba(var(--cool-rgb),.14);color:var(--cool)}
 .scene span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 .scene.flash{animation:flash .9s}
 
 .media{flex:none;display:flex;align-items:center;gap:calc(var(--u)*1.4);padding:calc(var(--u)*1.4);border-radius:calc(var(--r)*.8);background:var(--panel);border:1px solid var(--line)}
-.media .art{width:calc(var(--u)*6.4);height:calc(var(--u)*6.4);border-radius:calc(var(--u)*1.4);background:linear-gradient(135deg,rgba(var(--accent-rgb),.5),rgba(var(--cool-rgb),.35));display:grid;place-items:center;color:#0a0c0f;flex:none}
+.media .art{width:calc(var(--u)*6.4);height:calc(var(--u)*6.4);border-radius:calc(var(--u)*1.4);background:linear-gradient(135deg,rgba(var(--accent-rgb),.5),rgba(var(--cool-rgb),.35));display:flex;align-items:center;justify-content:center;color:#0a0c0f;flex:none}
 .media .art svg{width:50%;height:50%}
 .media .mt{flex:1;min-width:0}
 .media .mt b{display:block;font-size:calc(var(--u)*2.1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -116,17 +116,17 @@ svg{display:block}
 .chip.act{color:var(--text);border-color:rgba(var(--accent-rgb),.5)}
 .chip.warn{background:rgba(var(--accent-rgb),.14);color:var(--accent);border-color:rgba(var(--accent-rgb),.35)}
 .chip.demo{background:rgba(var(--accent-rgb),.14);color:var(--accent);border-color:transparent}
-.scroll{flex:1;min-height:0;overflow-y:auto;scrollbar-width:none;padding-bottom:calc(var(--u)*2);mask-image:linear-gradient(to bottom,#000 92%,transparent)}
+.scroll{flex:1;min-height:0;overflow-y:auto;scrollbar-width:none;padding-bottom:calc(var(--u)*2);-webkit-mask-image:linear-gradient(to bottom,#000 92%,transparent);mask-image:linear-gradient(to bottom,#000 92%,transparent)}
 .scroll::-webkit-scrollbar{display:none}
 .sec{margin-bottom:calc(var(--u)*2.6)}
 .sec h2{font-size:calc(var(--u)*2.3);font-weight:700;color:var(--mute);margin:0 calc(var(--u)*.4) calc(var(--u)*1.2);display:flex;align-items:center;gap:calc(var(--u)*1)}
 .sec h2::after{content:"";flex:1;height:1px;background:var(--line)}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(calc(var(--u)*27),1fr));gap:var(--gap)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(calc(var(--u)*27),1fr));grid-gap:var(--gap);gap:var(--gap)}
 
 .tile{position:relative;overflow:hidden;height:calc(var(--u)*18);padding:calc(var(--u)*1.9);border-radius:var(--r);background:var(--panel);border:1px solid var(--line);display:flex;flex-direction:column;justify-content:space-between;text-align:right;transition:background .3s,border-color .3s,transform .12s,opacity .3s}
 .tile:active{transform:scale(.97)}
 .tile .top{display:flex;justify-content:space-between;align-items:flex-start}
-.tile .ic{width:calc(var(--u)*6.2);height:calc(var(--u)*6.2);border-radius:50%;display:grid;place-items:center;background:var(--panel2);color:var(--mute);transition:all .3s}
+.tile .ic{width:calc(var(--u)*6.2);height:calc(var(--u)*6.2);border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--panel2);color:var(--mute);transition:all .3s}
 .tile .badge{color:var(--dim);width:calc(var(--u)*2.8);height:calc(var(--u)*2.8)}
 .tile .nm{font-size:calc(var(--u)*2.3);font-weight:700;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .tile .st{font-size:calc(var(--u)*1.9);color:var(--mute);margin-top:calc(var(--u)*.3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -145,16 +145,16 @@ svg{display:block}
 .tile.busy .ic{animation:pulse .9s infinite}
 .tile.warn{border-color:rgba(var(--accent-rgb),.6)}
 
-[data-hold="act"]::after{content:"";position:absolute;inset:0;background:rgba(255,255,255,.18);transform:scaleX(0);transform-origin:right;pointer-events:none}
+[data-hold="act"]::after{content:"";position:absolute;top:0;right:0;bottom:0;left:0;background:rgba(255,255,255,.18);transform:scaleX(0);transform-origin:right;pointer-events:none}
 [data-hold="act"].holding::after{transform:scaleX(1);transition:transform var(--hold,900ms) linear}
 
-.empty{display:grid;place-items:center;height:60%;color:var(--mute);font-size:calc(var(--u)*2.3);text-align:center;gap:calc(var(--u)*1)}
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:60%;color:var(--mute);font-size:calc(var(--u)*2.3);text-align:center;gap:calc(var(--u)*1)}
 .empty svg{width:calc(var(--u)*8);height:calc(var(--u)*8);color:var(--dim);margin:auto}
 
 /* ---------- Overlays ---------- */
 .toast{position:fixed;left:50%;bottom:calc(var(--u)*4);transform:translate(-50%,200%);background:#1f262f;border:1px solid var(--line);padding:calc(var(--u)*1.6) calc(var(--u)*3);border-radius:99px;font-size:calc(var(--u)*2.1);transition:transform .3s;z-index:20;white-space:nowrap;box-shadow:0 calc(var(--u)*2) calc(var(--u)*5) rgba(0,0,0,.5)}
 .toast.show{transform:translate(-50%,0)}
-.veil{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:10;padding:var(--gap)}
+.veil{position:fixed;top:0;right:0;bottom:0;left:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:10;padding:var(--gap)}
 .veil.show{display:flex}
 .sheet{width:min(92vw,calc(var(--u)*110));max-height:94vh;overflow-y:auto;background:#12161b;border:1px solid var(--line);border-radius:var(--r);padding:calc(var(--u)*3)}
 .sheet h3{font-size:calc(var(--u)*3);margin-bottom:calc(var(--u)*2)}
@@ -242,9 +242,50 @@ input[type=range]::-moz-range-thumb{width:calc(var(--u)*4);height:calc(var(--u)*
   .tile .st{font-size:calc(var(--u)*1.8)}
   .toast{white-space:normal;text-align:center;max-width:90vw}
 }
+
+/* ---------- Older car WebViews: spacing when flexbox gap is unsupported ---------- */
+.nogap .rail>*+*,.nogap .rooms>*+*,.nogap .hero>*+*,.nogap .garage>*+*,.nogap .scene>*+*,.nogap .empty>*+*{margin-top:calc(var(--u)*1.2)}
+.nogap .hero>*+*{margin-top:var(--gap)}
+.nogap .brand>*+*,.nogap .room>*+*,.nogap .railfoot>*+*,.nogap .conn>*+*,.nogap .g-top>*+*,.nogap .g-btn>*+*,.nogap .media>*+*,.nogap .mhead>*+*,.nogap #chips>*+*,.nogap .chip>*+*,.nogap .check>*+*,.nogap .actions>*+*,.nogap .dim-wrap>*+*{margin-right:calc(var(--u)*1.2)}
+@media (max-aspect-ratio:16/9) and (min-aspect-ratio:1/1){
+  .nogap .room>*+*,.nogap .railfoot>*+*{margin-right:0;margin-top:calc(var(--u)*.6)}
+}
+@media (max-aspect-ratio:7/10){
+  .nogap .rail>*+*,.nogap .rooms>*+*{margin-top:0;margin-right:calc(var(--u)*1)}
+  .nogap .garage>*+*{margin-top:0;margin-right:calc(var(--u)*1.4)}
+}
+#boot{position:fixed;top:0;left:0;right:0;z-index:99;display:none;padding:14px 18px;background:#5a1414;color:#fff;font:16px/1.6 Tahoma,sans-serif;direction:rtl;white-space:pre-wrap}
 </style>
+<script>
+/* Runs before anything else, in plain ES5 so even old car WebViews execute it:
+   sizes the layout unit without CSS min(), detects flexbox gap support, and shows any script error on screen. */
+(function(){
+  function fitU(){
+    var w=window.innerWidth||1920,h=window.innerHeight||720,r=w/h,u;
+    if(r<=0.7)u=Math.min(w*0.019,h*0.011);
+    else if(r<=1)u=Math.min(h*0.01,w*0.0105);
+    else if(r<=16/9)u=Math.min(h*0.01,w*0.0075);
+    else u=Math.min(h*0.01,w*0.0055);
+    document.documentElement.style.setProperty('--u',u.toFixed(3)+'px');
+  }
+  fitU();window.addEventListener('resize',fitU);
+  try{
+    var d=document.createElement('div');d.style.cssText='display:flex;flex-direction:column;row-gap:1px;position:absolute;visibility:hidden';
+    d.appendChild(document.createElement('div'));d.appendChild(document.createElement('div'));
+    document.documentElement.appendChild(d);var ok=d.scrollHeight===1;d.parentNode.removeChild(d);
+    if(!ok)document.documentElement.className+=' nogap';
+  }catch(e){}
+  window.__bootErr=[];
+  window.onerror=function(m,src,l,c){
+    window.__bootErr.push(m+' (سطر '+l+':'+c+')');
+    var b=document.getElementById('boot');
+    if(b){b.style.display='block';b.textContent='خطأ في الواجهة — صوّر هذه الرسالة:\n'+window.__bootErr.join('\n')+'\n'+navigator.userAgent}
+  };
+})();
+</script>
 </head>
 <body>
+<div id="boot"></div>
 
 <aside class="rail">
   <div class="brand">
@@ -453,7 +494,7 @@ function iconOf(e){
   if(d==='script'||d==='scene')return 'spark';
   return 'plug';
 }
-const ORDER=Object.fromEntries(TILE_DOMAINS.map((d,i)=>[d,i]));
+const ORDER={};TILE_DOMAINS.forEach((d,i)=>{ORDER[d]=i});
 function sortEnts(arr){
   return arr.sort((x,y)=>(isNA(x)-isNA(y))||(ORDER[dom(x.entity_id)]-ORDER[dom(y.entity_id)])||nameOf(x).localeCompare(nameOf(y),'ar'));
 }
@@ -470,7 +511,8 @@ function entities(view){
 
 /* ========= Rendering ========= */
 let raf=0;
-function render(){if(!raf)raf=requestAnimationFrame(()=>{raf=0;renderRail();renderMain();renderHero()})}
+let shown=false;
+function render(){if(!raf)raf=requestAnimationFrame(()=>{raf=0;renderRail();renderMain();renderHero();if(!shown){shown=true;try{if(APP&&APP.ready)APP.ready()}catch(e){}}})}
 
 function renderRail(){
   const all=Object.values(S.states).filter(relevant);
@@ -675,7 +717,7 @@ $('#dimToggle').addEventListener('click',()=>{
 
 /* settings */
 function openSettings(){
-  if(APP){let v='';try{v=APP.version()}catch(e){}$('#appRow').style.display='flex';$('#appVer').textContent='منزلي — الإصدار '+v}
+  if(APP){let v='';try{v=APP.version()}catch(e){}$('#appRow').style.display='flex';let wv='';try{wv=APP.webview?APP.webview():''}catch(e){}$('#appVer').textContent='منزلي — الإصدار '+v+(wv?' · متصفح النظام '+wv:'')}
   const signed=!!(AUTH.get()||cfg.token);
   $('#logoutBtn').style.display=signed?'':'none';
   $('#loginBtn').textContent=signed?'إعادة تسجيل الدخول':'تسجيل الدخول بحساب Home Assistant';
@@ -732,7 +774,7 @@ const AUTH={
     const base=location.origin;
     try{
       const r=await fetch(base+'/auth/token',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},
-        body:new URLSearchParams({grant_type:'authorization_code',code,client_id:base+'/'})});
+        body:new URLSearchParams({grant_type:'authorization_code',code,client_id:base+'/'}).toString()});
       if(!r.ok)throw new Error(r.status);
       const j=await r.json();
       this.set({access_token:j.access_token,refresh_token:j.refresh_token,expires:Date.now()+j.expires_in*1000,base,clientId:base+'/'});
@@ -749,7 +791,7 @@ async function browserToken(force){
   if(!force&&t.access_token&&t.expires>Date.now()+60000)return t.access_token;
   try{
     const r=await fetch(HA.base+'/auth/token',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},
-      body:new URLSearchParams({grant_type:'refresh_token',refresh_token:t.refresh_token,client_id:t.clientId||(HA.base+'/')})});
+      body:new URLSearchParams({grant_type:'refresh_token',refresh_token:t.refresh_token,client_id:t.clientId||(HA.base+'/')}).toString()});
     if(!r.ok){
       // sign out only when HA says the session was revoked; anything else (network, Cloudflare) is temporary
       if(own&&r.status===400){let j={};try{j=await r.json()}catch(e){}if(j.error==='invalid_grant')AUTH.set(null)}
@@ -908,7 +950,7 @@ function startDemo(){
 }
 function demoSet(id,state,attrs){
   const e=S.states[id];if(!e||isNA(e))return;
-  S.states[id]={...e,state,attributes:Object.assign({},e.attributes,attrs||{})};
+  S.states[id]=Object.assign({},e,{state,attributes:Object.assign({},e.attributes,attrs||{})});
   setTimeout(()=>{S.busy.delete(id);render()},250);
 }
 function demoCall(domain,service,data){

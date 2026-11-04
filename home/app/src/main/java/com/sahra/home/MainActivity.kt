@@ -14,7 +14,15 @@ import android.os.Build
 import android.os.Bundle
 import android.os.VibrationEffect
 import android.os.Vibrator
+import android.os.Handler
+import android.os.Looper
+import android.view.Gravity
 import android.view.View
+import android.view.ViewGroup
+import android.webkit.ConsoleMessage
+import android.webkit.RenderProcessGoneDetail
+import android.webkit.WebChromeClient
+import android.widget.FrameLayout
 import android.view.WindowInsets
 import android.view.WindowInsetsController
 import android.view.WindowManager
@@ -37,6 +45,10 @@ import android.webkit.WebViewClient
 class MainActivity : Activity() {
 
     private lateinit var web: WebView
+    private lateinit var diag: TextView
+    private val handler = Handler(Looper.getMainLooper())
+    @Volatile private var pageReady = false
+    private val consoleErrors = ArrayList<String>()
     private var dialog: AlertDialog? = null
     private var checking = false
     private var pendingUpdate: Updater.Release? = null
@@ -55,6 +67,7 @@ class MainActivity : Activity() {
 
         web = WebView(this)
         web.setBackgroundColor(BG)
+        if (prefs.getBoolean(KEY_SOFTWARE, false)) web.setLayerType(View.LAYER_TYPE_SOFTWARE, null)
         web.isVerticalScrollBarEnabled = false
         web.isHorizontalScrollBarEnabled = false
         web.overScrollMode = View.OVER_SCROLL_NEVER
@@ -95,9 +108,42 @@ class MainActivity : Activity() {
             }
 
             override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean = false
+
+            // محرك العرض في الشاشة توقف: أعد التشغيل بدل الإغلاق
+            override fun onRenderProcessGone(view: WebView, detail: RenderProcessGoneDetail): Boolean {
+                handler.post { recreate() }
+                return true
+            }
+        }
+        web.webChromeClient = object : WebChromeClient() {
+            override fun onConsoleMessage(m: ConsoleMessage): Boolean {
+                if (m.messageLevel() == ConsoleMessage.MessageLevel.ERROR) {
+                    synchronized(consoleErrors) {
+                        consoleErrors.add("${m.message()} (${m.lineNumber()})")
+                        if (consoleErrors.size > 5) consoleErrors.removeAt(0)
+                    }
+                }
+                return false
+            }
         }
 
-        setContentView(web)
+        // رسالة تشخيص أصلية تظهر إذا لم تكتمل الواجهة، لأنها لا تعتمد على WebView
+        diag = TextView(this)
+        diag.setBackgroundColor(Color.parseColor("#E6141A21"))
+        diag.setTextColor(Color.WHITE)
+        diag.textSize = 18f
+        diag.gravity = Gravity.CENTER
+        val pad = (32 * resources.displayMetrics.density).toInt()
+        diag.setPadding(pad, pad, pad, pad)
+        diag.visibility = View.GONE
+        diag.setOnClickListener { toggleSoftwareAndReload() }
+
+        val root = FrameLayout(this)
+        root.setBackgroundColor(BG)
+        root.addView(web, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
+        root.addView(diag, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
+        setContentView(root)
+        handler.postDelayed({ checkShown() }, 9000)
         hideBars()
 
         if (savedInstanceState != null) {
@@ -105,6 +151,32 @@ class MainActivity : Activity() {
         } else {
             web.loadUrl(pageUrl())
         }
+    }
+
+    private fun webViewVersion(): String = try {
+        WebView.getCurrentWebViewPackage()?.let { "${it.packageName} ${it.versionName}" } ?: "غير معروف"
+    } catch (e: Exception) {
+        "غير معروف"
+    }
+
+    private fun checkShown() {
+        if (pageReady || isFinishing) return
+        val errors = synchronized(consoleErrors) { consoleErrors.joinToString("\n") }
+        val mode = if (prefs.getBoolean(KEY_SOFTWARE, false)) "العرض البرمجي مفعّل" else "العرض بكرت الشاشة"
+        diag.text = "الواجهة لم تظهر بشكل صحيح\n\n" +
+            "نسخة متصفح النظام: ${webViewVersion()}\n" +
+            "الإصدار: ${Updater.currentName(this)} — $mode\n" +
+            (if (errors.isNotEmpty()) "\nالأخطاء:\n$errors\n" else "") +
+            "\nصوّر هذه الشاشة، ثم اضغط عليها لإعادة المحاولة بطريقة عرض أخرى"
+        diag.visibility = View.VISIBLE
+    }
+
+    private fun toggleSoftwareAndReload() {
+        val now = !prefs.getBoolean(KEY_SOFTWARE, false)
+        prefs.edit().putBoolean(KEY_SOFTWARE, now).commit()
+        diag.visibility = View.GONE
+        pageReady = false
+        recreate()
     }
 
     private fun isServer(url: Uri): Boolean {
@@ -254,6 +326,7 @@ class MainActivity : Activity() {
 
     override fun onDestroy() {
         dialog?.dismiss()
+        handler.removeCallbacksAndMessages(null)
         web.destroy()
         super.onDestroy()
     }
@@ -293,6 +366,16 @@ class MainActivity : Activity() {
             }
         }
 
+        /** تستدعيها الصفحة بعد أول رسم ناجح */
+        @JavascriptInterface
+        fun ready() {
+            pageReady = true
+            runOnUiThread { diag.visibility = View.GONE }
+        }
+
+        @JavascriptInterface
+        fun webview(): String = webViewVersion()
+
         @JavascriptInterface
         fun version(): String = Updater.currentName(this@MainActivity)
 
@@ -316,6 +399,7 @@ class MainActivity : Activity() {
         const val PAGE_PATH = "/local/haval-home.html"
         const val ASSET_PAGE = "haval-home.html"
         const val KEY_SERVER = "server"
+        const val KEY_SOFTWARE = "software_render"
         const val KEY_LAST_CHECK = "last_update_check"
         const val CHECK_EVERY_MS = 3 * 60 * 60 * 1000L
         val BG: Int = Color.parseColor("#0A0C0F")
