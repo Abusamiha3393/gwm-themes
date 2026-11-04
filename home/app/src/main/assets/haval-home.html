@@ -181,7 +181,7 @@ input[type=range]::-moz-range-thumb{width:calc(var(--u)*4);height:calc(var(--u)*
 @keyframes flash{0%{background:rgba(var(--cool-rgb),.35)}100%{background:var(--panel)}}
 
 /* ---------- Half screen (≈960×720) ---------- */
-@media (max-aspect-ratio:16/9) and (min-aspect-ratio:1/1){
+@media (max-aspect-ratio:3/2) and (min-aspect-ratio:1/1){
   :root{--u:min(1vh,.75vw)}
   body{grid-template-columns:calc(var(--u)*12) 1fr}
   .hero{display:none}
@@ -247,7 +247,7 @@ input[type=range]::-moz-range-thumb{width:calc(var(--u)*4);height:calc(var(--u)*
 .nogap .rail>*+*,.nogap .rooms>*+*,.nogap .hero>*+*,.nogap .garage>*+*,.nogap .scene>*+*,.nogap .empty>*+*{margin-top:calc(var(--u)*1.2)}
 .nogap .hero>*+*{margin-top:var(--gap)}
 .nogap .brand>*+*,.nogap .room>*+*,.nogap .railfoot>*+*,.nogap .conn>*+*,.nogap .g-top>*+*,.nogap .g-btn>*+*,.nogap .media>*+*,.nogap .mhead>*+*,.nogap #chips>*+*,.nogap .chip>*+*,.nogap .check>*+*,.nogap .actions>*+*,.nogap .dim-wrap>*+*{margin-right:calc(var(--u)*1.2)}
-@media (max-aspect-ratio:16/9) and (min-aspect-ratio:1/1){
+@media (max-aspect-ratio:3/2) and (min-aspect-ratio:1/1){
   .nogap .room>*+*,.nogap .railfoot>*+*{margin-right:0;margin-top:calc(var(--u)*.6)}
 }
 @media (max-aspect-ratio:7/10){
@@ -264,7 +264,7 @@ input[type=range]::-moz-range-thumb{width:calc(var(--u)*4);height:calc(var(--u)*
     var w=window.innerWidth||1920,h=window.innerHeight||720,r=w/h,u;
     if(r<=0.7)u=Math.min(w*0.019,h*0.011);
     else if(r<=1)u=Math.min(h*0.01,w*0.0105);
-    else if(r<=16/9)u=Math.min(h*0.01,w*0.0075);
+    else if(r<=1.5)u=Math.min(h*0.01,w*0.0075);
     else u=Math.min(h*0.01,w*0.0055);
     document.documentElement.style.setProperty('--u',u.toFixed(3)+'px');
   }
@@ -498,7 +498,7 @@ const ORDER={};TILE_DOMAINS.forEach((d,i)=>{ORDER[d]=i});
 function sortEnts(arr){
   return arr.sort((x,y)=>(isNA(x)-isNA(y))||(ORDER[dom(x.entity_id)]-ORDER[dom(y.entity_id)])||nameOf(x).localeCompare(nameOf(y),'ar'));
 }
-const narrow=()=>matchMedia('(max-aspect-ratio:16/9) and (min-aspect-ratio:1/1)').matches;
+const narrow=()=>matchMedia('(max-aspect-ratio:3/2) and (min-aspect-ratio:1/1)').matches;
 function entities(view){
   let arr=Object.values(S.states).filter(relevant);
   if(!narrow())arr=arr.filter(e=>!['script','scene'].includes(dom(e.entity_id)));
